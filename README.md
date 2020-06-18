@@ -14,7 +14,7 @@ A.K.A Loop, the shader you are seeing right now.
 
 **License as stated by Chocapic13**
 
-Sharing a modified version of my shaders:
+```Sharing a modified version of my shaders:
 
 -You are not allowed to claim any of the code included in "Chocapic13' shaders" as your own
 
@@ -63,4 +63,4 @@ Minecraft websites:
 
 If you are not sure about what you are allowed to do or not, PM Chocapic13 on http://www.minecraftforum.net/.
 
-Not respecting these rules can and will result in a request of thread/download shutdown to the host/administrator, with or without warning. Intellectual property stealing is punished by law.
+Not respecting these rules can and will result in a request of thread/download shutdown to the host/administrator, with or without warning. Intellectual property stealing is punished by law.```

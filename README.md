@@ -1,4 +1,4 @@
--readme by Alex-
+--readme by Alex--
 
 What started as a personal edit for Espen and his fellow server members to make The End dimension look like the Twilight Realm from Zelda
 turned into probably the most extensive Chocapic13 edit in shader history.

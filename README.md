@@ -1,5 +1,7 @@
 What started as a personal edit for Espen and his fellow server members to make The End dimension look like the Twilight Realm from Zelda
-turned into probably the most extensive Chocapic13 edit in shader history. a.k.a Loop, the shader you are seeing right now.
+turned into probably the most extensive Chocapic13 edit in shader history. 
+A.K.A Loop, the shader you are seeing right now.
+
 
 
 

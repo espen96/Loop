@@ -3,6 +3,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 #include "/lib/settings.glsl"
+#include "/lib/encode.glsl"
 
 
 

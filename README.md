@@ -7,14 +7,16 @@ A.K.A Loop, the shader you are seeing right now.
 
 - A very Breath of The Wild inspired look.
 
+- More settings to control the look of the shader.
 
+- A surprisingly optimized screen-space path tracing mode. 
 
 
 
 
 **License as stated by Chocapic13**
 
-```Sharing a modified version of my shaders:
+*Sharing a modified version of my shaders:*
 
 -You are not allowed to claim any of the code included in "Chocapic13' shaders" as your own
 
@@ -32,7 +34,7 @@ A.K.A Loop, the shader you are seeing right now.
 
 -Common sense #2 : share your modification only if you think it adds something really useful to the shaderpack(not only 2-3 constants changed)
 
-Special level of permission; with written permission from Chocapic13, on request if you think your shaderpack is an huge modification from the original:
+*Special level of permission; with written permission from Chocapic13, on request if you think your shaderpack is an huge modification from the original:*
 
 -Allows to use monetizing links
 
@@ -45,14 +47,14 @@ Special level of permission; with written permission from Chocapic13, on request
 -Chocapic13 still have to be clearly credited
 
 
-Using this shaderpack in a video or a picture:
+*Using this shaderpack in a video or a picture:*
 
 -You are allowed to use this shaderpack for screenshots and videos if you give the shaderpack name in the description/message
 
 -You are allowed to use this shaderpack in monetized videos if you respect the rule above.
 
 
-Minecraft websites:
+*Minecraft websites:*
 
 -The download link must redirect to the download link given in the shaderpack's official thread
 
@@ -63,4 +65,4 @@ Minecraft websites:
 
 If you are not sure about what you are allowed to do or not, PM Chocapic13 on http://www.minecraftforum.net/.
 
-Not respecting these rules can and will result in a request of thread/download shutdown to the host/administrator, with or without warning. Intellectual property stealing is punished by law.```
+Not respecting these rules can and will result in a request of thread/download shutdown to the host/administrator, with or without warning. Intellectual property stealing is punished by law.

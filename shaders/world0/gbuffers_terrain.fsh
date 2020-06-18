@@ -80,6 +80,21 @@ float encodeVec2(float x,float y){
     return encodeVec2(vec2(x,y));
 }
 
+float encode2Vec2(vec2 a){
+    const vec2 constant1 = vec2( 1., 256.) / 65535.;
+    vec2 temp = ( a * 254. );
+	return temp.x*constant1.x+temp.y*constant1.y;
+}
+float encode2Vec2(float x,float y){
+#ifdef LIGHTMAP_FILTER
+    return encode2Vec2(vec2(x,y));
+#else	
+    return encodeVec2(vec2(x,y));
+#endif	
+}
+
+
+
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec3 toScreenSpace(vec3 p) {
@@ -192,7 +207,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	data0.rgb*=color.rgb;
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encode2Vec2(data1.w,data0.w));
 
 
 
@@ -219,7 +234,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	#endif
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encode2Vec2(data1.w,data0.w));
 	#endif
 
 

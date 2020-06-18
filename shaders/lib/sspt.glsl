@@ -74,8 +74,7 @@ mat3 make_coord_space(vec3 n) {
 vec2 WeylNth(int n) {
 	return fract(vec2(n * 12664745, n*9560333) / exp2(24.0));
 }
-const bool colortex1Clear = false;
-const bool colortex3Clear = false;
+
 // with improvments from Bobcao3
 ivec2 iuv = ivec2(gl_FragCoord.st);
 //float noise_sample = fract(bayer64(iuv))*10;
@@ -90,8 +89,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
 
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
-		grid_sample.x *= 0.8;
-		grid_sample.y *= 0.8;
+		grid_sample.xy *= 0.8;
 		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
 		rayDir = obj2view * object_space_sample;;

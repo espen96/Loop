@@ -1,5 +1,5 @@
 What started as a personal edit for Espen and his fellow server members to make The End dimension look like the Twilight Realm from Zelda
-turned into probably the most extensive Chocapic13 edit in shader history. 
+turned into probably the most extensive Chocapic13 edit in shader history.
 
 A.K.A Loop, the shader you are seeing right now.
 
@@ -7,12 +7,13 @@ A.K.A Loop, the shader you are seeing right now.
 
 - A very Breath of The Wild inspired look.
 
-- More settings to control the look of the shader.
+- A surprisingly optimized screen-space path tracing setting.
 
-- A surprisingly optimized screen-space path tracing mode. 
+- Way more settings to control the look of the shader. 
 
+- Revamped shader options to make life easier. (You'll know why.)
 
-
+Base shader was Chocapic13 V8.1 Ultra BETA from the shaderLABS discord server. 
 
 **License as stated by Chocapic13**
 

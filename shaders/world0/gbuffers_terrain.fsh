@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 #include "/lib/settings.glsl"
-#include "/lib/encode.glsl"
+
 
 
 
@@ -33,7 +33,7 @@ uniform vec2 texelSize;
 uniform int framemod8;
 #endif
 
-varying vec4 lmtexcoord;
+
 varying vec4 color;
  varying vec4 normalMat;
 #ifdef MC_NORMAL_MAP
@@ -52,12 +52,7 @@ float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
 
-//encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 n)
-{
-
-    return vec4(n.xy*inversesqrt(n.z*8.0+8.0) + 0.5,vec2(lmtexcoord.z,lmtexcoord.w));
-}
+#include "/lib/encode.glsl"
 
 #ifdef MC_NORMAL_MAP
 vec3 applyBump(mat3 tbnMatrix, vec3 bump)
@@ -71,28 +66,7 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 }
 #endif
 
-//encoding by jodie
-float encodeVec2(vec2 a){
-    const vec2 constant1 = vec2( 1., 256.) / 65535.;
-    vec2 temp = floor( a * 254. );
-	return temp.x*constant1.x+temp.y*constant1.y;
-}
-float encodeVec2(float x,float y){
-    return encodeVec2(vec2(x,y));
-}
 
-float encode2Vec2(vec2 a){
-    const vec2 constant1 = vec2( 1., 256.) / 65535.;
-    vec2 temp = ( a * 254. );
-	return temp.x*constant1.x+temp.y*constant1.y;
-}
-float encode2Vec2(float x,float y){
-#ifdef LIGHTMAP_FILTER
-    return encode2Vec2(vec2(x,y));
-#else	
-    return encodeVec2(vec2(x,y));
-#endif	
-}
 
 
 

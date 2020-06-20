@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
 #undef POM
@@ -33,7 +32,7 @@ uniform vec2 texelSize;
 uniform int framemod8;
 #endif
 
-
+varying vec4 lmtexcoord;
 varying vec4 color;
  varying vec4 normalMat;
 #ifdef MC_NORMAL_MAP
@@ -52,7 +51,12 @@ float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
 
-#include "/lib/encode.glsl"
+//encode normal in two channels (xy),torch(z) and sky lightmap (w)
+vec4 encode (vec3 n)
+{
+
+    return vec4(n.xy*inversesqrt(n.z*8.0+8.0) + 0.5,vec2(lmtexcoord.z,lmtexcoord.w));
+}
 
 #ifdef MC_NORMAL_MAP
 vec3 applyBump(mat3 tbnMatrix, vec3 bump)
@@ -66,9 +70,15 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 }
 #endif
 
-
-
-
+//encoding by jodie
+float encodeVec2(vec2 a){
+    const vec2 constant1 = vec2( 1., 256.) / 65535.;
+    vec2 temp = floor( a * 254. );
+	return temp.x*constant1.x+temp.y*constant1.y;
+}
+float encodeVec2(float x,float y){
+    return encodeVec2(vec2(x,y));
+}
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
@@ -172,7 +182,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
-	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
   else data0.a = 0.0;
 
 
@@ -182,7 +192,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	data0.rgb*=color.rgb;
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encode2Vec2(data1.w,data0.w));
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 
 
 
@@ -202,14 +212,14 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
   #endif
 
 
-	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
   else data0.a = 0.0;
 	#ifdef MC_NORMAL_MAP
 	normal = applyBump(tbnMatrix,texture2D(normals, lmtexcoord.xy).rgb*2.0-1.);
 	#endif
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encode2Vec2(data1.w,data0.w));
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
 
 

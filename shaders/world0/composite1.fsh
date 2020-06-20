@@ -387,17 +387,17 @@ void main() {
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
-		vec2 lightmap2 = vec2(dataUnpacked1.yz);			
-		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
-		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.9;
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+		vec2 lightmap = vec2(dataUnpacked1.yz);			
+
 		
+
 #ifdef LIGHTMAP_FILTER
-		float baseDepth = ld(z0);
-		if (hand){baseDepth = 1;}		
+		float baseDepth = ld(z0);	
         vec4 data2 = vec4(0.0);
         for (int i = 0; i <= 16; i++) {
+												  
+														   
+									   
 		
 		    vec2 offset = poissonDisk[i] * texelSize*16;
 
@@ -407,19 +407,22 @@ void main() {
             if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025) {
                 data2 += vec4(decodeVec2(texture2D(colortex1, texcoord + offset).z),(fract((texture2D(colortex1, texcoord + offset).w) * (constant1 ))));
             } else {
-                data2.yz += lightmap2.xy;
+                data2.yz += lightmap.xy;
             }
         }
         data2 /= 16.0;
         vec4 dataUnpacked3 = vec4(dataUnpacked1.x,data2.y,data2.z,dataUnpacked1.w);
-		vec2 lightmap = vec2(dataUnpacked3.yz);		
-#else
-		
-		vec2 lightmap = vec2(dataUnpacked1.yz);
+	 lightmap = vec2(dataUnpacked3.yz);		
 
-#endif		
-		
 
+#endif	
+
+		
+		
+		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
+		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
+		bool entity = abs(entityg.y) >0.9;
+		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
 
 
@@ -546,7 +549,7 @@ void main() {
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
-			gl_FragData[0].rgb = lightmap.yyy;
+			 //gl_FragData[0].rgb = lightmap.yyy;
 			#else
 			
 		  		

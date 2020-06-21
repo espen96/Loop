@@ -400,12 +400,9 @@ void main() {
 									   
 		
 		    vec2 offset = poissonDisk[i] * texelSize*16;
-
-		    const vec2 constant1 = 65536 / vec2( 256.0, 0.);
-
             float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
             if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025) {
-                data2 += vec4(decodeVec2(texture2D(colortex1, texcoord + offset).z),(fract((texture2D(colortex1, texcoord + offset).w) * (constant1 ))));
+                data2 += vec4(decodeVec2(texture2D(colortex1, texcoord + offset).z),(decodeVec2(texture2D(colortex1, texcoord + offset).w)));
             } else {
                 data2.yz += lightmap.xy;
             }
@@ -548,8 +545,8 @@ void main() {
 			#ifndef SSPT
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
-			 //gl_FragData[0].rgb = lightmap.yyy;
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
+			 //gl_FragData[0].rgb = (directLightCol.rgb*lightmap.yyy);
 			#else
 			
 		  		
@@ -576,7 +573,7 @@ void main() {
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight);
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight);
 
 		    //gl_FragData[0].rgb = data2.yyy;
 			#endif

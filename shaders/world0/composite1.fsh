@@ -539,7 +539,7 @@ void main() {
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = ((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3)*filtered.y;
 
 
 
@@ -565,7 +565,7 @@ void main() {
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight);
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,100));
 
 		    //gl_FragData[0].rgb = data2.yyy;
 		    

@@ -260,7 +260,7 @@ vec3 data2 = vec3(0.0);
 														   
 									   
 		
-		    vec2 offset = poissonDisk[i] * texelSize*8;
+		    vec2 offset = poissonDisk[i] * texelSize*5;
             float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
 			if (emissive || entity){ currentDepth=0;}
             if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025 ){

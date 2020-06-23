@@ -280,11 +280,11 @@ vec3 data2 = vec3(0.0);
 
 
 	blur1 = mix((ssaoVL_blur(texcoord,vec2(0.2,0.1),Depth*far)),(ssaoVL_blur(texcoord,vec2(0.1,0.2),Depth*far)),0.5);
-	blur2 = blur1;
+	blur2 = data2;
 	blur3 = (blur2+test);
-	blur4 = clamp((blur3/filtered)/4,0,256);
+	blur4 = clamp((blur3/filtered)/4,0,1);
 
-	fblur = mix(test,data2,blur4*0.5);
+	fblur = mix(test,blur2,blur4*0.5);
 
 }
 

@@ -1,6 +1,10 @@
-const bool depthtex0MipmapEnabled = true;
-/* const int colortex5Format = R11F_G11F_B10F;	 */
-const bool colortex5Clear = false;
+
+
+
+
+
+
+
 
 vec3 RT(vec3 dir,vec3 position,float dither){
 
@@ -35,10 +39,6 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 }
 
 
-vec2 R2_samples(int n){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha*0.25 * n*frameCounter);
-}
 
 
 // with improvments from Bobcao3
@@ -90,22 +90,27 @@ ivec2 iuv = ivec2(gl_FragCoord.st);
 //float noise_sample = fract(bayer64(iuv))*10;
 float noise_sample = fract(R2_dither()*3);
 //float noise_sample = fract(blueNoise2());
+
+
+
+
 vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
-        mat3 obj2view = make_coord_space(normal);
+
+     mat3 obj2view = make_coord_space(normal);
 	const int nrays = RAYS;
-	vec3 Ld = vec3(0.0);
-	const float weight_per_ray = 1.0 / float(nrays);
+
+
 	const float num_directions = 4096 * nrays;
 	vec3 intRadiance = vec3(0.0);
 	for (int i = 0; i < nrays; i++){
 
 
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
-
+			 grid_sample.y *=0.8;
 		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
-		rayDir = obj2view * object_space_sample;;
-		//rayDir = TangentToWorld(normal,rayDir);
+		//rayDir = obj2view * object_space_sample;;
+		rayDir = TangentToWorld(normal,rayDir);
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, noise);
 
 		

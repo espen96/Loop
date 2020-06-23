@@ -196,17 +196,7 @@ float linZ(float depth) {
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
-float bayer2(vec2 a){
-	a = floor(a);
-    return fract(dot(a,vec2(0.5,a.y*0.75)));
-}
 
-#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
-#define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
-#define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
-#define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
-#define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
-#define bayer128(a) fract(bayer64(.5*(a))*.25+bayer2(a)+tempOffsets)
 float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
 
     const float quality = 16.;
@@ -264,10 +254,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 }
 
 
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
-}
+
 
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);

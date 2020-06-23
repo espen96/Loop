@@ -1,10 +1,25 @@
 
+float bayer2(vec2 a){
+	a = floor(a);
+    return fract(dot(a,vec2(0.5,a.y*0.75)));
+}
+
+#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
+#define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
+#define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
+#define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
+#define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
+#define bayer128(a) fract(bayer64(.5*(a))*.25+bayer2(a)+tempOffsets)
 
 
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
+}
 
-
-
-
+float blueNoise2(){
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887);
+}
 
 vec3 RT(vec3 dir,vec3 position,float dither){
 
@@ -75,9 +90,7 @@ mat3 make_coord_space(vec3 n) {
 vec2 WeylNth(int n) {
 	return fract(vec2(n * 12664745, n*9560333) / exp2(24.0));
 }
-float blueNoise2(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887);
-}
+
 // with improvments from Bobcao3
 vec2 invWidthHeight = vec2(1.0 / viewWidth, 1.0 / viewHeight);
 

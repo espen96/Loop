@@ -561,10 +561,10 @@ void main() {
 		}
 		else{	
 				
-			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2.5;
+			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
 			
 			//ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
-			ambientLight += (rtGI(normal, noise, fragpos)*8.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
+			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
 		  //ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y);	
 		  
 		  

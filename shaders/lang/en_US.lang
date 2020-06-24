@@ -55,6 +55,9 @@ value.Credits.1=Original by Chocapic13
 
 #Settings
 
+
+option.TOASTER=Potato mode (WIP)
+
 #TAA
 option.FLICKER_REDUCTION=Flicker reduction
 option.BLEND_FACTOR=Blend factor

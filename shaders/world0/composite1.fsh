@@ -332,7 +332,12 @@ vec2 decodeVec1(float a){
     const float constant2 = 256. / 255.;
     return fract( a * constant1 ) * constant2 ;
 }
-
+const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
+vec2( -0.6250, -0.0000 ),
+vec2(  0.3536, -0.3536 ),
+vec2( -0.0000,  0.3750 ),
+vec2( -0.1768, -0.1768 ),
+vec2( 0.1250,  0.0000 ));
 
 void main() {
 
@@ -409,6 +414,8 @@ void main() {
 
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		float shading = 1.0;
+		
+#ifndef TOASTER
 		vec3 filtered = vec3(1.412,1.0,0.0);
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
@@ -418,7 +425,15 @@ void main() {
 			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.3);
 			filtered.y = filtered.y * 0.55+0.55;
 		}
-
+#else 
+		if (translucent) {
+			albedo *= 1.1;
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.45)*1.52, 3.0*phaseg(dot(np3, WsunVec),0.1))*3.1415, diffuseSun, 0.35);
+									   
+		}
+		vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
+		
+#endif		
 		//compute shadows only if not backfacing the sun
 		if (diffuseSun > 0.001) {
 
@@ -436,6 +451,7 @@ void main() {
 				float diffthresh = translucent? 0.00014 : distortThresh/6000.0*threshMul;
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 				shading = 0.0;
+#ifndef TOASTER				
 				float SSS = max(exp(-(filtered.x-1.412)*2.4), 0.7*exp(-(filtered.x-1.412)*0.6));
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
@@ -447,6 +463,22 @@ void main() {
 					else
 						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
 				}
+#else				
+mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
+									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
+									);
+				for(int i = 0; i < 6; i++){
+					vec2 offsetS = noiseM*shadowOffsets[i];
+
+					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
+					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
+					 
+																  
+		 
+													 
+				}				
+#endif				
+				
 			}
 			if (shading > 0.005){
 				#ifdef SCREENSPACE_CONTACT_SHADOWS

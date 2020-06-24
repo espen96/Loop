@@ -6,7 +6,7 @@
 #include "/lib/color_transforms.glsl"
 #include "/lib/encode.glsl"
 
-const int noiseTextureResolution = 32;
+
 
 
 
@@ -50,21 +50,6 @@ uniform mat4 gbufferPreviousModelView;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex5,texcoord).rgb;
 		bool entity = abs(entityg.y) >0.9;
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+tempOffsets);
-}
-float triangularize(float dither)
-{
-    float center = dither*2.0-1.0;
-    dither = center*inversesqrt(abs(center));
-    return clamp(dither-fsign(center),0.0,1.0);
-}
-vec3 fp10Dither(vec3 color,float dither){
-	const vec3 mantissaBits = vec3(6.,6.,5.);
-	vec3 exponent = floor(log2(color));
-	return color + dither*exp2(-mantissaBits)*exp2(exponent);
-}
-
 
 
 
@@ -105,7 +90,7 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
 }
 
 
-vec3 TAA_hq(){
+vec3 TAA_sspt(){
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
 
 
@@ -137,7 +122,7 @@ vec3 TAA_hq(){
 	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
 	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
 
-	#ifndef NO_CLIP2
+
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
@@ -156,14 +141,11 @@ vec3 TAA_hq(){
 	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*0;
 
 	//Blend current pixel with clamped history
-	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+rej+isclamped*0.1+0.01,0.,1.));
-	#endif
+	//vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+rej+isclamped*0.1+0.01,0.,1.));
+	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+isclamped*0.1+0.01,0.,1.));
 
 
-	#ifdef NO_CLIP2
-	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
-	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.05,0.,1.));
-	#endif
+
 
 	//De-tonemap
 	return supersampled;
@@ -174,7 +156,7 @@ void main() {
 /* DRAWBUFFERS:3 */
 
 #ifdef RT_FILTER
-	vec3 color = TAA_hq();
+	vec3 color = TAA_sspt();
 	gl_FragData[0].rgb = color;
 #else
 	vec3 color2 = texture2D(colortex3,texcoord).rgb;

@@ -164,8 +164,12 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 		}
 		else {
-			//vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb * float(rayDir.y > 0.0);
+		
+		#ifdef nether
+			vec3 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+40)*vec3(2.0,0.0,0.0)) * float(rayDir.y > 0.0);
+		#else
 			vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb * float(rayDir.y > 1.0-eyeBrightnessSmooth.y/240.0);
+		#endif	
 			intRadiance += sky_c*2;
 		}
 

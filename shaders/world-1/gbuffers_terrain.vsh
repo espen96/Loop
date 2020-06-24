@@ -128,6 +128,10 @@ void main() {
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.8;
 	}
+	if (mc_Entity.x == 10007){
+		color.rgb = normalize(color.rgb)*sqrt(3.0);
+		normalMat.a = 0.8;
+	}
 	gl_Position = toClipSpace3(position);
 
 	color.rgb*=sqrt(color.a);

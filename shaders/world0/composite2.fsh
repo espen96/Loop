@@ -1,5 +1,5 @@
 #version 120
-//Temporal Anti-Aliasing + Dynamic exposure calculations (vertex shader)
+//Temporal sspt filter
 
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"

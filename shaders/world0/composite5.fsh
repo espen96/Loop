@@ -1,7 +1,9 @@
+
+
 #version 120
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
-
+#ifndef TOASTER
 #include "/lib/settings.glsl"
 
 
@@ -276,5 +278,15 @@ void main() {
 		#endif
 		}	
 	}
+#else
 
+
+/* DRAWBUFFERS:3 */
+
+
+
+void main() {
+
+}
+#endif
 

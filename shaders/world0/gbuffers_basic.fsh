@@ -1,19 +1,10 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
+#include "/program/gbuffers/standard.shared.glsl"
 
 
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
 
-
-uniform sampler2D texture;
-uniform float frameTimeCounter;
-uniform mat4 gbufferProjectionInverse;
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
-}
 
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
 vec4 encode (vec3 n)

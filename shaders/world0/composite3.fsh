@@ -1,5 +1,5 @@
 #version 120
-//Render sky, volumetric clouds, direct lighting
+//sspt filter2
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
 

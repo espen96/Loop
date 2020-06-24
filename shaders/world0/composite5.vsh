@@ -1,4 +1,8 @@
 #version 120
+
+#ifndef TOASTER
+
+
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
@@ -55,3 +59,19 @@ void main() {
 	fogAmount = BASE_FOG_AMOUNT*(fogAmount0+max(FOG_RAIN_MULTIPLIER*1/10.*rainStrength , FOG_TOD_MULTIPLIER*1/50.*clamp(modWT-13000.,0.,1000.0)/1000.*(1.0-clamp(modWT-23000.,0.,1000.0)/1000.)));
 
 }
+#else
+
+#extension GL_EXT_gpu_shader4 : enable
+
+
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+
+void main() {
+
+	gl_Position.w = -1.0;
+}
+#endif

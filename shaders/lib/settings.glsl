@@ -2,7 +2,7 @@
 //   #include "/lib/settings.glsl"
 */
 
-//#define TOASTER
+#define TOASTER
 
 #define Credits 1 //[0 1]
 #define Performance_Impact_Key 0 //Shows which colors mean what[0 1 2 3 4 5]
@@ -177,7 +177,7 @@
 #define VOLUMETRIC_CLOUDS
 
 #define CLOUDS_SPEED 1 //[0.0 0.25 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0]
-#define BLOOMY_FOG 1.5 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
+#define BLOOMY_FOG 0 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
 
 /* ------ fog color ------ */
 #define fog_mieg1 0.40 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0]

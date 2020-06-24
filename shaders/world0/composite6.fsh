@@ -152,6 +152,9 @@ void main() {
 
 
 #else
+
+
+
 //Horizontal bilateral blur for volumetric fog + Forward rendered objects + Draw volumetric fog
 #extension GL_EXT_gpu_shader4 : enable
 
@@ -222,7 +225,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	dVWorld *= maxLength;
 
 	vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
-	vec3 vL = vec3(0.);
+	vec3 vL = vec3(0.)*eyeBrightnessSmooth.y;
 
 	float SdotV = dot(sunVec,normalize(fragpos))*lightCol.a;
 	float dL = length(dVWorld);
@@ -250,7 +253,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	float mu = 1.0;
 	float muS = 1.0*mu;
 	vec3 absorbance = vec3(1.0);
-	float expFactor = 2.7;
+	float expFactor = 11.0;
 	for (int i=0;i<VL_SAMPLES;i++) {
 		float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 		float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES)) * log(expFactor) / float(VL_SAMPLES)/(expFactor-1.0);
@@ -295,7 +298,7 @@ float R2_dither(){
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 0.43015971 * frameCounter);
 }
 void main() {
-  /* DRAWBUFFERS:3 */
+  /* DRAWBUFFERS:73 */
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
@@ -342,6 +345,6 @@ void main() {
     waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), R2_dither(), totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/3.1415, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
     color += vl;
   }
-  gl_FragData[0].rgb = clamp(color,6.11*1e-5,65000.0);
+  gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
 }
 #endif

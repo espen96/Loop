@@ -258,16 +258,25 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 		float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES)) * log(expFactor) / float(VL_SAMPLES)/(expFactor-1.0);
 		progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
-    float density = cloudVol(progressW)*1.5*ATMOSPHERIC_DENSITY*mu*400.;
-		//Just air
-		vec2 airCoef = exp2(-max(progressW.y-SEA_LEVEL,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
+    float density = cloudVol(progressW)*ATMOSPHERIC_DENSITY*mu*500.;
 
+		//Just air
+		
+		
+		vec2 airCoef = exp2(-max(progressW.y-SEA_LEVEL,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
+			float sh = 1.0;
 		//Pbr for air, yolo mix between mie and rayleigh for water droplets
-		vec3 rL = rC*(airCoef.x+density*0.15);
-		vec3 m = (airCoef.y+density*1.85)*mC;
-		vec3 vL0 = sunColor*(rayL*rL+m*mie)*0.75 + skyCol0*(rL+m);
-		vL += vL0 * dd * dL *  absorbance;
-		absorbance *= exp(-(rL+m)*dL*dd);
+			vec3 rL = rC*airCoef.x;
+			vec3 m = (airCoef.y+density)*mC;
+			vec3 vL0 = sunColor*sh*(rayL*rL+m*mie) + skyCol0*(rL+m);
+			vL += (vL0 - vL0 * exp(-(rL+m)*dd*dL)) / ((rL+m)+0.00000001)*absorbance;
+			absorbance *= clamp(exp(-(rL+m)*dd*dL),0.0,1.0);
+		
+		
+		
+		
+		
+
 	}
 	return mat2x3(vL,absorbance);
 }
@@ -298,7 +307,7 @@ float R2_dither(){
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 0.43015971 * frameCounter);
 }
 void main() {
-  /* DRAWBUFFERS:73 */
+  /* DRAWBUFFERS:3 */
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
@@ -338,6 +347,8 @@ void main() {
     color.rgb *= exp(-length(fragpos)*totEpsilon);
     float estEyeDepth = clamp((14.0-eyeBrightnessSmooth.y/255.0*16.0)/14.0,0.,1.0);
     estEyeDepth *= estEyeDepth*estEyeDepth*34.0;
+	
+	
     #ifndef lightMapDepthEstimation
       estEyeDepth = max(Water_Top_Layer - cameraPosition.y,0.0);
     #endif
@@ -345,6 +356,6 @@ void main() {
     waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), R2_dither(), totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/3.1415, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
     color += vl;
   }
-  gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
+  gl_FragData[0].rgb = clamp(color,6.11*1e-5,65000.0);
 }
 #endif

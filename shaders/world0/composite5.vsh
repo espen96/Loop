@@ -1,11 +1,15 @@
 #version 120
 
+
+#include "/lib/settings.glsl"
+
+
 #ifndef TOASTER
 
 
 #extension GL_EXT_gpu_shader4 : enable
 
-#include "/lib/settings.glsl"
+
 
 flat varying vec4 lightCol;
 flat varying vec3 ambientUp;

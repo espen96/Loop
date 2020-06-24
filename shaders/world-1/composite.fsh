@@ -352,7 +352,11 @@ void main() {
 		
 		
 #ifndef SSPT		
-		ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
+				
+				if (emissive)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
+				}
+						else{
+		ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;}
 
 		
 		

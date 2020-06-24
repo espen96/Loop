@@ -67,8 +67,7 @@ uniform vec3 cameraPosition;
 uniform int framemod8;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
-#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+
 
 
 
@@ -150,6 +149,7 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
+#include "/lib/util.glsl"
 #include "/lib/encode.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/stars.glsl"
@@ -162,7 +162,7 @@ vec3 normVec (vec3 vec){
 float lengthVec (vec3 vec){
 	return sqrt(dot(vec,vec));
 }
-#define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
+
 float triangularize(float dither)
 {
     float center = dither*2.0-1.0;
@@ -180,10 +180,7 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-}
+
 
 
 
@@ -418,7 +415,7 @@ void main() {
 		}
 		//custom shading model for translucent objects
 		if (translucent) {
-			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*3.1415*3.1415*(1.0-filtered.y*0.5), diffuseSun, 0.3);
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.3);
 			filtered.y = filtered.y * 0.55+0.55;
 		}
 

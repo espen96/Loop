@@ -59,7 +59,7 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 // with improvments from Bobcao3
 vec3 cosineHemisphereSample(vec2 r)
 {
-    float phi = 2.0 * 3.1415926 * r.y;
+    float phi = TAU * r.y;
     float sqrt_rx = sqrt(r.x);
 
     return vec3(cos(phi) * sqrt_rx, sin(phi) * sqrt_rx, sqrt(1.0 - r.x));

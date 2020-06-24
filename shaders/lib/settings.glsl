@@ -2,7 +2,7 @@
 //   #include "/lib/settings.glsl"
 */
 
-#define TOASTER
+//#define TOASTER
 
 #define Credits 1 //[0 1]
 #define Performance_Impact_Key 0 //Shows which colors mean what[0 1 2 3 4 5]

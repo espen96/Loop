@@ -53,34 +53,13 @@ vec3 rodSample(vec2 Xi)
 
     return normalize(vec3(cos(phi) * r, sin(phi) * r, Xi.x)).xzy;
 }
-vec3 cosineHemisphereSample(vec2 Xi)
-{
-    float r = sqrt(Xi.x);
-    float theta = 2.0 * 3.14159265359 * Xi.y;
 
-    float x = r * cos(theta);
-    float y = r * sin(theta);
-
-    return vec3(x, y, sqrt(clamp(1.0 - Xi.x,0.,1.)));
-}
 
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
 
-vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter)
-{
-    float alpha = float(sampleNumber+jitter)/nb;
-    float angle = (jitter+alpha) * (nbRot * 6.28);
 
-    float ssR = alpha;
-    float sin_v, cos_v;
-
-	sin_v = sin(angle);
-	cos_v = cos(angle);
-
-    return vec2(cos_v, sin_v)*ssR;
-}
 //Low discrepancy 2D sequence, integration error is as low as sobol but easier to compute : http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);

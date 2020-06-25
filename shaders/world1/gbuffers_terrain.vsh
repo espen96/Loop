@@ -130,6 +130,10 @@ void main() {
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.8;
 	}
+	if (mc_Entity.x == 10007){
+		color.rgb = normalize(color.rgb)*sqrt(3.0);
+		normalMat.a = 0.8;
+	}	
 	gl_Position = toClipSpace3(position);
 	#ifdef SEPARATE_AO
 	lmtexcoord.z *= sqrt(color.a);

@@ -21,6 +21,7 @@ uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
+uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
 uniform sampler2D depthtex1;//depth
@@ -39,6 +40,9 @@ uniform float rainStrength;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferPreviousProjection;
+uniform vec3 previousCameraPosition;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform mat4 gbufferModelView;
@@ -51,8 +55,7 @@ uniform vec3 cameraPosition;
 uniform int framemod8;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
-#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 p3 = p * 2. - 1.;
@@ -62,6 +65,7 @@ vec3 toScreenSpace(vec3 p) {
 
 #include "/lib/color_transforms.glsl"
 #include "lib/sky_gradient.glsl"
+#include "/lib/util.glsl"
 #include "/lib/stars.glsl"
 #include "lib/volumetricClouds.glsl"
 #include "/lib/waterBump.glsl"
@@ -74,7 +78,7 @@ vec3 normVec (vec3 vec){
 float lengthVec (vec3 vec){
 	return sqrt(dot(vec,vec));
 }
-#define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
+
 float triangularize(float dither)
 {
     float center = dither*2.0-1.0;
@@ -97,11 +101,6 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-}
-
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));
 	// l = (2*n)/(f+n-d(f-n))
@@ -117,10 +116,7 @@ float invLinZ (float lindepth){
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
-float bayer2(vec2 a){
-	a = floor(a);
-    return fract(dot(a,vec2(0.5,a.y*0.75)));
-}
+
 
 #define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
 #define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
@@ -198,10 +194,7 @@ vec3 BilateralFiltering(sampler2D tex, sampler2D depth,vec2 coord,float frDepth,
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
-}
+
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -209,6 +202,11 @@ vec3 toShadowSpaceProjected(vec3 p3){
 
     return p3;
 }
+
+#define END
+#include "/lib/sspt.glsl"
+
+
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
     float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
@@ -315,7 +313,7 @@ void main() {
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-
+		vec4 entityg = texture2D(colortex7,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 
@@ -323,7 +321,7 @@ void main() {
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-
+		bool entity = abs(entityg.y) >0.9;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);
@@ -333,10 +331,22 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		vec3 directLightCol = lightCol.rgb;
+		
+		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
-		if (emissive || (hand && heldBlockLightValue > 0.1))
-			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*1.4;
-		ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*1.5;
+			
+
+
+#ifndef SSPT		
+				
+				if (emissive)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;
+				}
+						else{
+		ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);}
+
+		
+		
 		//combine all light sources
 		float ao = 1.0;
 		if (!hand)
@@ -346,7 +356,68 @@ void main() {
 		#endif
 		}
 		gl_FragData[0].rgb = ambientLight*albedo*ao;
-		}
+		
+		
+#else	
 
-/* DRAWBUFFERS:3 */
+
+
+				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z;
+				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;
+				}
+						else{			
+		
+		ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
+		ambientLight += (rtGI(normal, noise, fragpos)*20.0/150./3.0 ) *((ambientLight.y*2));	}
+
+		
+		
+		float ao = 1.0;
+		if (!hand)
+		{
+		#ifdef SSAO
+			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+		#endif
+		}
+		gl_FragData[0].rgb = ambientLight*ao;
+
+		
+
+#endif   
+
+		#ifdef SSAO
+			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+		#endif
+		
+
+		vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
+		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
+		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
+		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
+		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
+		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
+
+			vec3 ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
+			if (emissive) ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;	  
+			gl_FragData[1].rgb = ambientLight2.rgb*ao;}
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+
+
+
+		
+
+/* DRAWBUFFERS:36 */
 }

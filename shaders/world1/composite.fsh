@@ -237,7 +237,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	//pre-rotate direction
 	float n = 0.;
 
-	occlusion = 2.0;
+	occlusion = 1.0;
 
 	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
@@ -334,7 +334,7 @@ void main() {
 		
 		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*1.5;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;
 			
 
 
@@ -368,7 +368,7 @@ void main() {
 						else{			
 		
 		ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
-		ambientLight += (rtGI(normal, noise, fragpos)*20.0/150./3.0 ) *((ambientLight.y*2));	}
+		ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y));	}
 
 		
 		
@@ -399,8 +399,8 @@ void main() {
 
 			vec3 ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
 			if (emissive) ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;	  
-			gl_FragData[1].rgb = ambientLight2.rgb*ao;}
-
+			gl_FragData[1].rgb = ambientLight2.rgb*ao;
+			if (emissive) gl_FragData[1].rgb = ambientLight2.rgb;}
 
 
 

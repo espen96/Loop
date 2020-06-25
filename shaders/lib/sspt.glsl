@@ -173,7 +173,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
 
 #ifdef END
-			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+40)*vec3(1.1,0.5,0.2)) * float(rayDir.y > 0.0);
+			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+50)*vec3(2.0,0.7,0.4)) * float(rayDir.y > 0.0);
 #endif
 			intRadiance += sky_c*2;
 		}

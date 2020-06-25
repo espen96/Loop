@@ -510,11 +510,11 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		ambientLight *= (1.0+rainStrength*0.2);
 		vec3 directLightCol = lightCol.rgb;
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*4./150./3.;
-		custom_lightmap.y *= filtered.y*0.5+0.1;
+		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		if (emissive || (hand && heldBlockLightValue > 0.1))
 	#ifdef SSPT	
-			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*5;
+			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;
 	#else
 			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
 	#endif		

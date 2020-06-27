@@ -37,7 +37,7 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 
 
     vec3 stepv = direction/len;
-	vec3 spos = clipPosition + stepv;
+	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 	
 	
@@ -48,7 +48,7 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.1 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv*0.25;
+			spos += stepv*0.5;
 		}
     return vec3(1.1);
 }
@@ -119,7 +119,6 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
 
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
-			 grid_sample.y *=0.8;
 		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
 		//rayDir = obj2view * object_space_sample;;
@@ -152,7 +151,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 #ifdef RT_FILTER
 			
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/1.5*3.0;
+			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/2.0*3.0;
 #else			
 			
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/4.0*3.0;

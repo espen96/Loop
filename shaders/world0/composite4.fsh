@@ -148,6 +148,14 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/sky_gradient.glsl"
 #include "/lib/stars.glsl"
 
+#include "/lib/Shadow_Params.glsl"
+
+
+#include "/lib/volumetricClouds.glsl"
+
+
+
+
 
 
 vec3 normVec (vec3 vec){
@@ -175,12 +183,155 @@ float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 
+vec3 toShadowSpaceProjected(vec3 p3){
+    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
+    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
+    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
 
+    return p3;
+}
 #include "/lib/blur.glsl"
+void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
+		inColor *= exp(-rayLength * waterCoefs);	//No need to take the integrated value
+		int spCount = rayMarchSampleCount;
+		vec3 start = toShadowSpaceProjected(rayStart);
+		vec3 end = toShadowSpaceProjected(rayEnd);
+		vec3 dV = (end-start);
+		//limit ray length at 32 blocks for performance and reducing integration error
+		//you can't see above this anyway
+		float maxZ = min(rayLength,32.0)/(1e-8+rayLength);
+		dV *= maxZ;
+		rayLength *= maxZ;
+		estEndDepth *= maxZ;
+		estSunDepth *= maxZ;
+		vec3 absorbance = vec3(1.0);
+		vec3 vL = vec3(0.0);
+		float phase = phaseg(VdotL, Dirt_Mie_Phase);
+		float expFactor = 11.0;
+		for (int i=0;i<spCount;i++) {
+			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
+			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);
+			vec3 spPos = start.xyz + dV*d;
+			//project into biased shadowmap space
+			float distortFactor = calcDistort(spPos.xy);
+			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
+			float sh = 1.0;
+			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
+				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
+				sh =  shadow2D( shadow, pos).x;
+			}
+			vec3 ambientMul = exp(-estEndDepth * d * waterCoefs * 1.1);
+			vec3 sunMul = exp(-estSunDepth * d * waterCoefs);
+			vec3 light = (sh * lightSource*8./150./3.0 * phase * sunMul + ambientMul * ambient)*scatterCoef;
+			vL += (light - light * exp(-waterCoefs * dd * rayLength)) / waterCoefs *absorbance;
+			absorbance *= exp(-dd * rayLength * waterCoefs);
+		}
+		inColor += vL;
+}
+
+float waterCaustics(vec3 wPos){
+	vec2 pos = (wPos.xz + wPos.y)*4.0 ;
+	vec2 movement = vec2(-0.02*frameTimeCounter);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	for (int i = 0; i < 5; i++){
+		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
+		pos = rotationMatrix * pos;
+		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		weightSum += exp2(-0.8*i);
+	}
+	return caustic * weightSum;
+}
+vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
+{
+    float alpha = (sampleNumber+jitter)/nb;
+    float angle = jitter*6.28+alpha * nbRot * 6.28;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*alpha;
+}
+float interleaved_gradientNoise(){
+	vec2 coord = gl_FragCoord.xy;
+	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y));
+	return noise;
+}
+
+vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
+{
+    float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
+    float angle = alpha * (nbRot * 6.28) + spinAngle*6.28;
+
+    float ssR = alpha;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*ssR;
+}
+
+void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal)
+{
+
+	ivec2 pos = ivec2(gl_FragCoord.xy);
+	const float tan70 = tan(70.*3.14/180.);
+	float mulfov2 = gbufferProjection[1][1]/tan70;
+
+
+	float maxR2 = fragpos.z*fragpos.z*mulfov2*2.*1.412/50.0;
+
+
+
+	float rd = mulfov2*0.04;
+	//pre-rotate direction
+	float n = 0.;
+
+	occlusion = 0.0;
+
+	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
+	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
+
+	vec2 v = fract(vec2(dither,interleaved_gradientNoise()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
+	for (int j = 0; j < SSAO_SAMPLES ;j++) {
+
+			vec2 sp = tapLocation(j,v.x,SSAO_SAMPLES,5.,v.y);
+			vec2 sampleOffset = sp*rd;
+			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio));
+			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
+				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+
+				vec3 vec = t0.xyz - fragpos;
+				float dsquared = dot(vec,vec);
+				if (dsquared > 1e-5){
+					if (dsquared < maxR2){
+						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
+						occlusion += NdotV * clamp(1.0-dsquared/maxR2,0.0,1.0);
+					}
+					n += 1.0;
+				}
+			}
+		}
+
+
+
+		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.,0.5);
+		//occlusion = mult;
+
+}
 
 void main() {
 
 
+	float dirtAmount = Dirt_Amount;
+	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
+	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
+	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
+	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
 	float z0 = texture2D(depthtex0,texcoord).x;
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
@@ -208,8 +359,15 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			float Vdiff = distance(fragpos,fragpos0);
+			float VdotU = np3.y;
+			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
+			float estimatedSunDepth = estimatedDepth/abs(WsunVec.y); //assuming water plane
 
-
+			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
+			vec3 ambientColVol = ambientUp*8./150./3.*0.84*2.0/pi * eyeBrightnessSmooth.y / 240.0;
+			if (isEyeInWater == 0)
+				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
 		}
 	}
 
@@ -236,7 +394,7 @@ void main() {
 
 
 		 {
-float Depth = texture2D(depthtex1, texcoord).x;
+float Depth = texture2D(depthtex0, texcoord).x;
 vec2 offset2 = vec2(1,0.99999);
 vec3 fblur = texture2D(colortex3, texcoord).xyz;
 vec3 blur1 = texture2D(colortex3, texcoord).xyz;
@@ -279,29 +437,30 @@ vec3 data2 = vec3(0.0);
     
 
 
-	blur1 = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
+	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far);
 	blur2 = data2;
-	blur3 = (blur2+test);
-	blur4 = clamp((blur2/filtered)/4,0,1);
+	blur3 = (blur1*test);
+	blur4 = clamp((blur1/filtered)/4,0,1);
 
-	fblur = mix(test,blur2,blur4*0.5);
+	fblur = mix(blur3,test,blur4*0.5);
 
 }
 
-
-  float lum = luma(filtered);
-  vec3 diff = filtered-lum;
-  vec3 filtered2 = fblur + diff*(-lum*(-0.00) + 0.0);
+  float ao= 1.0;
+  float lum = luma(test);
+  vec3 diff = test-lum;
+  vec3 filtered2 = test + diff*(-lum*(-0.00) + -1.0);
+  ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 #endif		    
-		    gl_FragData[0].rgb = filtered.rgb;	
+		    gl_FragData[0].rgb = (filtered.rgb*albedo);	
 		
 		   #ifdef SSPT
 
-		    gl_FragData[0] = vec4((blur1.xyz),1.0);
+		    gl_FragData[0] = vec4((blur1*ao)*albedo,1.0);
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = filtered.rgb;}
+			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = filtered.rgb*albedo;}
 
 
 
@@ -309,7 +468,6 @@ vec3 data2 = vec3(0.0);
 
 			#endif
 			
-
 
 		}
 	}

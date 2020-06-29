@@ -60,6 +60,7 @@ uniform int blockEntityId;
 uniform int worldTime;
 
 uniform vec2 texelSize;
+
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float aspectRatio;
@@ -564,14 +565,14 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			#ifndef SSPT
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight);
 			 //gl_FragData[0].rgb = (directLightCol.rgb*lightmap.yyy);
 			#else
 			
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb)*filtered.y;
 
 
 
@@ -582,12 +583,13 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 				
 			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
 			
-			//ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
+		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
 			
 			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
 			
 			
-		  //ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y);	
+		//  ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
+
 		  
 		  
 		
@@ -597,26 +599,14 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,100));
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,255));
 
-		    //gl_FragData[0].rgb = data2.yyy;
+		    gl_FragData[1].rgb = filtered.yyy;
 		    
 			#endif
-   vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
-		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
-		ambientLight3 *= (1.0+rainStrength*0.2);
-			
-			
-			vec3 ambientLight2 = (ambientLight3 * (filtered.y)* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2.5;
-			if (emissive) ambientLight2 = ((ambientLight3 *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.5;
-			vec3 clean = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight2);		  
-			gl_FragData[1].rgb = clean.rgb;
+
 		}
 	}
 
-/* DRAWBUFFERS:36 */
+/* DRAWBUFFERS:3 */
 }

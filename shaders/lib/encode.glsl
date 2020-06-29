@@ -2,19 +2,18 @@ varying vec4 lmtexcoord;
 
 
 
-vec3 decode (vec2 enc)
+vec3 decode (vec2 encn)
 {
-    vec2 fenc = enc* 4.0 - 2.0;
-    float f = dot(fenc,fenc);
-    float g = sqrt(1.0 - f * 0.25);
-return vec3(fenc * g, 1.0 - f * 0.5);
+    vec3 unenc = vec3(0.0);
+    encn = encn * 2.0 - 1.0;
+    unenc.xy = abs(encn);
+    unenc.z = 1.0 - unenc.x - unenc.y;
+    unenc.xy = unenc.z <= 0.0 ? (1.0 - unenc.yx) * sign(encn) : encn;
+    return normalize(unenc.xyz);
 }
 
 
 vec2 decodeVec2(float a){
-    const vec2 constant1 = 65536. / vec2( 256.0, 65536.);
-    const float constant2 = 256. / 255.;
-    return fract( a * constant1 ) * constant2 ;
+    int bf = int(a*65535.);
+    return vec2(bf%256, bf>>8) / 255.;
 }
-
-

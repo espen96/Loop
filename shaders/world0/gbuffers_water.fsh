@@ -76,7 +76,7 @@ vec4 nvec4(vec3 pos){
 }
 vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 
-    float quality = mix(15,SSR_STEPS,fresnel);
+    float quality = mix(10,SSR_STEPS,fresnel);
     vec3 clipPosition = toClipSpace3(position);
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
        (-near -position.z) / dir.z : far*sqrt(3.);
@@ -205,12 +205,21 @@ float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
 
   return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);
 }
-
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+}
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
+const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
+vec2( -0.6250, -0.0000 ),
+vec2(  0.3536, -0.3536 ),
+vec2( -0.0000,  0.3750 ),
+vec2( -0.1768, -0.1768 ),
+vec2( 0.1250,  0.0000 ));															   
 /* DRAWBUFFERS:27 */
 void main() {
 
@@ -285,13 +294,16 @@ void main() {
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 
 				shading = 0.0;
-				float noise = blueNoise();
-				float rdMul = 4.0/shadowMapResolution;
-				for(int i = 0; i < 9; i++){
-					vec2 offsetS = tapLocation(i,9, 2.0,noise,0.0);
+				float noise = R2_dither();
+				float rdMul = 3.0*distortFactor*d0*k/shadowMapResolution;
+				mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
+									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
+									);
+				for(int i = 0; i < 6; i++){
+					vec2 offsetS = noiseM*shadowOffsets[i];
 
-					float weight = 1.0+(i+noise)*rdMul/9.0*shadowMapResolution;
-					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/9.0;
+					float weight = 1.0+(i+noise)*rdMul/8.0*shadowMapResolution;
+					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
 					}
 
 
@@ -336,7 +348,7 @@ void main() {
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
 		#ifdef SCREENSPACE_REFLECTIONS
-		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,blueNoise(), fresnel);
+		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
 		if (rtPos.z <1.){
 
 		vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rtPos*2.-1.,1.);

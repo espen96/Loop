@@ -189,11 +189,11 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			vec2 airCoef = exp2(-max(progressW.y-SEA_LEVEL,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
 
 			//Pbr for air, yolo mix between mie and rayleigh for water droplets
-			vec3 rL = rC*airCoef.x;
-			vec3 m = (airCoef.y+density)*mC;
-			vec3 vL0 = sunColor*(rayL*rL+m*mie) + skyCol0*(rL+m);
+			vec3 rL = rC*(airCoef.x+density*0.15);
+			vec3 m = (airCoef.y+density*1.85)*mC;
+			vec3 vL0 = sunColor*(rayL*rL+m*mie)*0.75 + skyCol0*(rL+m);
 			vL += vL0 * dd * dL *  absorbance;
-			absorbance *= clamp(exp(-(rL+m)*dd*dL),0.0,1.0);
+			absorbance *= exp(-(rL+m)*dL*dd);
 		}
 	return mat2x3(vL,absorbance);
 

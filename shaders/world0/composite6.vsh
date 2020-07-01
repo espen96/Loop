@@ -3,27 +3,7 @@
 #include "/lib/settings.glsl"
 
 
-#ifndef TOASTER
 
-#extension GL_EXT_gpu_shader4 : enable
-
-varying vec2 texcoord;
-flat varying vec3 zMults;
-uniform float far;
-uniform float near;
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-
-void main() {
-	zMults = vec3(1.0/(far * near),far+near,far-near);
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
-
-}
-#else
 #extension GL_EXT_gpu_shader4 : enable
 
 varying vec2 texcoord;
@@ -80,4 +60,3 @@ void main() {
 
 }
 
-#endif

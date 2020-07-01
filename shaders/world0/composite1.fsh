@@ -191,40 +191,7 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
-float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
 
-    const float quality = 16.;
-    vec3 clipPosition = toClipSpace3(position);
-	//prevents the ray from going behind the camera
-	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
-       (-near -position.z) / dir.z : far*sqrt(3.);
-    vec3 direction = toClipSpace3(position+dir*rayLength)-clipPosition;  //convert to clip space
-    direction.xyz = direction.xyz/max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y);	//fixed step size
-	
-	
-	
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0);
-	vec3 spos = clipPosition+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
-
-
-
-	for (int i = 0; i < int(quality); i++) {
-		spos += stepv;
-
-		float sp = texture2D(depthtex1,spos.xy).x;
-        if( sp < spos.z) {
-
-			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
-
-			if (dist < 0.01 ) return translucent*exp2(position.z/8.);
-
-
-
-	}
-
-	}
-    return 1.0;
-}
 
 
 
@@ -408,25 +375,14 @@ void main() {
 
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		float shading = 0.1;
-		
-#ifndef TOASTER
-		vec3 filtered = vec3(1.412,1.0,0.0);
-		if (!hand){
-			filtered = texture2D(colortex3,texcoord).rgb;
-		}
-		//custom shading model for translucent objects
-		if (translucent) {
-			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.3);
-			filtered.y = filtered.y * 0.55+0.55;
-		}
-#else 
+
+
+
 
 		vec3 filtered = vec3(1.412,1.0,0.0);
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
 		}
-		
-#endif		
 
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));

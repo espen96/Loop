@@ -107,16 +107,7 @@ float phaseg(float x, float g){
     return (gg * -0.25 /3.14 + 0.25 /3.14) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5);
 }
 
-float calcShadow(vec3 pos, vec3 ray){
-	float shadowStep = length(ray);
-	float d = 0.0;
-	for (int j=1;j<6;j++){
-		float cloudS=cloudVolLQ(vec3(pos+ray*j));
-		d += cloudS*cdensity;
 
-		}
-	return max(exp(-shadowStep*d),exp(-0.25*shadowStep*d)*0.1);
-}
 float cirrusClouds(vec3 pos){
 	vec2 pos2D = pos.xz/50000.0 + cloudSpeed/200.;
 	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.5+0.7*rainStrength,0.0,1.0);

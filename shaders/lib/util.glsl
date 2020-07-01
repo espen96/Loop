@@ -108,11 +108,7 @@ vec3 blackbody(float Temp)
     return srgbToLinear(col);
 }
 
-float calculateHardShadows(float shadowDepth, vec3 shadowPosition, float bias) {
-    if(shadowPosition.z >= 1.0) return 1.0;
 
-    return 1.0 - fstep(shadowDepth, shadowPosition.z - bias);
-}
 
 vec3 genUnitVector(vec2 xy) {
     xy.x *= TAU; xy.y = xy.y * 2.0 - 1.0;

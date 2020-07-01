@@ -3,8 +3,7 @@ uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferPreviousProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
+
 
 uniform vec3 cameraPosition;
 
@@ -40,16 +39,5 @@ vec3 toWorldSpaceCamera(vec3 p3){
     return p3 + cameraPosition;
 }
 
-vec3 toShadowSpace(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    return p3;
-}
 
-vec3 toShadowSpaceProjected(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
 
-    return p3;
-}

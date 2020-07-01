@@ -1,9 +1,6 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
-const int shadowMapResolution = 3172; //[512 768 1024 1536 2048 3172 4096 8192]
-
-
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
@@ -46,15 +43,7 @@ float facos(float sx){
     float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
     return sx > 0. ? a : 3.14159265359 - a;
 }
-#define SHADOW_MAP_BIAS 0.8
-float calcDistort(vec2 worlpos){
 
-	vec2 pos = worlpos * 1.165;
-	vec2 posSQ = pos*pos;
-
-	float distb = pow(posSQ.x*posSQ.x*posSQ.x + posSQ.y*posSQ.y*posSQ.y, 1.0 / 6.0);
-	return 1.08695652/((1.0 - SHADOW_MAP_BIAS) + distb * SHADOW_MAP_BIAS);
-}
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////

@@ -138,7 +138,7 @@ void main() {
 
 
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
-	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius,1.0,0.0,0.0);
+	gl_FragData[0] = vec4(0,1.0,0.0,0.0);
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	if (z < 1.0){

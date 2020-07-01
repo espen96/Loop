@@ -22,7 +22,7 @@ varying vec3 viewVector;
 attribute vec4 at_tangent;
 attribute vec4 mc_Entity;
 
-#define SHADOW_MAP_BIAS 0.8
+
 
 
 uniform vec2 texelSize;

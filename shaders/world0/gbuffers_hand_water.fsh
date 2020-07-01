@@ -25,7 +25,7 @@ uniform float sunElevation;
 uniform float rainStrength;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
-#include "/lib/Shadow_Params.glsl"
+
 #include "/lib/util2.glsl"
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){
@@ -42,13 +42,7 @@ vec3 toScreenSpace(vec3 p) {
 }
 
 
-#ifdef PCF
-const vec2 shadowOffsets[4] = vec2[4](vec2( 0.1250,  0.0000 ),
-vec2( -0.1768, -0.1768 ),
-vec2( -0.0000,  0.3750 ),
-vec2(  0.3536, -0.3536 )
-);
-#endif
+
 float facos(float sx){
     float x = clamp(abs( sx ),0.,1.);
     return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );

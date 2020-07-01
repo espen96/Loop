@@ -42,7 +42,7 @@ uniform vec3 previousCameraPosition;
 uniform int framemod8;
 uniform int frameCounter;
 uniform int isEyeInWater;
-#include "/lib/Shadow_Params.glsl"
+
 #include "/lib/color_transforms.glsl"
 #include "/lib/projections.glsl"
 #include "/lib/sky_gradient.glsl"

@@ -32,7 +32,7 @@ flat varying float VFAmount;
  
 uniform sampler2D colortex4;
 uniform sampler2D noisetex;
-uniform sampler2DShadow shadow;
+
 
 uniform int frameCounter;
 uniform float rainStrength;
@@ -45,13 +45,11 @@ uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferPreviousProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
 uniform float sunElevation;
 uniform vec3 cameraPosition;
 uniform float far;
 uniform ivec2 eyeBrightnessSmooth;
-#include "/lib/Shadow_Params.glsl"
+
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
 										 

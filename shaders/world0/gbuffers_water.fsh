@@ -15,7 +15,7 @@ varying float dist;
 
 uniform sampler2D texture;
 uniform sampler2D noisetex;
-uniform sampler2DShadow shadow;
+
 uniform sampler2D gaux2;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
@@ -214,12 +214,7 @@ float R2_dither(){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
-vec2( -0.6250, -0.0000 ),
-vec2(  0.3536, -0.3536 ),
-vec2( -0.0000,  0.3750 ),
-vec2( -0.1768, -0.1768 ),
-vec2( 0.1250,  0.0000 ));															   
+													   
 /* DRAWBUFFERS:27 */
 void main() {
 

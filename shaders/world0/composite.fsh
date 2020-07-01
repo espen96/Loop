@@ -7,9 +7,8 @@
 flat varying float tempOffsets;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
-#include "/lib/Shadow_Params.glsl"
+
 uniform sampler2D depthtex1;
-uniform sampler2D shadow;
 uniform sampler2D colortex1;
 uniform sampler2D colortex7;
 uniform sampler2D noisetex;
@@ -21,8 +20,6 @@ uniform int frameCounter;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform float viewWidth;
 uniform float aspectRatio;

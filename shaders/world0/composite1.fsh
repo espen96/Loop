@@ -34,14 +34,12 @@ uniform sampler2D noisetex;//depth
 uniform sampler2D texture;
 uniform sampler2D normals;
 
-uniform sampler2DShadow shadow;
+
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
 uniform float frameTime;
 uniform int isEyeInWater;
-uniform mat4 shadowModelViewInverse;
-uniform mat4 shadowProjectionInverse;
 uniform float far;
 uniform float near;
 uniform float frameTimeCounter;
@@ -52,8 +50,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
+
 uniform mat4 gbufferModelView;
 uniform int entityId;
 uniform int blockEntityId;
@@ -259,13 +256,7 @@ float blueNoise(){
 
 
 
-vec3 toShadowSpaceProjected(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
 
-    return p3;
-}
 
 
 
@@ -280,8 +271,8 @@ vec3 toShadowSpaceProjected(vec3 p3){
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		inColor *= exp(-rayLength * waterCoefs);	//No need to take the integrated value
 		int spCount = rayMarchSampleCount;
-		vec3 start = toShadowSpaceProjected(rayStart);
-		vec3 end = toShadowSpaceProjected(rayEnd);
+		vec3 start = vec3(0.0);
+		vec3 end = vec3(0.0);
 		vec3 dV = (end-start);
 		//limit ray length at 32 blocks for performance and reducing integration error
 		//you can't see above this anyway
@@ -304,7 +295,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
-				sh =  shadow2D( shadow, pos).x;
+				sh =  0;
 			}
 			vec3 ambientMul = exp(-estEndDepth * d * waterCoefs * 1.1);
 			vec3 sunMul = exp(-estSunDepth * d * waterCoefs);

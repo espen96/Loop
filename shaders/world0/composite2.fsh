@@ -89,44 +89,12 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
     return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
-vec3 closestToCamera3x3()
-{
-	vec2 du = vec2(texelSize.x, 0.0);
-	vec2 dv = vec2(0.0, texelSize.y);
-
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture2D(depthtex0, texcoord - dv).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-
-	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture2D(depthtex0, texcoord - du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture2D(depthtex0, texcoord + du).x);
-
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture2D(depthtex0, texcoord + dv).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
-
-	vec3 dmin = dmc;
-
-	dmin = dmin.z > dtc.z? dtc : dmin;
-	dmin = dmin.z > dtr.z? dtr : dmin;
-
-	dmin = dmin.z > dml.z? dml : dmin;
-	dmin = dmin.z > dtl.z? dtl : dmin;
-	dmin = dmin.z > dmr.z? dmr : dmin;
-
-	dmin = dmin.z > dbl.z? dbl : dmin;
-	dmin = dmin.z > dbc.z? dbc : dmin;
-	dmin = dmin.z > dbr.z? dbr : dmin;
-
-	return dmin;
-}
 
 vec3 TAA_sspt(){
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
 
 
-	vec3 closestToCamera = closestToCamera3x3();
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
 
 	//reproject previous frame
 	vec3 fragposition = toScreenSpace(closestToCamera);
@@ -139,7 +107,7 @@ vec3 TAA_sspt(){
 	//to reduce error propagation caused by interpolation during history resampling, we will introduce back some aliasing in motion
 	vec2 d = 0.5-abs(fract(previousPosition.xy*vec2(viewWidth,viewHeight)-texcoord*vec2(viewWidth,viewHeight))-0.5);
 	float mixFactor = dot(d,d);
-	float rej = mixFactor*0.0;
+	float rej = mixFactor*0;
 	//reject history if off-screen and early exit
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return texture2D(colortex3, texcoord).rgb;
 
@@ -160,7 +128,7 @@ vec3 TAA_sspt(){
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
 
 
-	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 1.0).xyz;
+	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.82).xyz;
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);
 
 
@@ -170,11 +138,11 @@ vec3 TAA_sspt(){
 
 	//reduces blending factor if current texel is far from history, reduces flickering
 	float lumDiff2 = distance(albedoPrev,albedoCurrent0)/luma(albedoPrev);
-	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*0.25;
+	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*0;
 
 	//Blend current pixel with clamped history
-	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,0.5);
-
+	//vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+rej+isclamped*0.1+0.01,0.,1.));
+	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+isclamped*0.1+0.01,0.,1.));
 
 
 

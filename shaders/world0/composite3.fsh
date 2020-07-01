@@ -236,7 +236,7 @@ void main() {
 
 
 		 {
-float Depth = texture2D(depthtex1, texcoord).x;
+float Depth = texture2D(depthtex0, texcoord).x;
 vec2 offset2 = vec2(1,0.99999);
 vec3 fblur = texture2D(colortex3, texcoord).xyz;
 vec3 blur1 = texture2D(colortex3, texcoord).xyz;
@@ -251,26 +251,7 @@ blur3 = filtered.rgb;
 blur4 = filtered.rgb;
 #else
 
-vec3 data2 = vec3(0.0);
 
-		float baseDepth = ld(z0);	
-        
-        for (int i = 0; i <= 16; i++) {
-												  
-														   
-									   
-		
-		    vec2 offset = poissonDisk[i] * texelSize*5;
-            float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
-			if (emissive || entity){ currentDepth=0;}
-            if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025 ){
-                data2 += texture2D(colortex3, texcoord + offset).rgb;
-            } else {
-                data2.rgb += texture2D(colortex3, texcoord).rgb;
-            }
-        }
-        data2 /= 16;
-		
 
 
 
@@ -280,8 +261,8 @@ vec3 data2 = vec3(0.0);
 
 
 	blur1 = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
-	blur2 = data2;
-	blur3 = (blur2+test);
+	float lum1 = luma(test);
+	blur3 = (blur1+lum1);
 	blur4 = clamp((blur2/filtered)/4,0,1);
 
 	fblur = mix(test,blur2,blur4*0.5);
@@ -309,7 +290,10 @@ vec3 data2 = vec3(0.0);
 
 			#endif
 			
-
+		    //gl_FragData[0] = vec4((test.rgb)*albedo,1.0);
+			//gl_FragData[0].rgb = filtered.rgb;
+			//gl_FragData[0].rgb = filtered.rgb * albedo;
+			//gl_FragData[1].rgb = filtered.rgb * albedo;
 
 		}
 	}

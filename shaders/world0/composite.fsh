@@ -208,8 +208,8 @@ void main() {
 			#endif
 			float ao= 1.0;
 			#ifdef SSAO
-				ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-				gl_FragData[0].g = ao;
+				//ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+				//gl_FragData[0].g = ao;
 			#endif
 		}
 

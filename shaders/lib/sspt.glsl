@@ -1,14 +1,4 @@
 
-
-
-		vec4 entityg2 = texture2D(colortex7,texcoord);
-
-		bool entity = abs(entityg2.y) >0.9;
-
-
-
-
-
 float bayer2(vec2 a){
 	a = floor(a);
     return fract(dot(a,vec2(0.5,a.y*0.75)));
@@ -34,10 +24,7 @@ float blueNoise2(){
 vec3 RT(vec3 dir,vec3 position,float dither){
 
     vec3 clipPosition = toClipSpace3(position);
-	    const float maxDistance = MAX_RAYLENGTH;
-	//	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxDistance) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxDistance;
-		float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);		
-
+	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);
 		vec3 end = toClipSpace3(position+dir*rayLength);
         vec3 direction = end-clipPosition;  //convert to clip space
 		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/36.;
@@ -47,14 +34,14 @@ vec3 RT(vec3 dir,vec3 position,float dither){
          vec3 maxLengths = (step(0.0,direction)-clipPosition) / direction;
          float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 
-//vec3 stepv = direction * mult / MAX_RAYLENGTH;
-  vec3 stepv = direction/len;
-	vec3 spos = clipPosition + stepv * dither*4;
+
+    vec3 stepv = direction * mult / 15;
+	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 	
 	
-	//for(int i = 0; i < min(len, mult*len)-2; i++){
-    for (int i = 0; i < int(MAX_RAYLENGTH*0.9); i++) {
+
+    for(int i = 0; i < min(len, mult*len)-2; i++){
 			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
@@ -68,16 +55,6 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 
 
 
-
-vec3 TangentToWorld(vec3 N, vec3 H)
-{
-    vec3 UpVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 T = normalize(cross(UpVector, N));
-    vec3 B = cross(N, T);
-
-    return vec3((T * H.x) + (B * H.y) + (N * H.z));
-}
-
 // with improvments from Bobcao3
 vec3 cosineHemisphereSample(vec2 r)
 {
@@ -86,16 +63,13 @@ vec3 cosineHemisphereSample(vec2 r)
 
     return vec3(cos(phi) * sqrt_rx, sin(phi) * sqrt_rx, sqrt(1.0 - r.x));
 }
-
-vec3 cosineHemisphereSample2(vec2 Xi)
+vec3 TangentToWorld(vec3 N, vec3 H)
 {
-    float r = sqrt(Xi.x);
-    float theta = 2.0 * 3.14159265359 * Xi.y;
+    vec3 UpVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 T = normalize(cross(UpVector, N));
+    vec3 B = cross(N, T);
 
-    float x = r * cos(theta);
-    float y = r * sin(theta);
-
-    return vec3(x, y, sqrt(clamp(1.0 - Xi.x,0.,1.)));
+    return vec3((T * H.x) + (B * H.y) + (N * H.z));
 }
 
 mat3 make_coord_space(vec3 n) {
@@ -125,8 +99,8 @@ ivec2 iuv = ivec2(gl_FragCoord.st);
 
 
 
-float noise_sample = fract(bayer64(iuv))*5;
-//float noise_sample = fract(R2_dither()*2);
+float noise_sample = fract(bayer64(iuv))*10;
+//float noise_sample = fract(R2_dither()*3);
 //float noise_sample = fract(blueNoise2());
 
 
@@ -143,10 +117,8 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 	for (int i = 0; i < nrays; i++){
 
 
-
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
-		grid_sample.x *=0.8;
-		vec3 object_space_sample = cosineHemisphereSample2(grid_sample);
+		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
 		//rayDir = obj2view * object_space_sample;;
 		rayDir = TangentToWorld(normal,rayDir);
@@ -155,7 +127,14 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		
 		
 
-		if (rayHit.z <1.){		
+		if (rayHit.z <1.){
+		
+		
+		
+		vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+		vec3 fragposition = toScreenSpace(closestToCamera);
+		fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+		
 		
 			vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rayHit*2.-1.,1.);
 			fragpositionPrev /= fragpositionPrev.w;
@@ -171,13 +150,12 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 #ifdef RT_FILTER
 			
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/4.0*3.0;
-
+			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
 #else			
 			
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/4.0*3.0;
 #endif			
-
+			
 			
 			
 			
@@ -195,13 +173,10 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 #ifdef END
 			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+50)*vec3(2.0,0.7,0.4)) * float(rayDir.y > 0.0);
 #endif
-	//		intRadiance += sky_c*2;
 			intRadiance += sky_c;
-
 		}
 
 	}
-		
 	return intRadiance/nrays;
 }
 

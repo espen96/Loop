@@ -60,7 +60,6 @@ uniform int blockEntityId;
 uniform int worldTime;
 
 uniform vec2 texelSize;
-
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float aspectRatio;
@@ -572,7 +571,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3)*filtered.y;
 
 
 
@@ -581,15 +580,14 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		}
 		else{	
 				
-			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
+			//ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
 			
-		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
+			//ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
 			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
+			//ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
 			
 			
-		//  ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
-
+		  ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
 		  
 		  
 		
@@ -599,14 +597,18 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,255));
+			gl_FragData[0].rgb = ambientLight;
+			if (entity) {gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,100));}
 
-		    gl_FragData[1].rgb = filtered.yyy;
+		    //gl_FragData[0].rgb = data2.yyy;
 		    
 			#endif
 
+
+			vec3 clean = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy));		  
+			gl_FragData[1].rgb = clean.rgb;
 		}
 	}
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:36 */
 }

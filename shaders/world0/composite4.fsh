@@ -409,26 +409,7 @@ blur3 = filtered.rgb;
 blur4 = filtered.rgb;
 #else
 
-vec3 data2 = vec3(0.0);
 
-		float baseDepth = ld(z0);	
-        
-        for (int i = 0; i <= 16; i++) {
-												  
-														   
-									   
-		
-		    vec2 offset = poissonDisk[i] * texelSize*5;
-            float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
-			if (emissive || entity){ currentDepth=0;}
-            if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025 ){
-                data2 += texture2D(colortex3, texcoord + offset).rgb;
-            } else {
-                data2.rgb += texture2D(colortex3, texcoord).rgb;
-            }
-        }
-        data2 /= 16;
-		
 
 
 
@@ -438,11 +419,11 @@ vec3 data2 = vec3(0.0);
 
 
 	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far);
-	blur2 = data2;
-	blur3 = (blur1*test);
-	blur4 = clamp((blur1/filtered)/4,0,1);
-
-	fblur = mix(blur3,test,blur4*0.5);
+	float lum1 = luma(test);
+	blur3 = lum1+(blur1);
+	blur4 = clamp(((lum1)-blur1),0,1)/4;
+	float lum2 = luma(blur4);
+	fblur = mix(blur3,test,lum2*0.5);
 
 }
 
@@ -452,11 +433,11 @@ vec3 data2 = vec3(0.0);
   vec3 filtered2 = test + diff*(-lum*(-0.00) + -1.0);
   ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 #endif		    
-		    gl_FragData[0].rgb = (filtered.rgb*albedo);	
+		    gl_FragData[0].rgb = (filtered.rgb);	
 		
 		   #ifdef SSPT
 
-		    gl_FragData[0] = vec4((blur1*ao)*albedo,1.0);
+		    gl_FragData[0] = vec4((blur3*albedo)*ao,1.0);
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}

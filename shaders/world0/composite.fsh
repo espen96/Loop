@@ -117,7 +117,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 				float dsquared = dot(vec,vec);
 				if (dsquared > 1e-5){
 					if (dsquared < maxR2){
-						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
+						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.0,1.0);
 						occlusion += NdotV * clamp(1.0-dsquared/maxR2,0.0,1.0);
 					}
 					n += 1.0;
@@ -127,7 +127,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.,1.0);
+		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.0,1.0);
 		//occlusion = mult;
 
 }

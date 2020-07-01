@@ -58,13 +58,7 @@ uniform ivec2 eyeBrightnessSmooth;
 #include "/lib/volumetricClouds.glsl"
 #include "/lib/util2.glsl"
 
-vec3 toShadowSpaceProjected(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
 
-    return p3;
-}
 
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);

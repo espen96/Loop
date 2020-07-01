@@ -276,42 +276,8 @@ void main() {
 		vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;
 
 		float shading = 1.0;
-		//compute shadows only if not backface
-		if (diffuseSun > 0.001) {
-			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
-
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
-				float diffthresh = distortThresh/6000.0*threshMul;
-
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-
-				shading = 0.0;
-				float noise = R2_dither();
-				float rdMul = 3.0*distortFactor*d0*k/shadowMapResolution;
-				mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
-									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
-									);
-				for(int i = 0; i < 6; i++){
-					vec2 offsetS = noiseM*shadowOffsets[i];
-
-					float weight = 1.0+(i+noise)*rdMul/8.0*shadowMapResolution;
-					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
-					}
 
 
-
-				direct *= shading;
-			}
-
-		}
 
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 

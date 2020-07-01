@@ -31,14 +31,12 @@ uniform sampler2D noisetex;//depth
 uniform sampler2D texture;
 uniform sampler2D normals;
 
-uniform sampler2DShadow shadow;
+
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
 uniform float frameTime;
 uniform int isEyeInWater;
-uniform mat4 shadowModelViewInverse;
-uniform mat4 shadowProjectionInverse;
 uniform float far;
 uniform float near;
 uniform float frameTimeCounter;
@@ -49,8 +47,6 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferPreviousModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
 uniform mat4 gbufferModelView;
 uniform int entityId;
 uniform int worldTime;

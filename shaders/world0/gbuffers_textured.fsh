@@ -26,8 +26,6 @@ uniform float sunElevation;
 uniform float rainStrength;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/util2.glsl"
 //faster and actually more precise than pow 2.2
@@ -121,29 +119,7 @@ float h1(float a)
     return 1.0 + w3(a) / (w2(a) + w3(a));
 }
 
-float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
-{
-	vec2 uv = sc.xy*shadowMapResolution;
-	vec2 iuv = floor( uv );
-	vec2 fuv = fract( uv );
 
-    float g0x = g0(fuv.x);
-    float g1x = g1(fuv.x);
-    float h0x = h0(fuv.x);
-    float h1x = h1(fuv.x);
-    float h0y = h0(fuv.y);
-    float h1y = h1(fuv.y);
-
-	vec2 p0 = vec2(iuv.x + h0x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p1 = vec2(iuv.x + h1x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p2 = vec2(iuv.x + h0x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p3 = vec2(iuv.x + h1x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-
-    return g0(fuv.y) * (g0x * shadow2D(tex, vec3(p0,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p1,sc.z)).x) +
-           g1(fuv.y) * (g0x * shadow2D(tex, vec3(p2,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p3,sc.z)).x);
-}
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -167,34 +143,7 @@ void main() {
 		vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;
 
 		//compute shadows only if not backface
-		if (diffuseSun > 0.001) {
-			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
 
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-				const float threshMul = sqrt(2048.0/shadowMapResolution*shadowDistance/128.0);
-				float distortThresh = 1.0/(distortFactor*distortFactor);
-				float diffthresh = 0.0002;
-
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-
-				float noise = interleaved_gradientNoise(tempOffset.x*0.5+0.5);
-
-
-				vec2 offsetS = vec2(cos( noise*3.14159265359*2.0 ),sin( noise*3.14159265359*2.0 ));
-
-				float shading = shadow2D_bicubic(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)));
-
-
-				direct *= shading;
-			}
-
-		}
 
 
 		direct *= diffuseSun;

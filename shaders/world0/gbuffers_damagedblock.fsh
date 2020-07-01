@@ -12,7 +12,7 @@ varying vec4 normalMat;
 
 
 uniform sampler2D texture;
-uniform sampler2DShadow shadow;
+
 uniform sampler2D gaux1;
 uniform vec4 lightCol;
 uniform vec3 sunVec;
@@ -171,35 +171,7 @@ void main() {
 		vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;
 
 
-		//compute shadows only if not backface
-		if (diffuseSun > 0.001) {
-			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
-
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-				const float threshMul = sqrt(2048.0/shadowMapResolution*shadowDistance/128.0);
-				float distortThresh = 1.0/(distortFactor*distortFactor);
-				float diffthresh = facos(diffuseSun)*distortThresh/800*threshMul;
-
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-
-				float noise = interleaved_gradientNoise(tempOffset.x*0.5+0.5);
-
-
-				vec2 offsetS = vec2(cos( noise*3.14159265359*2.0 ),sin( noise*3.14159265359*2.0 ));
-
-				float shading = shadow2D_bicubic(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)));
-
-
-				direct *= shading;
-			}
-
-		}
+		
 
 
 		direct *= diffuseSun;

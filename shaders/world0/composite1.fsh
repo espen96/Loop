@@ -416,7 +416,7 @@ void main() {
 
 
 		float diffuseSun = clamp(NdotL,0.,1.0);
-		float shading = 1.0;
+		float shading = 0.1;
 		
 #ifndef TOASTER
 		vec3 filtered = vec3(1.412,1.0,0.0);
@@ -429,75 +429,14 @@ void main() {
 			filtered.y = filtered.y * 0.55+0.55;
 		}
 #else 
-		if (translucent) {
-			albedo *= 1.1;
-			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.45)*1.52, 3.0*phaseg(dot(np3, WsunVec),0.1))*3.1415, diffuseSun, 0.35);
-									   
+
+		vec3 filtered = vec3(1.412,1.0,0.0);
+		if (!hand){
+			filtered = texture2D(colortex3,texcoord).rgb;
 		}
-		vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
 		
 #endif		
-		//compute shadows only if not backfacing the sun
-		if (diffuseSun > 0.001) {
 
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
-
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
-				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
-				float diffthresh = translucent? 0.00014 : distortThresh/6000.0*threshMul;
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-				shading = 0.0;
-#ifndef TOASTER				
-				float SSS = max(exp(-(filtered.x-1.412)*2.4), 0.7*exp(-(filtered.x-1.412)*0.6));
-				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
-					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
-
-					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-					if (translucent)
-						shading += mix(SSS,1.0,isShadow)/SHADOW_FILTER_SAMPLE_COUNT;
-					else
-						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
-				}
-#else				
-mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
-									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
-									);
-				for(int i = 0; i < 6; i++){
-					vec2 offsetS = noiseM*shadowOffsets[i];
-
-					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
-					 
-																  
-		 
-													 
-				}				
-#endif				
-				
-			}
-			if (shading > 0.005){
-				#ifdef SCREENSPACE_CONTACT_SHADOWS
-					vec3 vec = lightCol.a*sunVec;
-					shading *= rayTraceShadow(vec,fragpos,noise,float(translucent));
-				#endif
-				#ifdef CLOUDS_SHADOWS
-					vec3 pos = p3 + cameraPosition + gbufferModelViewInverse[3].xyz;
-					vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(2500.0-cameraPosition.y);
-					shading *= mix(1.0,exp(-20.*cloudVolLQ(cloudPos)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
-				#endif
-			}
-			#ifdef CAVE_LIGHT_LEAK_FIX
-				shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
-			#endif
-		}
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
@@ -565,7 +504,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-			 //gl_FragData[0].rgb = (directLightCol.rgb*lightmap.yyy);
+			// gl_FragData[0].rgb = filtered.yyy;
 			#else
 			
 		  		

@@ -162,50 +162,6 @@ void main() {
 				float bn = blueNoise(gl_FragCoord.xy);
 				float noise = fract(bn + frameCounter/1.6180339887);
 				vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
-				#ifdef Variable_Penumbra_Shadows
-					if (NdotL > 0.001) {
-					vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-					vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-					projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
-
-					//apply distortion
-					float distortFactor = calcDistort(projectedShadowPosition.xy);
-					projectedShadowPosition.xy *= distortFactor;
-					//do shadows only if on shadow map
-					if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-						const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-						float distortThresh = (sqrt(1.0-NdotL*NdotL)/NdotL+0.7)/distortFactor;
-						float diffthresh =  translucent? 0.00014/15.0 : distortThresh/7500.0*threshMul;
-						projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-
-
-						const float mult = Max_Shadow_Filter_Radius;
-						float avgBlockerDepth = 0.0;
-						vec2 scales = vec2(0.0,Max_Filter_Depth);
-						float blockerCount = 0.0;
-						float rdMul = distortFactor*(1.0+mult)*d0*k/shadowMapResolution;
-						float diffthreshM = diffthresh*mult*distortFactor*d0*k;
-						for(int i = 0; i < VPS_Search_Samples; i++){
-							vec2 offsetS = tapLocation(i,VPS_Search_Samples, 2.0,noise,0.0);
-
-							float d = texelFetch2D( shadow, ivec2((projectedShadowPosition.xy+offsetS*rdMul)*shadowMapResolution),0).x;
-							float b  = ffstep(d,projectedShadowPosition.z-i*diffthreshM/VPS_Search_Samples-diffthreshM);
-
-							blockerCount += b;
-							avgBlockerDepth += d * b;
-						}
-						if (blockerCount >= 0.9)
-							avgBlockerDepth /= blockerCount;
-						else {
-							avgBlockerDepth = projectedShadowPosition.z;
-						}
-						float ssample = max(projectedShadowPosition.z - avgBlockerDepth,0.0)*1500.0;
-						float avgdepth = clamp(ssample, scales.x, scales.y)/(scales.y)*(mult-Min_Shadow_Filter_Radius)+Min_Shadow_Filter_Radius;
-
-						gl_FragData[0].r = avgdepth;
-					}
-				}
-			#endif
 			float ao= 1.0;
 			#ifdef SSAO
 				ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));

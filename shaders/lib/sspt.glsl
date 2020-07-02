@@ -24,7 +24,10 @@ float blueNoise2(){
 vec3 RT(vec3 dir,vec3 position,float dither){
 
     vec3 clipPosition = toClipSpace3(position);
-	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);
+	    const float maxDistance = MAX_RAYLENGTH;
+		float rayLength = ((position.z + dir.z * sqrt(3.0)*maxDistance) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxDistance;
+	//	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);		
+
 		vec3 end = toClipSpace3(position+dir*rayLength);
         vec3 direction = end-clipPosition;  //convert to clip space
 		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/36.;
@@ -35,19 +38,21 @@ vec3 RT(vec3 dir,vec3 position,float dither){
          float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 
 
-    vec3 stepv = direction * mult / 15;
+//vec3 stepv = direction * mult / MAX_RAYLENGTH;
+  vec3 stepv = direction/len;
 	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 	
 	
 
-    for(int i = 0; i < min(len, mult*len)-2; i++){
+	for(int i = 0; i < min(len, mult*len)-2; i++){
+    //for (int i = 0; i < int(MAX_RAYLENGTH*0.9); i++) {
 			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.1 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv;
+			spos += stepv*0.25;
 		}
     return vec3(1.1);
 }
@@ -99,8 +104,8 @@ ivec2 iuv = ivec2(gl_FragCoord.st);
 
 
 
-float noise_sample = fract(bayer64(iuv))*10;
-//float noise_sample = fract(R2_dither()*3);
+//float noise_sample = fract(bayer64(iuv))*10;
+float noise_sample = fract(R2_dither()*3);
 //float noise_sample = fract(blueNoise2());
 
 
@@ -148,15 +153,11 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 			
 			
-#ifdef RT_FILTER
 			
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
-#else			
-			
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/4.0*3.0;
-#endif			
 			
 			
+
 			
 			
 			

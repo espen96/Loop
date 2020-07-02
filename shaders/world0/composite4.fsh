@@ -427,21 +427,22 @@ blur4 = filtered.rgb;
 
 }
 
-  float ao= 1.0;
-  float lum = luma(test);
+  float ao= 1.0;  
+  ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+  float lum = luma(test)*ao;
   vec3 diff = test-lum;
   vec3 filtered2 = test + diff*(-lum*(-0.00) + -1.0);
-  ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+
 #endif		    
 		    gl_FragData[0].rgb = (filtered.rgb);	
 		
 		   #ifdef SSPT
 
-		    gl_FragData[0] = vec4((blur3*albedo)*ao,1.0);
+		    gl_FragData[0] = vec4((blur3*albedo),1.0);
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = filtered.rgb*albedo;}
+			if (isEyeInWater == 1 || entity || emissive) { gl_FragData[0].rgb = filtered.rgb*albedo;}
 
 
 

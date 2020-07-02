@@ -282,7 +282,7 @@ blur4 = filtered.rgb;
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = filtered.rgb;}
+			if (isEyeInWater == 1 || entity || emissive) { gl_FragData[0].rgb = filtered.rgb;}
 
 
 

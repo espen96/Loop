@@ -109,40 +109,16 @@ vec3 TAA_sspt(){
 	float mixFactor = dot(d,d);
 	float rej = mixFactor*0;
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return texture2D(colortex3, texcoord).rgb;
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0  || entity ||emissive) return texture2D(colortex3, texcoord).rgb;
 
 	//Samples current frame 3x3 neighboorhood
 	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;
-	vec3 albedoCurrent1 = texture2D(colortex3, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 = texture2D(colortex3, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 = texture2D(colortex3, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 = texture2D(colortex3, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 = texture2D(colortex3, texcoord + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 = texture2D(colortex3, texcoord + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
-	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
 
 
-	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
-	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
-	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
+	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.01,0.5,1.0));
+	if (hand|| entity ||emissive) supersampled = albedoCurrent0;
 
-
-	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.82).xyz;
-	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);
-
-
-
-	//increases blending factor if history is far away from aabb, reduces ghosting at the cost of some flickering
-	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
-
-	//reduces blending factor if current texel is far from history, reduces flickering
-	float lumDiff2 = distance(albedoPrev,albedoCurrent0)/luma(albedoPrev);
-	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*0;
-
-	//Blend current pixel with clamped history
-	//vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+rej+isclamped*0.1+0.01,0.,1.));
-	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(0.5*lumDiff2+isclamped*0.1+0.01,0.,1.));
 
 
 

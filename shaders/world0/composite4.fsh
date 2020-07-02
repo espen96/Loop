@@ -411,27 +411,24 @@ blur4 = filtered.rgb;
 
 
 
-
+float ao= 1.0;  
 
 	if (Depth < 1.0){
 	Depth = ld(Depth);
     
 
-
-	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far);
+  
+	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far); 
+	ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 	float lum1 = luma(test);
-	blur3 = lum1+(blur1);
+	blur3 = lum1+(blur1)*ao;
 	blur4 = clamp(((lum1)-blur1),0,1)/4;
 	float lum2 = luma(blur4);
 	fblur = mix(blur3,test,lum2*0.5);
 
 }
 
-  float ao= 1.0;  
-  ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-  float lum = luma(test)*ao;
-  vec3 diff = test-lum;
-  vec3 filtered2 = test + diff*(-lum*(-0.00) + -1.0);
+
 
 #endif		    
 		    gl_FragData[0].rgb = (filtered.rgb);	

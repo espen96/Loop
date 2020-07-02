@@ -141,4 +141,5 @@ void main() {
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
 	#endif
+	
 }

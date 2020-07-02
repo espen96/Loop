@@ -290,9 +290,7 @@ blur4 = filtered.rgb;
 
 			#endif
 			
-		    //gl_FragData[0] = vec4((test.rgb)*albedo,1.0);
-			//gl_FragData[0].rgb = filtered.rgb;
-			//gl_FragData[0].rgb = filtered.rgb * albedo;
+
 			//gl_FragData[1].rgb = filtered.rgb * albedo;
 
 		}

@@ -122,7 +122,7 @@ vec3 toLinear(vec3 sRGB){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:1 */
+/* DRAWBUFFERS:17 */
 void main() {
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
@@ -226,6 +226,6 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
-
+	gl_FragData[1] = vec4(0,0,0,0);
 
 }

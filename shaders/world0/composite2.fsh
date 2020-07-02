@@ -55,34 +55,6 @@ uniform mat4 gbufferPreviousModelView;
 
 
 //approximation from SMAA presentation from siggraph 2016
-vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float sharpenAmount)
-{
-    vec2 position = rtMetrics.zw * texcoord;
-    vec2 centerPosition = floor(position - 0.5) + 0.5;
-    vec2 f = position - centerPosition;
-    vec2 f2 = f * f;
-    vec2 f3 = f * f2;
-
-    float c = sharpenAmount;
-    vec2 w0 =        -c  * f3 +  2.0 * c         * f2 - c * f;
-    vec2 w1 =  (2.0 - c) * f3 - (3.0 - c)        * f2         + 1.0;
-    vec2 w2 = -(2.0 - c) * f3 + (3.0 -  2.0 * c) * f2 + c * f;
-    vec2 w3 =         c  * f3 -                c * f2;
-
-    vec2 w12 = w1 + w2;
-    vec2 tc12 = rtMetrics.xy * (centerPosition + w2 / w12);
-    vec3 centerColor = texture2D(colorTex, vec2(tc12.x, tc12.y)).rgb;
-
-    vec2 tc0 = rtMetrics.xy * (centerPosition - 1.0);
-    vec2 tc3 = rtMetrics.xy * (centerPosition + 2.0);
-    vec4 color = vec4(texture2D(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
-                   vec4(texture2D(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
-                   vec4(centerColor,                                      1.0) * (w12.x * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
-	return color.rgb/color.a;
-
-}
 
 
 vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
@@ -104,12 +76,10 @@ vec3 TAA_sspt(){
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 	previousPosition.xy = texcoord + velocity;
 
-	//to reduce error propagation caused by interpolation during history resampling, we will introduce back some aliasing in motion
-	vec2 d = 0.5-abs(fract(previousPosition.xy*vec2(viewWidth,viewHeight)-texcoord*vec2(viewWidth,viewHeight))-0.5);
-	float mixFactor = dot(d,d);
-	float rej = mixFactor*0;
+
 	//reject history if off-screen and early exit
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0  || entity ||emissive) return texture2D(colortex3, texcoord).rgb;
+
 
 	//Samples current frame 3x3 neighboorhood
 	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;

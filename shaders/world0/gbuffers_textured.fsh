@@ -150,7 +150,7 @@ float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:2 */
+/* DRAWBUFFERS:27 */
 void main() {
 
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
@@ -188,6 +188,7 @@ void main() {
 
 				vec2 offsetS = vec2(cos( noise*3.14159265359*2.0 ),sin( noise*3.14159265359*2.0 ));
 
+
 				float shading = shadow2D_bicubic(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)));
 
 
@@ -205,7 +206,7 @@ void main() {
 
 
 		gl_FragData[0].rgb = diffuseLight*albedo*8./3.0/150.*0.1;
-
+		gl_FragData[1] = vec4(1,0,0,0);
 
 
 

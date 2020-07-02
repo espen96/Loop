@@ -104,8 +104,8 @@ ivec2 iuv = ivec2(gl_FragCoord.st);
 
 
 
-//float noise_sample = fract(bayer64(iuv))*10;
-float noise_sample = fract(R2_dither()*3);
+float noise_sample = fract(bayer64(iuv))*10;
+//float noise_sample = fract(R2_dither()*3);
 //float noise_sample = fract(blueNoise2());
 
 

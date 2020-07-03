@@ -16,7 +16,7 @@ flat varying vec3 ambientDown;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
-uniform vec3 fogColor; 
+
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
@@ -67,6 +67,7 @@ vec3 toScreenSpace(vec3 p) {
 
 #include "/lib/color_transforms.glsl"
 #include "/lib/util.glsl"
+#include "/lib/encode.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/stars.glsl"
 #include "/lib/volumetricClouds.glsl"
@@ -102,22 +103,7 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 
-vec3 decode (vec2 enc)
-{
-    vec2 fenc = enc*4-2;
-    float f = dot(fenc,fenc);
-    float g = sqrt(1-f/4.0);
-    vec3 n;
-    n.xy = fenc*g;
-    n.z = 1-f/2;
-    return n;
-}
 
-vec2 decodeVec2(float a){
-    const vec2 constant1 = 65535. / vec2( 256., 65536.);
-    const float constant2 = 256. / 255.;
-    return fract( a * constant1 ) * constant2 ;
-}
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));
 	// l = (2*n)/(f+n-d(f-n))

@@ -132,12 +132,10 @@ void main() {
 		normalMat.a = 0.8;
 	}
 	gl_Position = toClipSpace3(position);
-	#ifdef SEPARATE_AO
-	lmtexcoord.z *= sqrt(color.a);
-	lmtexcoord.w *= color.a;
-	#else
+
+
 	color.rgb*=color.a;
-	#endif
+
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
 	#endif

@@ -28,7 +28,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
-
+uniform vec3 fogColor; 
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
 uniform float viewHeight;

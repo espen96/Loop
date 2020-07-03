@@ -16,7 +16,7 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
-
+uniform vec3 fogColor; 
 
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
@@ -125,7 +125,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		ambientLight += ambientB;
 		ambientLight += ambientF;
 
-		vec3 skyCol0 = ambientLight*8.*2./150./3.*N_Ambient_Mult*3.1415;
+		vec3 skyCol0 = fogColor*8.*2./150./3.*N_Ambient_Mult*3.1415;
 
 		float mu = 1.0;
 		float muS = 1.05;

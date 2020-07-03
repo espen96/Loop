@@ -17,7 +17,7 @@ flat varying vec3 ambientDown;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
-
+uniform vec3 fogColor; 
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
@@ -345,7 +345,7 @@ void main() {
 	
 //sky
 	if (z >=1.0) {
-		vec3 color = vec3(1.0,0.4,0.12)* vec3(1.5,1.2,1.05)/4000.0*150.0*0.25;
+		vec3 color = (fogColor/5);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);

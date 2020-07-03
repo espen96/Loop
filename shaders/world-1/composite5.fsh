@@ -17,7 +17,7 @@ flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
 uniform vec3 fogColor;    
-uniform float fogDensity;    
+uniform vec3 fogDensity;    
 
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
@@ -74,8 +74,8 @@ float densityAtPos(in vec3 pos)
 }
 float cloudVol(in vec3 pos){
 
-	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)*5.0+frameTimeCounter*vec3(0.5,0.,0.5)*1.;
-	float noise = densityAtPos(samplePos*12.);
+	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)*5.0+frameTimeCounter*vec3(10,-0.1,10)*1.;
+	float noise = densityAtPos(samplePos*5);
 	float unifCov = exp2(-max(pos.y-70,0.0)/50.);
 
 	float cloud = pow(clamp(1.0-noise-0.76,0.0,1.0),2.)+0.005;
@@ -126,7 +126,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		ambientLight += ambientB;
 		ambientLight += ambientF;
 
-		vec3 skyCol0 = (fogColor/2)*N_Ambient_Mult;
+		vec3 skyCol0 = (fogColor/5)*N_Ambient_Mult;
 
 		float mu = 1.0;
 		float muS = 1.05;
@@ -136,7 +136,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES+8))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES+8)) * log(expFactor) / float(VL_SAMPLES+8)/(expFactor-1.0);
 			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
-			float densityVol = cloudVol(progressW);
+			float densityVol = cloudVol(progressW)/3;
 			float density = densityVol;
 			vec3 vL0 = skyCol0*density*muS;
 			vL += (vL0 - vL0 * exp(-density*mu*dd*dL)) / (density*mu+0.00000001)*absorbance;

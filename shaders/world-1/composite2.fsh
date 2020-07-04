@@ -97,8 +97,7 @@ vec3 TAA_sspt(){
 void main() {
 
 /* DRAWBUFFERS:3 */
-
-#ifdef RT_FILTER
+#ifdef SSPT
 	vec3 color = TAA_sspt();
 	gl_FragData[0].rgb = color;
 #else

@@ -1,4 +1,8 @@
 
+
+//#define ALT_SSPT
+
+
 float bayer2(vec2 a){
 	a = floor(a);
     return fract(dot(a,vec2(0.5,a.y*0.75)));
@@ -24,38 +28,38 @@ float blueNoise2(){
 vec3 RT(vec3 dir,vec3 position,float dither){
 
 
-#ifdef nether
+#ifdef ALT_SSPT
 
 
     vec3 clipPosition = toClipSpace3(position);
 
-		float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);		
+float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
 
-		vec3 end = toClipSpace3(position+dir*rayLength);
+		vec3 end = toClipSpace3(position+dir*(rayLength*0.75));
         vec3 direction = end-clipPosition;  //convert to clip space
 
     //get at which length the ray intersects with the edge of the screen
-	
+		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/15.;	
          vec3 maxLengths = (step(0.0,direction)-clipPosition) / direction;
-         float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+         float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z/10);
 
 
-vec3 stepv = direction * mult / MAX_RAYLENGTH;
+vec3 stepv = direction/len;
 
   
-	vec3 spos = clipPosition + stepv;
+	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 	
 	
 
 
-    for (int i = 0; i < int(MAX_RAYLENGTH+1); i++) {
+    for(int i = 0; i < min(len, mult*len)-2; i++){
 			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
-				if (dist <= 0.1 ) return vec3(spos.xy, sp);
+				if (dist <= 0.5 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv;
+			spos += stepv*0.75;
 		}
 #else		
     vec3 clipPosition = toClipSpace3(position);
@@ -144,8 +148,8 @@ ivec2 iuv = ivec2(gl_FragCoord.st);
 float noise_sample = fract(R2_dither()*3);
 #else
 
-float noise_sample = fract(bayer64(iuv))*10;
-//float noise_sample = fract(R2_dither()*3);
+//float noise_sample = fract(bayer64(iuv))*10;
+float noise_sample = fract(R2_dither()*4);
 //float noise_sample = fract(blueNoise2());
 #endif
 
@@ -193,7 +197,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 			
 			
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
+			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/2.0*3.0;
 	#ifdef nether
 			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*50.0;
 	#endif		

@@ -410,7 +410,7 @@ void main() {
 		
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.9;
+		bool entity = abs(entityg.r) >0.9;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
 
@@ -512,12 +512,14 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*4./150./3.;
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
-		if (emissive || (hand && heldBlockLightValue > 0.1))
+		
+		float alblum = clamp(luma(albedo),0,0.35);
 	#ifdef SSPT	
-			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;
+
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*40;
 	#else
-			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
-	#endif		
+		if (emissive || (hand && heldBlockLightValue > 0.1))			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
+	#endif
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater ==1)){
 
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
@@ -564,14 +566,14 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			#ifndef SSPT
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight);
-			 //gl_FragData[0].rgb = (directLightCol.rgb*lightmap.yyy);
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
+		//	gl_FragData[0].rgb = (filtered.yyy);
 			#else
 			
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
 
 
 
@@ -587,7 +589,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y));  
 			
 			
-		//	ambientLight += rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
+		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
 		  
 		  
 		

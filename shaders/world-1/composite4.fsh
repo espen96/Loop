@@ -417,7 +417,7 @@ if (!hand)
 
 	float lum1 = luma(test);
 	blur3 = lum1+(blur1)*ao;
-	blur4 = filtered*ao;
+	blur4 = (filtered*fogColor)*10*ao;
 
 
 }

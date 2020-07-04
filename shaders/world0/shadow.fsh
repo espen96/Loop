@@ -25,5 +25,6 @@ void main() {
 	#endif
   #ifdef Stochastic_Transparent_Shadows
 	 gl_FragData[0].a = float(gl_FragData[0].a >= blueNoise());
+	 
   #endif
 }

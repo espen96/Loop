@@ -74,5 +74,5 @@ void main() {
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 
-	gl_FragData[1] = vec4(0,0,0,0);
+	gl_FragData[1] = vec4(1,0,0,0);
 }

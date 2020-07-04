@@ -386,11 +386,11 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.999;
+		bool entity = abs(entityg.r) >0.999;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;
-
+		vec2 lightmap = vec2(dataUnpacked1.yz);			
 
 
 		 {
@@ -413,24 +413,22 @@ blur4 = filtered.rgb;
 
 float ao= 1.0;  
 
-	if (Depth < 1.0){
-	Depth = ld(Depth);
+
     
 
   
-	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far); 
+	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far); 
 	ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 	float lum1 = luma(test);
 	blur3 = lum1+(blur1)*ao;
-	blur4 = clamp(((lum1)-blur1),0,1)/4;
-	float lum2 = luma(blur4);
-	fblur = mix(blur3,test,lum2*0.5);
-
-}
 
 
 
-#endif		    
+
+
+#endif		
+
+			vec3 sky_c = skyCloudsFromTex(vec3(0.05),colortex4).rgb;    
 		    gl_FragData[0].rgb = (filtered.rgb);	
 		
 		   #ifdef SSPT
@@ -439,7 +437,8 @@ float ao= 1.0;
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity || emissive) { gl_FragData[0].rgb = filtered.rgb*albedo;}
+			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = (filtered.rgb*albedo);}
+			if (emissive) { gl_FragData[0].rgb = (filtered.rgb);}
 
 
 

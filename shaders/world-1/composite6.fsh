@@ -13,7 +13,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
-
+uniform vec3 fogColor; 
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform float far;

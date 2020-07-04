@@ -16,8 +16,8 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
-uniform vec3 fogColor;    
-uniform vec3 fogDensity;    
+uniform vec3 fogColor;
+uniform vec3 fogDensity;
 
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;

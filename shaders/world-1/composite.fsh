@@ -67,6 +67,7 @@ vec3 toScreenSpace(vec3 p) {
 
 #include "/lib/color_transforms.glsl"
 #include "/lib/util.glsl"
+#include "/lib/encode.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/encode.glsl"
 #include "/lib/stars.glsl"

@@ -322,7 +322,7 @@ void main() {
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
-		bool entity = abs(entityg.y) >0.9;
+		bool entity = abs(entityg.r) >0.9;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);

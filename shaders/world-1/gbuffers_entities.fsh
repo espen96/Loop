@@ -48,7 +48,7 @@ float encodeVec2(float x,float y){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:1 */
+/* DRAWBUFFERS:17 */
 void main() {
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
@@ -62,6 +62,6 @@ void main() {
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-
+	gl_FragData[1] = vec4(5,0,0,0);	
 
 }

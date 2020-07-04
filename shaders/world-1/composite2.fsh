@@ -49,7 +49,7 @@ uniform mat4 gbufferPreviousModelView;
 		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex5,texcoord).rgb;
-		bool entity = abs(entityg.y) >0.9;
+		bool entity = abs(entityg.r) >0.9;
 
 
 
@@ -99,6 +99,7 @@ void main() {
 /* DRAWBUFFERS:3 */
 #ifdef SSPT
 	vec3 color = TAA_sspt();
+	if(entity) color = texture2D(colortex3,texcoord).rgb;
 	gl_FragData[0].rgb = color;
 #else
 	vec3 color2 = texture2D(colortex3,texcoord).rgb;

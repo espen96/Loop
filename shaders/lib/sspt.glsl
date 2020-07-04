@@ -208,7 +208,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
 			vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb * float(rayDir.y > 1.0-eyeBrightnessSmooth.y/240.0);
 #ifdef nether
-			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+100)*fogColor) * float(rayDir.y > 0.0);
+			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+200)*fogColor) * float(rayDir.y > 0.0);
 #endif
 
 

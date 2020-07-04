@@ -377,7 +377,7 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.999;
+		bool entity = abs(entityg.r) >0.999;
 		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;
@@ -410,9 +410,14 @@ float ao= 1.0;
 
   
 	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far); 
-	ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+if (!hand)
+		{
+
+			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));}
+
 	float lum1 = luma(test);
 	blur3 = lum1+(blur1)*ao;
+	blur4 = filtered*ao;
 
 
 }
@@ -428,7 +433,7 @@ float ao= 1.0;
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity || emissive) { gl_FragData[0].rgb = filtered.rgb*albedo;}
+			if (isEyeInWater == 1 || entity || emissive) { gl_FragData[0].rgb = blur4.rgb*albedo;}
 
 
 

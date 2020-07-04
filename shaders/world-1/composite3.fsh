@@ -212,7 +212,7 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.999;
+		bool entity = abs(entityg.r) >0.999;
 		bool emissive = abs(dataUnpacked1.w-0.9) >0.3;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;

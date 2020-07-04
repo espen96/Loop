@@ -195,7 +195,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
 	#ifdef nether
-			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*255.0;
+			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*50.0;
 	#endif		
 			
 

@@ -244,12 +244,7 @@ blur4 = filtered.rgb;
     
 
 
-	blur1 = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
-	float lum1 = luma(test);
-	blur3 = (blur1+lum1);
-	blur4 = clamp((blur2/filtered)/4,0,1);
-
-	fblur = mix(test,blur2,blur4*0.5);
+	blur1 = ssaoVL_blur(texcoord,vec2(2.0,0.0),Depth*far);
 
 }
 

@@ -343,7 +343,8 @@ void main() {
 				if (emissive)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
 				}
 						else{
-		ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;}
+	//	ambientLight = ambientLight * custom_lightmap.x*fogColor + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z*fogColor;}
+		ambientLight = ambientLight * custom_lightmap.x*fogColor + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z*fogColor;}
 
 		
 		
@@ -362,7 +363,7 @@ void main() {
 
 
 
-				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
+				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*fogColor + custom_lightmap.z;
 				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
 				}
 						else{
@@ -370,7 +371,7 @@ void main() {
 			
 
 			
-			ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y);	 }
+			ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y)*fogColor;	 }
 			
 			
 		//combine all light sources
@@ -391,7 +392,7 @@ void main() {
 
 			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z;
 			if (emissive)  ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo;
-			gl_FragData[1].rgb = ambientLight2.rgb;}
+			gl_FragData[1].rgb = ambientLight2.rgb*fogColor;}
 
 /* DRAWBUFFERS:36 */
 }

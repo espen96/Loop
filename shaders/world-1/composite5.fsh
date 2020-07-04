@@ -86,8 +86,6 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 	//project pixel position into projected shadowmap space
 	vec3 wpos = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-	vec3 fragposition = mat3(shadowModelView) * wpos + shadowModelView[3].xyz;
-	fragposition = diagonal3(shadowProjection) * fragposition + shadowProjection[3].xyz;
 
 
 
@@ -98,11 +96,11 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	//rayvector into projected shadow map space
 	//we can use a projected vector because its orthographic projection
 	//however we still have to send it to curved shadow map space every step
-	vec3 dV = (fragposition-start);
+
 	vec3 dVWorld = (wpos-gbufferModelViewInverse[3].xyz);
 
 	float maxLength = min(length(dVWorld),far)/length(dVWorld);
-	dV *= maxLength;
+
 	dVWorld *= maxLength;
 
 	//apply dither
@@ -132,9 +130,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float muS = 1.05;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
-		for (int i=0;i<VL_SAMPLES+8;i++) {
-			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES+8))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
-			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES+8)) * log(expFactor) / float(VL_SAMPLES+8)/(expFactor-1.0);
+		for (int i=0;i<VL_SAMPLES;i++) {
+			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
+			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES)) * log(expFactor) / float(VL_SAMPLES)/(expFactor-1.0);
 			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 			float densityVol = cloudVol(progressW)/2;
 			float density = densityVol;
@@ -148,15 +146,10 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 }
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEyeDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
-		int spCount = 16;
-
-		vec3 start = toShadowSpaceProjected(rayStart);
-		vec3 end = toShadowSpaceProjected(rayEnd);
-		vec3 dV = (end-start);
+		int spCount = 6;
 		//limit ray length at 32 blocks for performance and reducing integration error
 		//you can't see above this anyway
 		float maxZ = min(rayLength,32.0)/(1e-8+rayLength);
-		dV *= maxZ;
 		rayLength *= maxZ;
 		float dY = normalize(mat3(gbufferModelViewInverse) * rayEnd).y * rayLength;
 		vec3 absorbance = vec3(1.0);
@@ -166,9 +159,9 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		for (int i=0;i<spCount;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);		// exponential step position (0-1)
 			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);	//step length (derivative)
-			vec3 spPos = start.xyz + dV*d;
 			vec3 ambientMul = exp(-max(estEyeDepth - dY * d,0.0) * waterCoefs * 1.1);
-			vec3 light = (ambientMul*ambient )*scatterCoef;
+			vec3 sunMul = exp(-max((estEyeDepth - dY * d) ,0.0)/abs(sunElevation) * waterCoefs);
+			vec3 light = (0.75 * lightSource * phase * sunMul + ambientMul*ambient )*scatterCoef;
 			vL += (light - light * exp(-waterCoefs * dd * rayLength)) / waterCoefs *absorbance;
 			absorbance *= exp(-dd * rayLength * waterCoefs);
 		}

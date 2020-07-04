@@ -46,7 +46,7 @@ uniform mat4 gbufferPreviousModelView;
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex5,texcoord).rgb;
 		bool entity = abs(entityg.y) >0.9;
@@ -78,15 +78,12 @@ vec3 TAA_sspt(){
 
 
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0  || entity ||emissive) return texture2D(colortex3, texcoord).rgb;
-
-
 	//Samples current frame 3x3 neighboorhood
 	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;
 
 
 	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
-	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.75,0.5,1.0));
+	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.01,0.5,1.0));
 	if (hand|| entity ||emissive) supersampled = albedoCurrent0;
 
 

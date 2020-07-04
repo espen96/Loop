@@ -40,16 +40,16 @@ vec3 RT(vec3 dir,vec3 position,float dither){
          float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 
 
-vec3 stepv = direction * mult / 15;
+vec3 stepv = direction * mult / MAX_RAYLENGTH;
 
   
-	vec3 spos = clipPosition + stepv * dither;
+	vec3 spos = clipPosition + stepv;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 	
 	
 
 
-    for (int i = 0; i < int(15+1); i++) {
+    for (int i = 0; i < int(MAX_RAYLENGTH+1); i++) {
 			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
@@ -140,13 +140,14 @@ vec2 invWidthHeight = vec2(1.0 / viewWidth, 1.0 / viewHeight);
 ivec2 iuv = ivec2(gl_FragCoord.st);
 
 
-
+#ifdef nether
+float noise_sample = fract(R2_dither()*3);
+#else
 
 float noise_sample = fract(bayer64(iuv))*10;
 //float noise_sample = fract(R2_dither()*3);
 //float noise_sample = fract(blueNoise2());
-
-
+#endif
 
 
 vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
@@ -194,7 +195,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
 	#ifdef nether
-			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/6.0*3.0;
+			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*255.0;
 	#endif		
 			
 
@@ -216,7 +217,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 #endif
 
 			intRadiance += sky_c;
-	
+
 		}
 
 	}

@@ -194,23 +194,7 @@ void main() {
 	
 	if (z >=1.0) {
 
-		vec3 color = vec3(0.0);
-		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
-		if (np3.y > 0.){
-			color += stars(np3);
-			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
-		}
-		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
-		color = color*cloud.a+cloud.rgb;
-		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.0,triangularize(noise)),0.0,65000.);
-		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
-
-
-		}
+	
 	}
 
 	//land
@@ -229,7 +213,7 @@ void main() {
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = abs(entityg.y) >0.999;
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+		bool emissive = abs(dataUnpacked1.w-0.9) >0.3;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;
 
@@ -270,9 +254,7 @@ blur4 = filtered.rgb;
 }
 
 
-  float lum = luma(filtered);
-  vec3 diff = filtered-lum;
-  vec3 filtered2 = fblur + diff*(-lum*(-0.00) + 0.0);
+
 #endif		    
 		    gl_FragData[0].rgb = filtered.rgb;	
 		

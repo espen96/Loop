@@ -8,7 +8,7 @@ vec3 ssaoVL_blur(vec2 tex, vec2 dir,float cdepth)
 
 	vec2 step = dir*texelSize*3.0;
 
-  float dy = abs(dFdx(cdepth))*3.0+0.05;
+  float dy = abs(dFdx(cdepth))*3.0+0.5;
 
 	vec3 res = vec3(0.0);
 	vec3 total_weights = vec3(0.);

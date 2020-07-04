@@ -334,7 +334,8 @@ void main() {
 		vec3 directLightCol = lightCol.rgb;
 		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*5;
+		float alblum = clamp(luma(albedo),0.0,0.1);
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = alblum*5;
 		
 		
 #ifndef SSPT		
@@ -362,11 +363,10 @@ void main() {
 
 
 				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
-				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo;
+				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
 				}
 						else{
 		
-			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z)/2.5;
 			
 
 			
@@ -374,21 +374,12 @@ void main() {
 			
 			
 		//combine all light sources
-		float ao = 1.0;
-		if (!hand)
-		{
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		}
-		gl_FragData[0].rgb = ambientLight*ao;
+
+		gl_FragData[0].rgb = ambientLight;
 		
 
 #endif   
 
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
 		
 
 		vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
@@ -398,9 +389,9 @@ void main() {
 		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
-			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
-			if (emissive) ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo;	  
-			gl_FragData[1].rgb = ambientLight2.rgb*ao;}
+			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z;
+			if (emissive)  ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo;
+			gl_FragData[1].rgb = ambientLight2.rgb;}
 
 /* DRAWBUFFERS:36 */
 }

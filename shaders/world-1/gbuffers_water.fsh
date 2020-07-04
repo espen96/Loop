@@ -75,7 +75,7 @@ vec4 nvec4(vec3 pos){
 }
 vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 
-    float quality = mix(15,SSR_STEPS,fresnel);
+    float quality = mix(10,SSR_STEPS,fresnel);
     vec3 clipPosition = toClipSpace3(position);
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
        (-near -position.z) / dir.z : far*sqrt(3.);

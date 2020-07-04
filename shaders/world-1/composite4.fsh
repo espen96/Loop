@@ -297,9 +297,9 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
 
 	vec2 v = fract(vec2(dither,interleaved_gradientNoise()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
-	for (int j = 0; j < SSAO_SAMPLES ;j++) {
+	for (int j = 0; j < 3 ;j++) {
 
-			vec2 sp = tapLocation(j,v.x,SSAO_SAMPLES,5.,v.y);
+			vec2 sp = tapLocation(j,v.x,3,5.,v.y);
 			vec2 sampleOffset = sp*rd;
 			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio));
 			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
@@ -319,7 +319,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.,0.5);
+		occlusion = clamp(1.0-occlusion/n*2,0.,0.5);
 		//occlusion = mult;
 
 }
@@ -345,7 +345,7 @@ void main() {
 	
 //sky
 	if (z >=1.0) {
-		vec3 color = (fogColor/7);
+		vec3 color = (fogColor/5);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
@@ -378,7 +378,7 @@ void main() {
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = abs(entityg.y) >0.999;
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;
 
@@ -413,9 +413,7 @@ float ao= 1.0;
 	ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 	float lum1 = luma(test);
 	blur3 = lum1+(blur1)*ao;
-	blur4 = clamp(((lum1)-blur1),0,1)/4;
-	float lum2 = luma(blur4);
-	fblur = mix(blur3,test,lum2*0.5);
+
 
 }
 

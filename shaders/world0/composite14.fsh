@@ -436,6 +436,7 @@ void main() {
 
 	vec3 emc = texture2D(colortex7,texcoord).rgb;
 	vec3 col = texture2D(colortex5,texcoord).rgb;
+
 		
 	#ifdef DOF
 		/*--------------------------------*/
@@ -495,7 +496,7 @@ void main() {
 
 	vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5).rgb/2./7.0;
 #ifdef SSPT
-	float lightScat = clamp((BLOOM_STRENGTH/2)*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
+	float lightScat = clamp((BLOOM_STRENGTH/5)*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
 #else	
 	float lightScat = clamp(BLOOM_STRENGTH*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
 #endif	
@@ -504,6 +505,7 @@ void main() {
   VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
 
 	col = (mix(col,bloom,VL_abs)+bloom*lightScat)*exposure.rgb;
+	
 
 	//Purkinje Effect
   float lum = dot(col,vec3(0.15,0.3,0.55));

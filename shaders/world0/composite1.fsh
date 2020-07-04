@@ -513,10 +513,10 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		
-		float alblum = clamp(luma(albedo),0,0.35);
+		float alblum = clamp(luma(albedo),0.46,0.37);
 	#ifdef SSPT	
 
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*40;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0);
 	#else
 		if (emissive || (hand && heldBlockLightValue > 0.1))			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
 	#endif
@@ -586,10 +586,10 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			
 		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/5;
 			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y));  
+			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y*20));  
 			
 			
-		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));	
+		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10)*vec3(TORCH_R,TORCH_G,TORCH_B));	
 		  
 		  
 		

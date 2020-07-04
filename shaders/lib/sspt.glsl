@@ -1,5 +1,10 @@
 
+		vec4 data = texture2D(colortex1,texcoord);
+		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
+		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
+		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
+		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 //#define ALT_SSPT
 
 
@@ -41,7 +46,7 @@ float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ? (-s
     //get at which length the ray intersects with the edge of the screen
 		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/15.;	
          vec3 maxLengths = (step(0.0,direction)-clipPosition) / direction;
-         float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z/10);
+         float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
 
 vec3 stepv = direction/len;
@@ -93,7 +98,7 @@ vec3 stepv = direction/len;
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.1 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv*0.25;
+			spos += stepv*0.5;
 		}		
 #endif		
     return vec3(1.1);
@@ -201,7 +206,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 	#ifdef nether
 			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*50.0;
 	#endif		
-			
+
 
 			
 			

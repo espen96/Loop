@@ -26,7 +26,7 @@ vec3 ssaoVL_blur(vec2 tex, vec2 dir,float cdepth)
 {
 
 
-	vec2 step = dir*texelSize*3.0;
+	vec2 step = dir*texelSize*4.0;
 
   float dy = abs(dFdx(cdepth))*1.0+0.1;
 if(emissive) step = vec2(0.0);
@@ -56,7 +56,7 @@ if(emissive) step = vec2(0.0);
 		res += sp * weight;
 		total_weights += weight;
 
-		sp = texture2D(colortex3, tex + 1.*step).xyz;
+		sp = texture2D(colortex3, tex + 1.0*step).xyz;
 		linD = abs(cdepth-ld(texture2D(depthtex1,tex + 1.*step).x)*far);
 		ssaoThresh = linD < dy*1.0 ? 1.0 : 0.;
 		weight =(ssaoThresh);

@@ -370,7 +370,8 @@ void main() {
 			
 
 			
-			ambientLight += (rtGI(normal, noise, fragpos)*20.0/150./3.0 ) *((ambientLight.y*2));  }
+			ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y);	 }
+			
 			
 		//combine all light sources
 		float ao = 1.0;

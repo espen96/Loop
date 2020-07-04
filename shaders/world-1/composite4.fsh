@@ -345,7 +345,7 @@ void main() {
 	
 //sky
 	if (z >=1.0) {
-		vec3 color = (fogColor/5);
+		vec3 color = (fogColor/7);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);

@@ -335,7 +335,7 @@ void main() {
 		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
 		float alblum = clamp(luma(albedo),0.0,0.1);
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = alblum*5;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = alblum*20;
 		
 		
 #ifndef SSPT		
@@ -364,14 +364,14 @@ void main() {
 
 
 				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*fogColor + custom_lightmap.z;
-				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
+				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+2;
 				}
 						else{
 		
 			
 
 			
-			ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y)*fogColor;	 }
+			ambientLight = rtGI(normal, noise, fragpos)*10./150./3. + (custom_lightmap.y)*fogColor;	 }
 			
 			
 		//combine all light sources
@@ -391,7 +391,7 @@ void main() {
 		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
 			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z;
-			if (emissive)  ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo;
+			if (emissive)  ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+2;
 			gl_FragData[1].rgb = ambientLight2.rgb*fogColor;}
 
 /* DRAWBUFFERS:36 */

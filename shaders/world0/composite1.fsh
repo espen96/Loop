@@ -4,7 +4,7 @@
 #include "/lib/settings.glsl"
 const bool shadowHardwareFiltering = true;
 
-const float eyeBrightnessHalflife = 2.0f;
+const float eyeBrightnessHalflife = 5.0f;
 
 varying vec2 texcoord;
 

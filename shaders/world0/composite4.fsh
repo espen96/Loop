@@ -437,8 +437,8 @@ float ao= 1.0;
 	
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = (filtered.rgb*albedo);}
-			if (emissive) { gl_FragData[0].rgb = (filtered.rgb)*albedo;}
+			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = ((filtered.rgb*ao)*albedo);}
+			if (emissive || hand) { gl_FragData[0].rgb = (filtered.rgb)*albedo;}
 
 
 

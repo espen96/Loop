@@ -86,7 +86,7 @@ vec3 TAA_sspt(){
 
 
 	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
-	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.01,0.75,1.0));
+	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.05,0.5,1.0))*2;
 	if (hand|| entity ||emissive) supersampled = albedoCurrent0;
 
 

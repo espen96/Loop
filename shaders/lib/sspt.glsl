@@ -52,7 +52,7 @@ float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near
 vec3 stepv = direction/len;
 
   
-	vec3 spos = clipPosition + stepv * dither;
+	vec3 spos = clipPosition + stepv ;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 		float minZ = clipPosition.z;
 		float maxZ = spos.z+stepv.z*0.5;
@@ -65,7 +65,7 @@ vec3 stepv = direction/len;
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.5 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv*0.95;
+			spos += stepv*0.75;
 		}
 #else		
     vec3 clipPosition = toClipSpace3(position);
@@ -184,9 +184,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
 		vec2 ij = fract(R2_samples((frameCounter%1000)*nrays+i) + R2_dither());
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
-		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
-		//rayDir = obj2view * object_space_sample;;
 		rayDir = TangentToWorld(normal,rayDir);
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, noise_sample);
 
@@ -197,7 +195,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		
 		
 		
-		vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+		vec3 closestToCamera = vec3(texcoord,texture2D(depthtex1,texcoord).x);
 		vec3 fragposition = toScreenSpace(closestToCamera);
 		fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
 		

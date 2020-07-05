@@ -38,14 +38,14 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 
     vec3 clipPosition = toClipSpace3(position);
 
-float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*(far*0.75);
 
 		vec3 end = toClipSpace3(position+dir*(rayLength*0.75));
         vec3 direction = end-clipPosition;  //convert to clip space
 
     //get at which length the ray intersects with the edge of the screen
-		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/15.;	
-         vec3 maxLengths = (step(0.0,direction)-clipPosition) / direction;
+		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/24.;	
+         vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
          float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
 
@@ -54,17 +54,18 @@ vec3 stepv = direction/len;
   
 	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
-	
+		float minZ = clipPosition.z;
+		float maxZ = spos.z+stepv.z*0.5;
 	
 
 
     for(int i = 0; i < min(len, mult*len)-2; i++){
-			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
+			float sp= texelFetch2D(depthtex0,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.5 ) return vec3(spos.xy, sp);
 			}
-			spos += stepv*0.75;
+			spos += stepv*0.95;
 		}
 #else		
     vec3 clipPosition = toClipSpace3(position);
@@ -105,7 +106,16 @@ vec3 stepv = direction/len;
 }
 
 
+vec3 cosineHemisphereSample2(vec2 Xi)
+{
+    float r = sqrt(Xi.x);
+    float theta = 2.0 * 3.14159265359 * Xi.y;
 
+    float x = r * cos(theta);
+    float y = r * sin(theta);
+
+    return vec3(x, y, sqrt(clamp(1.0 - Xi.x,0.,1.)));
+}
 
 // with improvments from Bobcao3
 vec3 cosineHemisphereSample(vec2 r)
@@ -147,7 +157,10 @@ vec2 invWidthHeight = vec2(1.0 / viewWidth, 1.0 / viewHeight);
 
 
 ivec2 iuv = ivec2(gl_FragCoord.st);
-
+vec2 R2_samples(int n){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha * n);
+}
 
 #ifdef nether
 float noise_sample = fract(R2_dither()*3);
@@ -169,13 +182,13 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 	vec3 intRadiance = vec3(0.0);
 	for (int i = 0; i < nrays; i++){
 
-
+		vec2 ij = fract(R2_samples((frameCounter%1000)*nrays+i) + R2_dither());
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
 		vec3 object_space_sample = cosineHemisphereSample(grid_sample);
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
 		//rayDir = obj2view * object_space_sample;;
 		rayDir = TangentToWorld(normal,rayDir);
-		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, noise);
+		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, noise_sample);
 
 		
 		
@@ -189,7 +202,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
 		
 		
-			vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rayHit*2.-1.,1.);
+			vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rayHit*2.0-1.0,1.0);
 			fragpositionPrev /= fragpositionPrev.w;
 			vec3 sampleP = fragpositionPrev.xyz;
 			fragpositionPrev = gbufferModelViewInverse * fragpositionPrev;
@@ -230,7 +243,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		}
 
 	}
-	return intRadiance/nrays;
+	return clamp(intRadiance/nrays,0,1000);
 }
 
 

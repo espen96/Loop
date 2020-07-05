@@ -35,7 +35,7 @@ if(emissive) step = vec2(0.0);
 	ivec2 pos = ivec2(gl_FragCoord.xy) % 1;
 	int pixelInd = pos.y;
 	tex += pixelInd*texelSize;
-		vec3 sp = texture2D(colortex3, tex - 1.5*step).xyz;
+		vec3 sp = texture2D(colortex3, tex - 1*step).xyz;
 		float linD = abs(cdepth-ld(texture2D(depthtex1,tex - 1.0*step).x)*far);
 		float ssaoThresh = linD < dy*1.0 ? 1.0 : 0.;
 		float weight = (ssaoThresh);
@@ -56,7 +56,7 @@ if(emissive) step = vec2(0.0);
 		res += sp * weight;
 		total_weights += weight;
 
-		sp = texture2D(colortex3, tex + 1.5*step).xyz;
+		sp = texture2D(colortex3, tex + 1*step).xyz;
 		linD = abs(cdepth-ld(texture2D(depthtex1,tex + 1.*step).x)*far);
 		ssaoThresh = linD < dy*1.0 ? 1.0 : 0.;
 		weight =(ssaoThresh);

@@ -395,7 +395,7 @@ void main() {
 
 		 {
 float Depth = texture2D(depthtex0, texcoord).x;
-vec2 offset2 = vec2(1,0.99999);
+
 vec3 fblur = texture2D(colortex3, texcoord).xyz;
 vec3 blur1 = texture2D(colortex3, texcoord).xyz;
 vec3 blur2 = texture2D(colortex3, texcoord).xyz;
@@ -407,6 +407,10 @@ blur1 = filtered.rgb;
 blur2 = filtered.rgb;
 blur3 = filtered.rgb;
 blur4 = filtered.rgb;
+float ao= 1.0;  
+ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+
+
 #else
 
 

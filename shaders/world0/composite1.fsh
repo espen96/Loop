@@ -516,7 +516,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		float alblum = clamp(luma(albedo),0.46,0.37);
 	#ifdef SSPT	
 
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0);
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*clamp(lightCol.z*(eyeBrightnessSmooth.y/240.0),1.0,10.0);
 	#else
 		if (emissive || (hand && heldBlockLightValue > 0.1))			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
 	#endif

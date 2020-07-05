@@ -4,7 +4,7 @@
 #include "/lib/settings.glsl"
 const bool shadowHardwareFiltering = true;
 
-const float eyeBrightnessHalflife = 5.0f;
+const float eyeBrightnessHalflife = 2.0f;
 
 varying vec2 texcoord;
 
@@ -584,9 +584,9 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 				
 			ambientLight = (ambientLight * custom_lightmap.x + (custom_lightmap.y)*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
 			
-		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/5;
+		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))/5;
 			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y)+(custom_lightmap.y*10));  
+			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y)+((custom_lightmap.y)*5));  
 			
 			
 		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10)*vec3(TORCH_R,TORCH_G,TORCH_B));	

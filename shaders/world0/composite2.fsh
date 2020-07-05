@@ -28,6 +28,9 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
+uniform sampler2D noisetex;//depth
+uniform int frameCounter;
 
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
@@ -38,7 +41,12 @@ uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 #include "/lib/projections.glsl"
 
+float blueNoise(){
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+}
 
+
+		float z = texture2D(depthtex1,texcoord).x;
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -50,9 +58,11 @@ uniform mat4 gbufferPreviousModelView;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex5,texcoord).rgb;
 		bool entity = abs(entityg.r) >0.9;
+		bool issky = z >=1.0;
+		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 
 
-
+		float noise = blueNoise();
 
 //approximation from SMAA presentation from siggraph 2016
 
@@ -78,15 +88,21 @@ vec3 TAA_sspt(){
 
 
 	//reject history if off-screen and early exit
-	if ( entity ||emissive) return texture2D(colortex3, texcoord).rgb;
+	if ( entity || emissive || iswater || issky) return texture2D(colortex3, texcoord).rgb;
 
 
 	//Samples current frame 3x3 neighboorhood
 	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;
 
 
-	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
-	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.05,0.5,1.0))*2;
+	vec3 albedoPrev = (texture2D(colortex5, previousPosition.xy).xyz*noise);
+
+	
+	
+	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.75*noise,0.75*noise,1.0))*2;
+	
+	
+	
 	if (hand|| entity ||emissive) supersampled = albedoCurrent0;
 
 

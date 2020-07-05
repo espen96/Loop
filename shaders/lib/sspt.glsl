@@ -35,16 +35,16 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 
 #ifdef ALT_SSPT
 
-
-    vec3 clipPosition = toClipSpace3(position);
-
-float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*(far*0.75);
-
+		vec3 clipPosition = toClipSpace3(position);
+		float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*(far*0.75);
 		vec3 end = toClipSpace3(position+dir*(rayLength*0.75));
         vec3 direction = end-clipPosition;  //convert to clip space
 
+		
+		
     //get at which length the ray intersects with the edge of the screen
-		float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/24.;	
+	
+		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/24.;	
          vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
          float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
@@ -52,7 +52,7 @@ float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near
 vec3 stepv = direction/len;
 
   
-	vec3 spos = clipPosition + stepv ;
+	vec3 spos = clipPosition + stepv * dither;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 		float minZ = clipPosition.z;
 		float maxZ = spos.z+stepv.z*0.5;
@@ -94,7 +94,7 @@ vec3 stepv = direction/len;
 
 	for(int i = 0; i < min(len, mult*len)-2; i++){
     //for (int i = 0; i < int(MAX_RAYLENGTH*0.9); i++) {
-			float sp= texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
+			float sp= texelFetch2D(depthtex2,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 				if (dist <= 0.1 ) return vec3(spos.xy, sp);
@@ -165,10 +165,10 @@ vec2 R2_samples(int n){
 #ifdef nether
 float noise_sample = fract(R2_dither()*3);
 #else
-
+float noise = blueNoise();
 //float noise_sample = fract(bayer64(iuv))*10;
-float noise_sample = fract(R2_dither()*4);
-//float noise_sample = fract(blueNoise2());
+//float noise_sample = fract(R2_dither()*4);
+float noise_sample = fract(blueNoise2());
 #endif
 
 
@@ -191,7 +191,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		
 		
 
-		if (rayHit.z <1.){
+		if (rayHit.z <1.0){
 		
 		
 		
@@ -226,7 +226,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		else {
 		
 
-			vec3 sky_c = (skyCloudsFromTex(rayDir,colortex4).rgb*(eyeBrightnessSmooth.y/240.0)) * float(rayDir.y > 1.0-(eyeBrightnessSmooth.y/240.0));
+			vec3 sky_c = (skyCloudsFromTex(rayDir,colortex4).rgb*(eyeBrightnessSmooth.y/240.0)) * float(rayDir.y > 1.0);
 #ifdef nether
 			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+200)*fogColor) * float(rayDir.y > 0.0);
 #endif
@@ -236,12 +236,12 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+50)*vec3(2.0,0.7,0.4)) * float(rayDir.y > 0.0);
 #endif
 
-			intRadiance += sky_c;
+			intRadiance += sky_c*2;
 
 		}
 
 	}
-	return clamp(intRadiance/nrays,0,1000);
+	return clamp(intRadiance/nrays,0,255)*noise;
 }
 
 

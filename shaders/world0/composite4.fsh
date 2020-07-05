@@ -25,6 +25,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
+uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
@@ -180,8 +181,10 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 );
 }
+float noise = blueNoise();
+
 
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
@@ -377,6 +380,7 @@ void main() {
 
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		bool issky = (z >=1.0);
 		
 		vec4 entityg = texture2D(colortex7,texcoord);
 		vec4 data = texture2D(colortex1,texcoord);
@@ -424,15 +428,14 @@ float ao= 1.0;
 	blur1 = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far); 
 	ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 	float lum1 = luma(test);
-	blur3 = lum1+(blur1)*ao;
+	blur3 = lum1+(blur1);
 
 
 
 
 
 #endif		
-
-			vec3 sky_c = skyCloudsFromTex(vec3(0.05),colortex4).rgb;    
+  
 		    gl_FragData[0].rgb = (filtered.rgb);	
 		
 		   #ifdef SSPT
@@ -442,7 +445,8 @@ float ao= 1.0;
 			if (iswater){ 
 			gl_FragData[0].rgb = filtered.rgb;}
 			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = ((filtered.rgb*ao)*albedo);}
-			if (emissive || hand) { gl_FragData[0].rgb = (filtered.rgb)*albedo;}
+			if (emissive) { gl_FragData[0].rgb = (filtered.rgb)*albedo*2.2;}
+			if (hand) { gl_FragData[0].rgb = (filtered.rgb)*albedo/2;}
 
 
 

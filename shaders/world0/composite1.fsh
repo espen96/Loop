@@ -28,6 +28,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
+uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
@@ -513,7 +514,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		
-		float alblum = clamp(luma(albedo),0.41,0.37);
+		float alblum = clamp(luma(albedo),0.44,0.37);
 	#ifdef SSPT	
 
 		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*clamp(lightCol.z*(eyeBrightnessSmooth.y/240.0),1.0,10.0);
@@ -582,11 +583,11 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		}
 		else{	
 				
-			ambientLight = (ambientLight * custom_lightmap.x + (custom_lightmap.y)*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
+			ambientLight = (ambientLight * filtered.y * custom_lightmap.x + (custom_lightmap.y)*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5));
 			
 		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))/5;
 			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.y)+((custom_lightmap.y)*5));  
+			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.rgb)+((custom_lightmap.y)*5));  
 			
 			
 		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10)*vec3(TORCH_R,TORCH_G,TORCH_B));	
@@ -600,7 +601,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			//combine all light sources
 
 			gl_FragData[0].rgb = ambientLight;
-			if (entity) {gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,100));}
+			if (entity) {gl_FragData[0].rgb = (((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rrr*lightmap.yyy) + (ambientLight)))*2;}
 
 		    //gl_FragData[0].rgb = data2.yyy;
 		    

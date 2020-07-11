@@ -20,6 +20,7 @@ flat varying float tempOffsets;
 
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
+uniform sampler2D colortex2;
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;

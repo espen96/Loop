@@ -10,6 +10,19 @@
 
 
 
+const int noiseTextureResolution = 32;
+
+
+/*
+const int colortex0Format = RGBA16F;				// low res clouds (deferred->composite2) + low res VL (composite5->composite15)
+const int colortex1Format = RGBA16;					//terrain gbuffer (gbuffer->composite2)
+const int colortex2Format = RGBA16F;				//forward + transparencies (gbuffer->composite4)
+const int colortex3Format = R11F_G11F_B10F;			//frame buffer + bloom (deferred6->final)
+const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
+const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
+const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
+const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
+*/
 //no need to clear the buffers, saves a few fps
 const bool colortex0Clear = false;
 const bool colortex1Clear = false;
@@ -26,9 +39,11 @@ flat varying float tempOffsets;
 uniform sampler2D colortex1;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
+uniform sampler2D colortex6;
 uniform sampler2D colortex7;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
+uniform sampler2D depthtex2;
 uniform sampler2D noisetex;//depth
 uniform int frameCounter;
 
@@ -76,7 +91,7 @@ vec3 TAA_sspt(){
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
 
 
-	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex2,texcoord).x);
 
 	//reproject previous frame
 	vec3 fragposition = toScreenSpace(closestToCamera);
@@ -88,22 +103,26 @@ vec3 TAA_sspt(){
 
 
 	//reject history if off-screen and early exit
-	if ( entity || emissive || iswater || issky) return texture2D(colortex3, texcoord).rgb;
+
+	if ( entity ||emissive || issky || iswater) return texture2D(colortex3, texcoord).rgb;
 
 
 	//Samples current frame 3x3 neighboorhood
 	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;
 
+float tester = abs(velocity.x+velocity.y)*20;	
+	
 
-	vec3 albedoPrev = (texture2D(colortex5, previousPosition.xy).xyz*noise);
+	vec3 albedoPrev = texture2D(colortex5, previousPosition.xy).xyz;
 
 	
 	
-	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.75*noise,0.75*noise,1.0))*2;
+	vec3 ss1 =  mix(albedoPrev,albedoCurrent0,clamp(1.0,0.0,1.0));
+	vec3 ss2 =  mix(albedoPrev,albedoCurrent0,clamp(0.75,0.0,1.0));	
 	
-	
-	
-	if (hand|| entity ||emissive) supersampled = albedoCurrent0;
+	vec3 supersampled =  mix(ss2,ss1,tester);	
+//	     supersampled =  mix(vec3(1,0,0),vec3(0,0,1),tester);	
+
 
 
 

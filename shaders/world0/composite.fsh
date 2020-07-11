@@ -129,8 +129,11 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 		}
 
 
-
-		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.,1.0);
+#ifndef SSPT
+		occlusion = clamp(1.0-occlusion/n*SSAO_STRENGTH,0.0,1.0);
+#else		
+		occlusion = clamp(1.0-occlusion/n*0.6,0.0,1.0);
+#endif		
 		//occlusion = mult;
 
 }

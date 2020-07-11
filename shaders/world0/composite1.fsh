@@ -278,6 +278,8 @@ vec3 toShadowSpaceProjected(vec3 p3){
 
 
 
+
+
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		inColor *= exp(-rayLength * waterCoefs);	//No need to take the integrated value
 		int spCount = rayMarchSampleCount;
@@ -514,10 +516,10 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		
-		float alblum = clamp(luma(albedo),0.44,0.37);
+		float alblum = clamp(luma(albedo),0.37,0.40);
 	#ifdef SSPT	
 
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*clamp(lightCol.z*(eyeBrightnessSmooth.y/240.0),1.0,10.0);
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*clamp(lightCol.z,1.0,10.0));
 	#else
 		if (emissive || (hand && heldBlockLightValue > 0.1))			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
 	#endif
@@ -590,9 +592,9 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.rgb)+((custom_lightmap.y)*5));  
 			
 			
-		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10)*vec3(TORCH_R,TORCH_G,TORCH_B));	
+		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10));	
 		  
-		  
+		//  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
 		  
 }

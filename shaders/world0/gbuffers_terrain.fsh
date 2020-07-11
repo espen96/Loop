@@ -39,6 +39,7 @@ varying vec4 color;
 varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
+uniform sampler2D specular;
 #endif
 #ifdef POM
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq);
@@ -126,6 +127,9 @@ vec3 toLinear(vec3 sRGB){
 void main() {
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
+	vec3 specularity = vec3(1.0);
+
+
 	#ifdef MC_NORMAL_MAP
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
@@ -161,6 +165,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 	}
+
 	#else
 	if ( viewVector.z < 0.0)
 	{
@@ -182,9 +187,10 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 	}
+
 	#endif
 	}
-
+	
 	vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
@@ -192,7 +198,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 	normal = applyBump(tbnMatrix,texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz*2.-1.);
-
+	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgb;
+    
 
 	data0.rgb*=color.rgb;
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
@@ -226,6 +233,6 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
-	gl_FragData[1] = vec4(0,0,0,0);
+	gl_FragData[1] = vec4(0,0,specularity.r+specularity.g,0);
 
 }

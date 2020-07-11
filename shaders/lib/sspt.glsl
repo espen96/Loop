@@ -1,5 +1,6 @@
-
+uniform float lightSign;
 		vec4 data = texture2D(colortex1,texcoord);
+		float specular = texture2D(colortex7,texcoord).b;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -27,7 +28,7 @@ float R2_dither(){
 }
 
 float blueNoise2(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887);
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * (frameCounter & 0xFF));
 }
 
 vec3 RT(vec3 dir,vec3 position,float dither){
@@ -44,7 +45,7 @@ vec3 RT(vec3 dir,vec3 position,float dither){
 		
     //get at which length the ray intersects with the edge of the screen
 	
-		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/24.;	
+		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/12.0*dither;	
          vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
          float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
@@ -159,7 +160,7 @@ vec2 invWidthHeight = vec2(1.0 / viewWidth, 1.0 / viewHeight);
 ivec2 iuv = ivec2(gl_FragCoord.st);
 vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha * n);
+	return fract(alpha);
 }
 
 #ifdef nether
@@ -167,8 +168,8 @@ float noise_sample = fract(R2_dither()*3);
 #else
 float noise = blueNoise();
 //float noise_sample = fract(bayer64(iuv))*10;
-//float noise_sample = fract(R2_dither()*4);
-float noise_sample = fract(blueNoise2());
+float noise_sample = fract(R2_dither()*4);
+//float noise_sample = fract(blueNoise());
 #endif
 
 
@@ -176,13 +177,13 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 
      mat3 obj2view = make_coord_space(normal);
 	const int nrays = RAYS;
+vec3 reflectedVector = reflect(normalize(fragpos), normal);
+			vec3 sunSpec = drawSun(dot(lightSign*sunVec,reflectedVector), 0.0,texelFetch2D(colortex4,ivec2(6,37),0).rgb,vec3(0.0))*8./3./150.0*1000/3.1415 * (1.0-rainStrength*0.9);
 
-
-	const float num_directions = 4096 * nrays;
+	const float num_directions = 4096;
 	vec3 intRadiance = vec3(0.0);
 	for (int i = 0; i < nrays; i++){
 
-		vec2 ij = fract(R2_samples((frameCounter%1000)*nrays+i) + R2_dither());
 		vec2 grid_sample = WeylNth(int(noise_sample * num_directions + (frameCounter & 0xFF) * num_directions + i));
 		vec3 rayDir = normalize(cosineHemisphereSample(grid_sample));
 		rayDir = TangentToWorld(normal,rayDir);
@@ -192,8 +193,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		
 
 		if (rayHit.z <1.0){
-		
-		
+
 		
 		vec3 closestToCamera = vec3(texcoord,texture2D(depthtex1,texcoord).x);
 		vec3 fragposition = toScreenSpace(closestToCamera);
@@ -202,7 +202,6 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 		
 			vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rayHit*2.0-1.0,1.0);
 			fragpositionPrev /= fragpositionPrev.w;
-			vec3 sampleP = fragpositionPrev.xyz;
 			fragpositionPrev = gbufferModelViewInverse * fragpositionPrev;
 			vec4 previousPosition = fragpositionPrev + vec4(cameraPosition-previousCameraPosition,0.0);
 			previousPosition = gbufferPreviousModelView * previousPosition;
@@ -213,7 +212,7 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 			
 			
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0;
+			intRadiance = (texture2D(colortex5,previousPosition.xy).rgb*150.0/8.0*3.0);
 	#ifdef nether
 			 intRadiance = texture2D(colortex5,previousPosition.xy).rgb*50.0;
 	#endif		
@@ -224,9 +223,10 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 			
 		}
 		else {
-		
+			
 
 			vec3 sky_c = (skyCloudsFromTex(rayDir,colortex4).rgb*(eyeBrightnessSmooth.y/240.0)) * float(rayDir.y > 1.0);
+
 #ifdef nether
 			 sky_c = ((skyCloudsFromTex(rayDir,colortex4).rgb+200)*fogColor) * float(rayDir.y > 0.0);
 #endif
@@ -237,11 +237,13 @@ vec3 rtGI(vec3 normal,float noise,vec3 fragpos){
 #endif
 
 			intRadiance += sky_c*2;
-
+			
 		}
+							vec3 sky_c = (skyCloudsFromTex(rayDir,colortex4).rgb);
+         intRadiance += sky_c*(specular*sunSpec);
 
 	}
-	return clamp(intRadiance/nrays,0,255)*noise;
+	return clamp(intRadiance/nrays,0,255)*(specular);
 }
 
 

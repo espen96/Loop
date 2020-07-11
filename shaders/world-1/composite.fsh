@@ -24,6 +24,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
+uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth

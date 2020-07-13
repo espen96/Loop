@@ -33,7 +33,7 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 		
     //get at which length the ray intersects with the edge of the screen
 	
-		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/12.0*noise;	
+		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/12.0;	
          vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
          float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
@@ -41,7 +41,7 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 vec3 stepv = direction/len;
 
   
-	vec3 spos = clipPosition + stepv * noise;
+	vec3 spos = clipPosition + stepv;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 		float minZ = clipPosition.z;
 		float maxZ = spos.z+stepv.z*0.5;

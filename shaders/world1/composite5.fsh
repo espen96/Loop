@@ -25,6 +25,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
+uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
@@ -193,23 +194,12 @@ void main() {
 	//sky
 	
 	if (z >=1.0) {
-		vec3 color = vec3(1.0,0.4,0.2)/4000.0*1050.0*0.1;
-		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
-		color = color*5*cloud.a+cloud.rgb;
-		gl_FragData[0].rgb = clamp(fp10Dither(color*1./0.3 * (1.0-rainStrength*0.0),triangularize(noise)),0.0,65000.);
-		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
-			float Vdiff = distance(fragpos,fragpos0);
-			float VdotU = np3.y;
-			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
-			float estimatedSunDepth = estimatedDepth/abs(WsunVec.y); //assuming water plane
 
-			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
-			vec3 ambientColVol = ambientUp*8./150./3.*0.84*2.0/pi * eyeBrightnessSmooth.y / 240.0;
-		}
+
+		gl_FragData[0].rgb = texture2D(colortex3,texcoord).rgb;
+
+
+		
 	}
 
 	//land
@@ -227,7 +217,7 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.999;
+		bool entity = abs(entityg.r) >0.999;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		vec3 filtered = texture2D(colortex3,texcoord).rgb;
 		vec3 test = texture2D(colortex6,texcoord).rgb;
@@ -250,26 +240,7 @@ blur3 = filtered.rgb;
 blur4 = filtered.rgb;
 #else
 
-vec3 data2 = vec3(0.0);
 
-		float baseDepth = ld(z0);	
-        
-        for (int i = 0; i <= 16; i++) {
-												  
-														   
-									   
-		
-		    vec2 offset = poissonDisk[i] * texelSize*5;
-            float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
-			if (emissive || entity){ currentDepth=0;}
-            if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025 ){
-                data2 += texture2D(colortex3, texcoord + offset).rgb;
-            } else {
-                data2.rgb += texture2D(colortex3, texcoord).rgb;
-            }
-        }
-        data2 /= 16;
-		
 
 
 
@@ -278,9 +249,9 @@ vec3 data2 = vec3(0.0);
     
 
 
-	blur1 = mix((ssaoVL_blur(texcoord,vec2(0.2,0.1),Depth*far)),(ssaoVL_blur(texcoord,vec2(0.1,0.2),Depth*far)),0.5);
-	blur2 = data2;
-	blur3 = (blur2+test);
+	blur1 = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
+	float lum1 = luma(test);
+	blur3 = (blur1+lum1);
 	blur4 = clamp((blur2/filtered)/4,0,1);
 
 	fblur = mix(test,blur2,blur4*0.5);
@@ -296,11 +267,9 @@ vec3 data2 = vec3(0.0);
 		
 		   #ifdef SSPT
 
-		    gl_FragData[0] = vec4((fblur.xyz)*albedo,1.0);
+		    gl_FragData[0] = vec4((blur1.xyz),1.0);
 	
-			if (iswater){ 
-			gl_FragData[0].rgb = filtered.rgb;}
-			if (isEyeInWater == 1 || entity) { gl_FragData[0].rgb = filtered.rgb * albedo;}
+
 
 
 
@@ -308,10 +277,7 @@ vec3 data2 = vec3(0.0);
 
 			#endif
 			
-		    //gl_FragData[0] = vec4((test.rgb)*albedo,1.0);
-			//gl_FragData[0].rgb = filtered.rgb;
-			//gl_FragData[0].rgb = filtered.rgb * albedo;
-			//gl_FragData[1].rgb = filtered.rgb * albedo;
+
 
 		}
 	}

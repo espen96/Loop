@@ -1,210 +1,286 @@
 #version 120
-//Volumetric fog rendering
+//sspt filter2
 #extension GL_EXT_gpu_shader4 : enable
-
 #include "/lib/settings.glsl"
 
-flat varying vec4 lightCol;
+const float eyeBrightnessHalflife = 5.0f;
+
+varying vec2 texcoord;
+
+flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;
 flat varying vec3 ambientB;
 flat varying vec3 ambientF;
 flat varying vec3 ambientDown;
+flat varying vec3 WsunVec;
+flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
-flat varying float fogAmount;
-flat varying float VFAmount;
-uniform sampler2D noisetex;
-uniform sampler2D depthtex0;
-uniform vec3 fogColor;
-uniform vec3 fogDensity;
 
-uniform sampler2D colortex2;
+uniform sampler2D colortex0;//clouds
+uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
+uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
-uniform sampler2D colortex4;
+uniform sampler2D colortex5;
+uniform sampler2D colortex7;
+uniform sampler2D colortex6;//Skybox
+uniform sampler2D depthtex2;//depth
+uniform sampler2D depthtex1;//depth
+uniform sampler2D depthtex0;//depth
+uniform sampler2D noisetex;//depth
+uniform sampler2D texture;
+uniform sampler2D normals;
 
-uniform vec3 sunVec;
-uniform float far;
+uniform sampler2DShadow shadow;
+
+uniform int heldBlockLightValue;
 uniform int frameCounter;
-uniform float rainStrength;
-uniform float sunElevation;
-uniform ivec2 eyeBrightnessSmooth;
-uniform float frameTimeCounter;
+uniform float frameTime;
 uniform int isEyeInWater;
+uniform mat4 shadowModelViewInverse;
+uniform mat4 shadowProjectionInverse;
+uniform float far;
+uniform float near;
+uniform float frameTimeCounter;
+uniform float rainStrength;
+uniform mat4 gbufferProjection;
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferPreviousProjection;
+uniform vec3 previousCameraPosition;
+uniform mat4 shadowModelView;
+uniform mat4 shadowProjection;
+uniform mat4 gbufferModelView;
+uniform int entityId;
+uniform int worldTime;
+
 uniform vec2 texelSize;
+uniform float viewWidth;
+uniform float viewHeight;
+uniform float aspectRatio;
+uniform vec3 cameraPosition;
+uniform int framemod8;
+uniform vec3 sunVec;
+uniform ivec2 eyeBrightnessSmooth;
+#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
+#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+
+const vec2 poissonDisk[64] = vec2[64](
+vec2(-0.613392, 0.617481),
+vec2(0.170019, -0.040254),
+vec2(-0.299417, 0.791925),
+vec2(0.645680, 0.493210),
+vec2(-0.651784, 0.717887),
+vec2(0.421003, 0.027070),
+vec2(-0.817194, -0.271096),
+vec2(-0.705374, -0.668203),
+vec2(0.977050, -0.108615),
+vec2(0.063326, 0.142369),
+ vec2(0.203528, 0.214331),
+ vec2(-0.667531, 0.326090),
+ vec2(-0.098422, -0.295755),
+ vec2(-0.885922, 0.215369),
+ vec2(0.566637, 0.605213),
+ vec2(0.039766, -0.396100),
+ vec2(0.751946, 0.453352),
+ vec2(0.078707, -0.715323),
+ vec2(-0.075838, -0.529344),
+ vec2(0.724479, -0.580798),
+ vec2(0.222999, -0.215125),
+ vec2(-0.467574, -0.405438),
+ vec2(-0.248268, -0.814753),
+ vec2(0.354411, -0.887570),
+ vec2(0.175817, 0.382366),
+ vec2(0.487472, -0.063082),
+ vec2(-0.084078, 0.898312),
+ vec2(0.488876, -0.783441),
+ vec2(0.470016, 0.217933),
+ vec2(-0.696890, -0.549791),
+ vec2(-0.149693, 0.605762),
+ vec2(0.034211, 0.979980),
+ vec2(0.503098, -0.308878),
+ vec2(-0.016205, -0.872921),
+ vec2(0.385784, -0.393902),
+ vec2(-0.146886, -0.859249),
+ vec2(0.643361, 0.164098),
+ vec2(0.634388, -0.049471),
+ vec2(-0.688894, 0.007843),
+ vec2(0.464034, -0.188818),
+ vec2(-0.440840, 0.137486),
+ vec2(0.364483, 0.511704),
+ vec2(0.034028, 0.325968),
+ vec2(0.099094, -0.308023),
+ vec2(0.693960, -0.366253),
+ vec2(0.678884, -0.204688),
+ vec2(0.001801, 0.780328),
+ vec2(0.145177, -0.898984),
+ vec2(0.062655, -0.611866),
+ vec2(0.315226, -0.604297),
+ vec2(-0.780145, 0.486251),
+ vec2(-0.371868, 0.882138),
+ vec2(0.200476, 0.494430),
+ vec2(-0.494552, -0.711051),
+ vec2(0.612476, 0.705252),
+ vec2(-0.578845, -0.768792),
+ vec2(-0.772454, -0.090976),
+ vec2(0.504440, 0.372295),
+ vec2(0.155736, 0.065157),
+ vec2(0.391522, 0.849605),
+ vec2(-0.620106, -0.328104),
+ vec2(0.789239, -0.419965),
+ vec2(-0.545396, 0.538133),
+ vec2(-0.178564, -0.596057)
+);
+
+vec3 toScreenSpace(vec3 p) {
+	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
+    vec3 p3 = p * 2. - 1.;
+    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    return fragposition.xyz / fragposition.w;
+}
+
+
+
+
 #include "/lib/color_transforms.glsl"
-#include "/lib/color_dither.glsl"
-#include "/lib/projections.glsl"
+#include "/lib/encode.glsl"
 #include "/lib/sky_gradient.glsl"
+#include "/lib/stars.glsl"
+
+
+
+vec3 normVec (vec3 vec){
+	return vec*inversesqrt(dot(vec,vec));
+}
+
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
-
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+tempOffsets);
-}
-
-
-float phaseg(float x, float g){
-    float gg = g * g;
-    return (gg * -0.25 + 0.25) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5) /3.14;
-}
-float phaseRayleigh(float cosTheta) {
-	const vec2 mul_add = vec2(0.1, 0.28) /acos(-1.0);
-	return cosTheta * mul_add.x + mul_add.y; // optimized version from [Elek09], divided by 4 pi for energy conservation
-}
-
-float densityAtPos(in vec3 pos)
+float triangularize(float dither)
 {
-
-	pos /= 18.;
-	pos.xz *= 0.5;
-
-
-	vec3 p = floor(pos);
-	vec3 f = fract(pos);
-
-	f = (f*f) * (3.-2.*f);
-
-	vec2 uv =  p.xz + f.xz + p.y * vec2(0.0,193.0);
-
-	vec2 coord =  uv / 512.0;
-
-	vec2 xy = texture2D(noisetex, coord).yx;
-
-	return mix(xy.r,xy.g, f.y);
+    float center = dither*2.0-1.0;
+    dither = center*inversesqrt(abs(center));
+    return clamp(dither-fsign(center),0.0,1.0);
 }
-float cloudVol(in vec3 pos){
 
-	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)*5.0+frameTimeCounter*vec3(10,-0.1,10)*2.;
-	float noise = densityAtPos(samplePos*5);
-	float unifCov = exp2(-max(pos.y-70,0.0)/50.);
-
-	float cloud = pow(clamp(1.0-noise-0.76,0.0,1.0),2.)+0.005;
-
-return cloud;
+vec3 fp10Dither(vec3 color,float dither){
+	const vec3 mantissaBits = vec3(6.,6.,5.);
+	vec3 exponent = floor(log2(color));
+	return color + dither*exp2(-mantissaBits)*exp2(exponent);
 }
-mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
-
-	//project pixel position into projected shadowmap space
-	vec3 wpos = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
 
 
-	//project view origin into projected shadowmap space
-	vec3 start = toShadowSpaceProjected(vec3(0.));
 
-
-	//rayvector into projected shadow map space
-	//we can use a projected vector because its orthographic projection
-	//however we still have to send it to curved shadow map space every step
-
-	vec3 dVWorld = (wpos-gbufferModelViewInverse[3].xyz);
-
-	float maxLength = min(length(dVWorld),far)/length(dVWorld);
-
-	dVWorld *= maxLength;
-
-	//apply dither
-	vec3 progress = start.xyz;
-	vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
-		vec3 vL = vec3(0.);
-
-		float SdotV = dot(sunVec,normalize(fragpos))*lightCol.a;
-		float dL = length(dVWorld);
-		//Mie phase + somewhat simulates multiple scattering (Horizon zero down cloud approx)
-		float mie = max(phaseg(SdotV,fog_mieg1),1.0/13.0);
-		float rayL = phaseRayleigh(SdotV);
-	//	wpos.y = clamp(wpos.y,0.0,1.0);
-
-		vec3 ambientCoefs = dVWorld/dot(abs(dVWorld),vec3(1.));
-
-		vec3 ambientLight = ambientUp;
-		ambientLight += ambientDown;
-		ambientLight += ambientRight;
-		ambientLight += ambientLeft;
-		ambientLight += ambientB;
-		ambientLight += ambientF;
-
-		vec3 skyCol0 = (fogColor/3)*N_Ambient_Mult;
-
-		float mu = 1.0;
-		float muS = 1.05;
-		vec3 absorbance = vec3(1.0);
-		float expFactor = 11.0;
-		for (int i=0;i<VL_SAMPLES;i++) {
-			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
-			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES)) * log(expFactor) / float(VL_SAMPLES)/(expFactor-1.0);
-			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
-			float densityVol = cloudVol(progressW)/2;
-			float density = densityVol;
-			vec3 vL0 = skyCol0*density*muS;
-			vL += (vL0 - vL0 * exp(-density*mu*dd*dL)) / (density*mu+0.00000001)*absorbance;
-			absorbance *= clamp(exp(-density*mu*dd*dL),0.0,1.0);
-		}
-	return mat2x3(vL,absorbance);
-
-
-
-}
-void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEyeDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
-		int spCount = 6;
-		//limit ray length at 32 blocks for performance and reducing integration error
-		//you can't see above this anyway
-		float maxZ = min(rayLength,32.0)/(1e-8+rayLength);
-		rayLength *= maxZ;
-		float dY = normalize(mat3(gbufferModelViewInverse) * rayEnd).y * rayLength;
-		vec3 absorbance = vec3(1.0);
-		vec3 vL = vec3(0.0);
-		float phase = phaseg(VdotL, Dirt_Mie_Phase);
-		float expFactor = 11.0;
-		for (int i=0;i<spCount;i++) {
-			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);		// exponential step position (0-1)
-			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);	//step length (derivative)
-			vec3 ambientMul = exp(-max(estEyeDepth - dY * d,0.0) * waterCoefs * 1.1);
-			vec3 sunMul = exp(-max((estEyeDepth - dY * d) ,0.0)/abs(sunElevation) * waterCoefs);
-			vec3 light = (0.75 * lightSource * phase * sunMul + ambientMul*ambient )*scatterCoef;
-			vL += (light - light * exp(-waterCoefs * dd * rayLength)) / waterCoefs *absorbance;
-			absorbance *= exp(-dd * rayLength * waterCoefs);
-		}
-		inColor += vL;
-}
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
-//////////////////////////////VOID MAIN//////////////////////////////
+
+
+#include "/lib/blur.glsl"
 
 void main() {
-/* DRAWBUFFERS:0 */
-	if (isEyeInWater == 0){
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
-		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
-		float noise=blueNoise();
-		mat2x3 vl = getVolumetricRays(noise,fragpos);
-		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
-		gl_FragData[0] = clamp(vec4(vl[0],absorbance),0.000001,65000.);
-	}
-	else {
-		float dirtAmount = Dirt_Amount;
-		vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
-		vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
-		vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
-		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
-		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
-		float noise=blueNoise();
-		vec3 vl = vec3(0.0);
-		float estEyeDepth = clamp((14.0-eyeBrightnessSmooth.y/255.0*16.0)/14.0,0.,1.0);
-		estEyeDepth *= estEyeDepth*estEyeDepth*34.0;
-		#ifndef lightMapDepthEstimation
-			estEyeDepth = max(Water_Top_Layer - cameraPosition.y,0.0);
-		#endif
-		waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), noise, totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/pi, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
-		gl_FragData[0] = clamp(vec4(vl,1.0),0.000001,65000.);
+
+
+	float z0 = texture2D(depthtex0,texcoord).x;
+	float z = texture2D(depthtex1,texcoord).x;
+	vec2 tempOffset=TAA_Offset;
+	float noise = blueNoise();
+
+	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
+	vec3 np3 = normVec(p3);
+
+	//sky
+	
+	if (z >=1.0) {
+
+
+		gl_FragData[0].rgb = texture2D(colortex3,texcoord).rgb;
+
+
+		
 	}
 
+	//land
+	else {
+		p3 += gbufferModelViewInverse[3].xyz;
+
+		vec4 trpData = texture2D(colortex7,texcoord);
+		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		
+		vec4 entityg = texture2D(colortex7,texcoord);
+		vec4 data = texture2D(colortex1,texcoord);
+		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
+		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
+
+		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
+		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
+		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
+		bool entity = abs(entityg.r) >0.999;
+		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+		vec3 filtered = texture2D(colortex3,texcoord).rgb;
+		vec3 test = texture2D(colortex6,texcoord).rgb;
+
+
+
+		 {
+float Depth = texture2D(depthtex0, texcoord).x;
+vec2 offset2 = vec2(1,0.99999);
+vec3 fblur = texture2D(colortex3, texcoord).xyz;
+vec3 blur1 = texture2D(colortex3, texcoord).xyz;
+vec3 blur2 = texture2D(colortex3, texcoord).xyz;
+vec3 blur3 = texture2D(colortex3, texcoord).xyz;
+vec3 blur4 = texture2D(colortex3, texcoord).xyz;
+#ifndef RT_FILTER
+fblur = filtered.rgb;
+blur1 = filtered.rgb;
+blur2 = filtered.rgb;
+blur3 = filtered.rgb;
+blur4 = filtered.rgb;
+#else
+
+
+
+
+
+	if (Depth < 1.0){
+	Depth = ld(Depth);
+    
+
+
+	blur1 = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
+	float lum1 = luma(test);
+	blur3 = (blur1+lum1);
+	blur4 = clamp((blur2/filtered)/4,0,1);
+
+	fblur = mix(test,blur2,blur4*0.5);
+
+}
+
+
+  float lum = luma(filtered);
+  vec3 diff = filtered-lum;
+  vec3 filtered2 = fblur + diff*(-lum*(-0.00) + 0.0);
+#endif		    
+		    gl_FragData[0].rgb = filtered.rgb;	
+		
+		   #ifdef SSPT
+
+		    gl_FragData[0] = vec4((blur1.xyz),1.0);
+	
+
+
+
+
+			
+
+			#endif
+			
+
+
+		}
+	}
+
+/* DRAWBUFFERS:3 */
 }

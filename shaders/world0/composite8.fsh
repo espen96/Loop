@@ -157,7 +157,10 @@ vec3 TAA_hq(){
 	vec3 albedoCurrent6 = texture2D(colortex3, texcoord + vec2(0.0,-texelSize.y)).rgb;
 	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
 	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
-
+	
+	float tester = abs(velocity.x+velocity.y)*20;	
+	
+	
 	#ifndef NO_CLIP
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));

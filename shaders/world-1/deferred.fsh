@@ -27,6 +27,9 @@ flat varying float avgBrightness;
 flat varying float exposureF;
 flat varying float fogAmount;
 flat varying float VFAmount;
+uniform vec3 fogColor; 
+
+
 
 uniform sampler2D colortex4;
 uniform sampler2D noisetex;
@@ -65,7 +68,7 @@ float interleaved_gradientNoise(){
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
-vec4 lightCol = vec4(lightSourceColor, float(sunElevation > 1e-5)*2-1.);
+vec4 lightCol = vec4(fogColor, float(sunElevation > 1e-5)*2-1.);
 const float[17] Slightmap = float[17](14.0,17.,19.0,22.0,24.0,28.0,31.0,40.0,60.0,79.0,93.0,110.0,132.0,160.0,197.0,249.0,249.0);
 
 void main() {
@@ -114,7 +117,7 @@ gl_FragData[0] = vec4(avgAmbient,1.0);
 //Sky gradient (no clouds)
 const float pi = 3.141592653589793238462643383279502884197169;
 if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){
-  gl_FragData[0] = vec4(vec3(1.0,0.4,0.12)*100.,1.0);
+  gl_FragData[0] = vec4(vec3(fogColor)*100.,1.0);
 }
 
 //Temporally accumulate sky and light values

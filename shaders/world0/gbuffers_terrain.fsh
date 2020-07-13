@@ -52,7 +52,9 @@ float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
 
-
+float pow2(float x) {
+    return x*x;
+}
 
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
 vec4 encode (vec3 unenc)
@@ -199,7 +201,9 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	normal = applyBump(tbnMatrix,texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz*2.-1.);
 	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgb;
-    
+    specularity.x  = pow2(1.0 - specularity.x);
+    specularity.y  = (specularity.y);
+
 
 	data0.rgb*=color.rgb;
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
@@ -233,6 +237,6 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
-	gl_FragData[1] = vec4(0,0,specularity.r+specularity.g,0);
+	gl_FragData[1] = vec4(0,0,(pow2(specularity.r)+specularity.g),0);
 
 }

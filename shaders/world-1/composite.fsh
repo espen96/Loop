@@ -114,9 +114,6 @@ float linZ(float depth) {
 	// d = -((2n/l)-f-n)/(f-n)
 
 }
-float invLinZ (float lindepth){
-	return -((2.0*near/lindepth)-far-near)/(far-near);
-}
 
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
@@ -167,7 +164,9 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
 	}
     return 1.0;
 }
-
+vec4 blueNoise(vec2 coord){
+  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+}
 
 
 float ld(float dist) {
@@ -288,9 +287,9 @@ void main() {
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
-	//sky
+//sky
 	if (z >=1.0) {
-		vec3 color = vec3(1.0,0.4,0.12)* vec3(1.5,1.2,1.05)/4000.0*150.0*0.25;
+		vec3 color = (fogColor/5);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
@@ -314,6 +313,7 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
+		vec4 skc = texture2D(colortex4,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec4 entityg = texture2D(colortex7,texcoord);
@@ -362,39 +362,34 @@ void main() {
 		
 		
 #else	
+				if (emissive || entity || hand)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z);
+				if (emissive || hand)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*alblum*3;
 
 
 
-				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*fogColor + custom_lightmap.z;
-				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+2;
-				}
-						else{
-		
+
+
+		}
+		else{	
+
+
+
 			
 
 			
-			ambientLight = rtGI(normal, noise, fragpos)*10./150./3. + (custom_lightmap.y)*fogColor;	 }
+		  	ambientLight = netherGI(normal, blueNoise(gl_FragCoord.xy), fragpos, (fogColor*0.1+ambientLight)* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B));}
 			
 			
 		//combine all light sources
 
-		gl_FragData[0].rgb = ambientLight;
+		gl_FragData[0].rgb = ambientLight*albedo;
 		
 
 #endif   
 
 		
 
-		vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
-		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
-
-			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z;
-			if (emissive)  ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+2;
-			gl_FragData[1].rgb = ambientLight2.rgb*fogColor;}
+}
 
 /* DRAWBUFFERS:36 */
 }

@@ -1,10 +1,18 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
-varying vec2 texcoord;
-flat varying vec3 zMults;
-uniform float far;
+
+uniform sampler2D colortex4;
+uniform sampler2D depthtex0;
+
 uniform float near;
+uniform float far;
+
+
+float linZ(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));
+}
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -12,8 +20,9 @@ uniform float near;
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-	zMults = vec3(1.0/(far * near),far+near,far-near);
-	gl_Position = ftransform();
-	texcoord = gl_MultiTexCoord0.xy;
+/* DRAWBUFFERS:4 */
+	vec3 oldTex = texelFetch2D(colortex4, ivec2(gl_FragCoord.xy), 0).xyz;
+	float newTex = linZ(texelFetch2D(depthtex0, ivec2(gl_FragCoord.xy*4), 0).x);
+	gl_FragData[0] = vec4(oldTex, newTex);
 
 }

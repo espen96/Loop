@@ -187,6 +187,10 @@ vec3 fp10Dither(vec3 color,float dither){
 
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));
+	// l = (2*n)/(f+n-d(f-n))
+	// f+n-d(f-n) = 2n/l
+	// -d(f-n) = ((2n/l)-f-n)
+	// d = -((2n/l)-f-n)/(f-n)
 
 }
 
@@ -257,7 +261,9 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
-
+vec4 blueNoise(vec2 coord){
+  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+}
 
 
 vec3 toShadowSpaceProjected(vec3 p3){
@@ -359,14 +365,38 @@ void main() {
 	float noise = blueNoise();
 
 	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
 	//sky
 	
 	if (z >=1.0) {
-	
-		
+
+		vec3 color = vec3(0.0);
+		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
+		if (np3.y > 0.){
+			color += stars(np3);
+			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
+		}
+		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+		color = color*cloud.a+cloud.rgb;
+		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.0,triangularize(noise)),0.0,65000.);
+		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
+		vec4 trpData = texture2D(colortex7,texcoord);
+		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		if (iswater){
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			float Vdiff = distance(fragpos,fragpos0);
+			float VdotU = np3.y;
+			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
+			float estimatedSunDepth = estimatedDepth/abs(WsunVec.y); //assuming water plane
+
+			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
+			vec3 ambientColVol = ambientUp*8./150./3.*0.84*2.0/pi * eyeBrightnessSmooth.y / 240.0;
+			if (isEyeInWater == 0)
+				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
+		}
 	}
 	//land
 	else {
@@ -519,7 +549,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		float alblum = clamp(luma(albedo),0.37,0.40);
 	#ifdef SSPT	
 
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0)*clamp(lightCol.z,1.0,10.0));
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0))*20;
 	#else
 		if (emissive || (hand && heldBlockLightValue > 0.1))			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
 	#endif
@@ -575,8 +605,8 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			
 		  		
 			
-				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
+				if (hand|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo*2;
 
 
 
@@ -585,16 +615,8 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		}
 		else{	
 				
-			ambientLight = (ambientLight * filtered.y * custom_lightmap.x + (custom_lightmap.y)*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5));
-			
-		//	ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))/5;
-			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) * ((ambientLight.rgb)+((custom_lightmap.y)*5));  
-			
-			
-		//	ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + ((custom_lightmap.y*10));	
 		  
-		//  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
 		  
 }
@@ -602,8 +624,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ambientLight;
-			if (entity) {gl_FragData[0].rgb = (((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rrr*lightmap.yyy) + (ambientLight)))*2;}
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
 
 		    //gl_FragData[0].rgb = data2.yyy;
 		    

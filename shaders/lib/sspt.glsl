@@ -29,7 +29,7 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 	vec3 clipPosition = toClipSpace3(position);
 	
 	
-	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+	float rayLength = ((position.z + dir.z * sqrt(3.0)*far*0.75) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far*0.75;
 
 	vec3 end = toClipSpace3(position+dir*rayLength);
 	vec3 direction = end-clipPosition;  //convert to clip space
@@ -39,8 +39,8 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 	
 	
 	//get at which length the ray intersects with the edge of the screen
-	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
-	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction*0.75;
+	float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
 
 	vec3 stepv = direction/len;
@@ -119,7 +119,7 @@ vec2 WeylNth(int n) {
 
 vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha * n);
+	return fract(alpha * n*4);
 }
 
 

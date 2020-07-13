@@ -77,7 +77,22 @@ vec3 closestToCamera3x3()
 	return dmin;
 }
 
-
+//Modified texture interpolation from inigo quilez
+vec4 smoothfilter(in sampler2D tex, in vec2 uv)
+{
+	vec2 textureResolution = vec2(viewWidth,viewHeight);
+	uv = uv*textureResolution + 0.5;
+	vec2 iuv = floor( uv );
+	vec2 fuv = fract( uv );
+	#ifndef SMOOTHESTSTEP_INTERPOLATION
+	uv = iuv + (fuv*fuv)*(3.0-2.0*fuv);
+	#endif
+	#ifdef SMOOTHESTSTEP_INTERPOLATION
+	uv = iuv + fuv*fuv*fuv*(fuv*(fuv*6.0-15.0)+10.0);
+	#endif
+	uv = (uv - 0.5)/textureResolution;
+	return texture2D( tex, uv);
+}
 //Due to low sample count we "tonemap" the inputs to preserve colors and smoother edges
 vec3 weightedSample(sampler2D colorTex, vec2 texcoord){
 	vec3 wsample = texture2D(colorTex,texcoord).rgb*exposureA;
@@ -86,7 +101,56 @@ vec3 weightedSample(sampler2D colorTex, vec2 texcoord){
 }
 
 
+//from : https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
+vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
+{
+    // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
+    // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
+    // location [1, 1] in the grid, where [0, 0] is the top left corner.
+    vec2 samplePos = uv * texSize;
+    vec2 texPos1 = floor(samplePos - 0.5) + 0.5;
 
+    // Compute the fractional offset from our starting texel to our original sample location, which we'll
+    // feed into the Catmull-Rom spline function to get our filter weights.
+    vec2 f = samplePos - texPos1;
+
+    // Compute the Catmull-Rom weights using the fractional offset that we calculated earlier.
+    // These equations are pre-expanded based on our knowledge of where the texels will be located,
+    // which lets us avoid having to evaluate a piece-wise function.
+    vec2 w0 = f * ( -0.5 + f * (1.0 - 0.5*f));
+    vec2 w1 = 1.0 + f * f * (-2.5 + 1.5*f);
+    vec2 w2 = f * ( 0.5 + f * (2.0 - 1.5*f) );
+    vec2 w3 = f * f * (-0.5 + 0.5 * f);
+
+    // Work out weighting factors and sampling offsets that will let us use bilinear filtering to
+    // simultaneously evaluate the middle 2 samples from the 4x4 grid.
+    vec2 w12 = w1 + w2;
+    vec2 offset12 = w2 / (w1 + w2);
+
+    // Compute the final UV coordinates we'll use for sampling the texture
+    vec2 texPos0 = texPos1 - vec2(1.0);
+    vec2 texPos3 = texPos1 + vec2(2.0);
+    vec2 texPos12 = texPos1 + offset12;
+
+    texPos0 *= texelSize;
+    texPos3 *= texelSize;
+    texPos12 *= texelSize;
+
+    vec4 result = vec4(0.0);
+    result += texture2D(tex, vec2(texPos0.x,  texPos0.y)) * w0.x * w0.y;
+    result += texture2D(tex, vec2(texPos12.x, texPos0.y)) * w12.x * w0.y;
+    result += texture2D(tex, vec2(texPos3.x,  texPos0.y)) * w3.x * w0.y;
+
+    result += texture2D(tex, vec2(texPos0.x,  texPos12.y)) * w0.x * w12.y;
+    result += texture2D(tex, vec2(texPos12.x, texPos12.y)) * w12.x * w12.y;
+    result += texture2D(tex, vec2(texPos3.x,  texPos12.y)) * w3.x * w12.y;
+
+    result += texture2D(tex, vec2(texPos0.x,  texPos3.y)) * w0.x * w3.y;
+    result += texture2D(tex, vec2(texPos12.x, texPos3.y)) * w12.x * w3.y;
+    result += texture2D(tex, vec2(texPos3.x,  texPos3.y)) * w3.x * w3.y;
+
+    return result;
+}
 //approximation from SMAA presentation from siggraph 2016
 vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float sharpenAmount)
 {
@@ -117,7 +181,21 @@ vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float shar
 
 }
 
+vec3 clip_aabb(vec3 q,vec3 aabb_min, vec3 aabb_max)
+	{
+		vec3 p_clip = 0.5 * (aabb_max + aabb_min);
+		vec3 e_clip = 0.5 * (aabb_max - aabb_min) + 0.00000001;
 
+		vec3 v_clip = q - vec3(p_clip);
+		vec3 v_unit = v_clip.xyz / e_clip;
+		vec3 a_unit = abs(v_unit);
+		float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
+
+		if (ma_unit > 1.0)
+			return vec3(p_clip) + v_clip / ma_unit;
+		else
+			return q;
+	}
 vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
     return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
@@ -157,10 +235,7 @@ vec3 TAA_hq(){
 	vec3 albedoCurrent6 = texture2D(colortex3, texcoord + vec2(0.0,-texelSize.y)).rgb;
 	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
 	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
-	
-	float tester = abs(velocity.x+velocity.y)*20;	
-	
-	
+
 	#ifndef NO_CLIP
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));

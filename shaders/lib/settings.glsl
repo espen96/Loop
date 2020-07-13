@@ -18,9 +18,9 @@
 //#define FAST_TAA //disables bicubic resampling and closest velocity, improves fps especially at high resolutions
 #define FLICKER_REDUCTION 0.75  //[0.0 0.25 0.5 0.75 1.0] High values reduce flickering but may reduce sharpness
 #define BLEND_FACTOR 0.1 //[0.01 0.02 0.03 0.04 0.05 0.06 0.08 0.1 0.12 0.14 0.16] higher values = more flickering but sharper image, lower values = less flickering but the image will be blurrier
-#define ANTI_GHOSTING 0.5 //[0.0 0.25 0.5 0.75 1.0] High values reduce ghosting but may create flickering
+#define ANTI_GHOSTING 1.0 //[0.0 0.25 0.5 0.75 1.0] High values reduce ghosting but may create flickering
 #define MOTION_REJECTION 0.25 //[0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.5] //Higher values=sharper image in motion at the cost of flickering
-//#define CLOSEST_VELOCITY //improves edge quality in motion at the cost of performance
+#define CLOSEST_VELOCITY //improves edge quality in motion at the cost of performance
 //#define NO_CLIP	//Removes all anti-ghosting techniques used and creates a sharp image (good for still screenshots)
 
 /* ------ CAMERA ------ */
@@ -77,7 +77,7 @@
 
 
 
-#define RAYS 1 //[1 2 3 4 5 6 7 8 9 10] number of rays for SSPT
+#define RAYS 4 //[1 2 3 4 5 6 7 8 9 10] number of rays for SSPT
 #define STEPSIZE 10 //[1 2 5 10 15 20 30 40 50 75 100] Step Size
 #define MAXSTEPS 8 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
 

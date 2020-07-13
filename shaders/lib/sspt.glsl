@@ -52,7 +52,7 @@ vec3 stepv = direction/len;
 			float sp= texelFetch2D(depthtex0,ivec2(spos.xy/texelSize),0).x;
 			if( sp < spos.z) {
 				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
-				if (dist <= 0.5 ) return vec3(spos.xy, sp);
+				if (dist <= 0.035 ) return vec3(spos.xy, sp);
 			}
 			spos += stepv*0.75;
 		}

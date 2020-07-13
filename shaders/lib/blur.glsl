@@ -34,12 +34,12 @@ vec3 ssaoVL_blur(vec2 tex, vec2 dir,float cdepth)
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 
 
-    float vel = abs(velocity.x+velocity.y)*100;	
+    float vel = abs(velocity.x+velocity.y)*20;	
 
-	vec2 step = dir*texelSize*clamp((0.1),0,16);
+	vec2 step = dir*texelSize*clamp((0.0),0,16);
 
   float dy = abs(dFdx(cdepth))*3.0+1;
-if(emissive) step = vec2(0.0);
+
 	vec3 res = vec3(0.0);
 	vec3 total_weights = vec3(0.);
 	ivec2 pos = ivec2(gl_FragCoord.xy) % 1;

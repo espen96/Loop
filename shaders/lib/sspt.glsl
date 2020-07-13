@@ -3,7 +3,7 @@ uniform float lightSign;
 		float specular = texture2D(colortex7,texcoord).b;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-
+		vec2 lightmap = vec2(dataUnpacked1.yz);	
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 //#define ALT_SSPT
@@ -20,16 +20,62 @@ float invLinZ (float lindepth){
 vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
     return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
-
-
-
 vec3 RT(vec3 dir,vec3 position,float noise){
-	float stepSize = STEPSIZE;
-	int maxSteps = MAXSTEPS;
+
+#ifdef ALT_SSPT
+
+		vec3 clipPosition = toClipSpace3(position);
+		float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*(far*0.75);
+		vec3 end = toClipSpace3(position+dir*(rayLength*0.75));
+        vec3 direction = end-clipPosition;  //convert to clip space
+
+		
+		
+    //get at which length the ray intersects with the edge of the screen
+	
+		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/12.0*noise;	
+         vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
+         float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
+
+
+vec3 stepv = direction/len;
+
+  
+	vec3 spos = clipPosition + stepv * noise;
+	spos.xy+=TAA_Offset*texelSize*0.5;
+		float minZ = clipPosition.z;
+		float maxZ = spos.z+stepv.z*0.5;
+	
+
+
+    for(int i = 0; i < min(len, mult*len)-2; i++){
+			float sp= texelFetch2D(depthtex0,ivec2(spos.xy/texelSize),0).x;
+			if( sp < spos.z) {
+				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
+				if (dist <= 0.5 ) return vec3(spos.xy, sp);
+			}
+			spos += stepv*0.75;
+		}
+#else		
 	vec3 clipPosition = toClipSpace3(position);
 	
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+	vec3 fragposition = toScreenSpace(closestToCamera);
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+    float vel = abs(velocity.x+velocity.y)*50;		
 	
-	float rayLength = ((position.z + dir.z * sqrt(3.0)*far*0.75) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far*0.75;
+	
+	float stepSize = STEPSIZE/clamp(vel,1,2);
+	int maxSteps = MAXSTEPS;	
+	int maxLength = MAXLENGTH;	
+	
+	
+	
+//	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxLength) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxLength;
 
 	vec3 end = toClipSpace3(position+dir*rayLength);
 	vec3 direction = end-clipPosition;  //convert to clip space
@@ -71,8 +117,10 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 		}
 			spos += stepv;
 	}
-	return vec3(1.1);
+#endif		
+    return vec3(1.1);
 }
+
 
 
 vec3 cosineHemisphereSample(vec2 Xi)

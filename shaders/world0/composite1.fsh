@@ -222,7 +222,9 @@ float blueNoise(){
 }
 
 
-
+vec4 blueNoise(vec2 coord){
+  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+}
 
 
 
@@ -445,7 +447,7 @@ void main() {
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5)))*albedo.rgb+0.3)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*albedo;
 
 
 
@@ -454,16 +456,8 @@ void main() {
 		}
 		else{	
 				
-			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2;
-			
-			//ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))/3;
-			
-			ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y)*(filtered.y))*filtered.y;  
-			
-			
-		  //ambientLight = rtGI(normal, noise, fragpos)*8./150./3. + (custom_lightmap.y);	
 		  
-		  
+		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
 		  
 }
@@ -471,9 +465,7 @@ void main() {
 
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + clamp(ambientLight,0,100));
-
-		    //gl_FragData[0].rgb = data2.yyy;
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
 		    
 			#endif
    vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);

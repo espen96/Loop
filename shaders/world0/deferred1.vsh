@@ -124,21 +124,21 @@ void main() {
 	sunColor = calculateAtmosphere(vec3(0.0), sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.0);
 	sunColor = sunColorBase/4000. * skyAbsorb;
 
-	skyAbsorb = vec3(1.0);
-	float dSun = 0.03;
-	vec3 modSunVec = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
-	vec3 modSunVec2 = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	skyAbsorb = vec3(0.0);
+				   
+	vec3 modSunVec = sunVec*0.96+vec3(0.0,0.04,1.0);
+	vec3 modSunVec2 = sunVec*0.96+vec3(0.0,0.04,1.0);
 	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
 	sunColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.);
 	sunColorCloud = sunColorBase/4000. * skyAbsorb ;
 
-	skyAbsorb = vec3(1.0);
+					   
 	moonColor = calculateAtmosphere(vec3(0.0), -sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
-	moonColor = moonColorBase/4000.0*skyAbsorb;
+	moonColor = moonColorBase/4000.0*0.55;
 
-	skyAbsorb = vec3(1.0);
-	modSunVec = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
-	modSunVec2 = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	skyAbsorb = vec3(0.0);
+	modSunVec = -sunVec*0.96+vec3(0.0,0.04,1.0);
+	modSunVec2 = -sunVec*0.96+vec3(0.0,0.04,1.0);
 	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
 	moonColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
 
@@ -196,7 +196,7 @@ void main() {
 	avgBrightness = clamp(mix(avgExp,texelFetch2D(colortex4,ivec2(10,37),0).g,0.95),0.00003051757,65000.0);
 
 	float L = max(avgBrightness,1e-8);
-	float keyVal = 1.03-2.0/(log(L*4000/150.*8./3.0+1.0)/log(10.0)+2.0);
+	float keyVal = 1.03-2.0/(log(L*0.6+1.0)/log(10.0)+2.0);
 	float expFunc = 0.5+0.5*tanh(log(L));
 	float targetExposure = 0.18/log2(L*2.0+1.04)*0.9;
 

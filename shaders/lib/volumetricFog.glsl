@@ -46,9 +46,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
-	vec3 skyCol0 = ambientLight*2.*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*2.0/PI;
+	vec3 skyCol0 = ambientLight*2.0*8./150./3.*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*2.0/3.1415;
+	vec3 sunColor = lightCol.rgb*8./150./3.*eyeBrightnessSmooth.y/vec3(240.);
 														  
-	vec3 sunColor = lightCol.rgb;
 
 		vec3 rC = vec3(fog_coefficientRayleighR*1e-6, fog_coefficientRayleighG*1e-5, fog_coefficientRayleighB*1e-5);
 		vec3 mC = vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6);
@@ -57,13 +57,13 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float mu = 1.0;
 		float muS = 1.0*mu;
 		vec3 absorbance = vec3(1.0);
-		float expFactor = 11.0;
+		float expFactor = 2.7;
 		for (int i=0;i<VL_SAMPLES2;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES2))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES2)) * log(expFactor) / float(VL_SAMPLES2)/(expFactor-1.0);
 			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 
-    float density = cloudVol(progressW)*1.5*ATMOSPHERIC_DENSITY*mu*500.;
+    float density = cloudVol(progressW)*1.5*(ATMOSPHERIC_DENSITY)*mu*500.;
 			//Just air
 			vec2 airCoef = exp2(-max(progressW.y-SEA_LEVEL,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
 

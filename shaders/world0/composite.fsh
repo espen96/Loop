@@ -87,8 +87,8 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 {
 
 	ivec2 pos = ivec2(gl_FragCoord.xy);
-	const float tan70 = tan(70.*3.14/180.);
-	float mulfov2 = gbufferProjection[1][1]/tan70;
+
+	float mulfov2 = gbufferProjection[1][1];
 
 
 	float maxR2 = fragpos.z*fragpos.z*mulfov2*2.*1.412/50.0;

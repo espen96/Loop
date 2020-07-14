@@ -1,17 +1,23 @@
+#define VOLUMETRIC_CLOUDS
 
 float cloud_height = 1500.;
 float maxHeight = 3200.;
 #ifdef HQ_CLOUDS
-int maxIT_clouds = 20;
-int maxIT = 60;
+int maxIT_clouds = 40;
+int maxIT = 80;
 #else
-int maxIT_clouds = 15;
+int maxIT_clouds = 9;
 int maxIT = 27;
 #endif
 
 float cdensity = 0.015;
-
-float cloudSpeed = frameTimeCounter * CLOUDS_SPEED;
+#ifdef HQ_CLOUDS
+const int cloudLoD = 2;
+const int cloudShadowLoD = -1;
+#else
+const int cloudLoD = 0;
+const int cloudShadowLoD = -1;
+#endif
 
 //3D noise from 2d texture
 float densityAtPos(in vec3 pos)
@@ -34,71 +40,44 @@ float densityAtPos(in vec3 pos)
 
 	return mix(xy.r,xy.g, f.y);
 }
-vec4 smoothfilter(in sampler2D tex, in vec2 uv)
-{
-	uv = uv*512.0 + 0.5;
-	vec2 iuv = floor( uv );
-	vec2 fuv = fract( uv );
-	uv = iuv + (fuv*fuv)*(3.0-2.0*fuv);
-	uv = uv/512.0 - 0.5/512.0;
-	return texture2D( tex, uv);
-}
+
+
 //Cloud without 3D noise, is used to exit early lighting calculations if there is no cloud
 float cloudCov(in vec3 pos,vec3 samplePos){
 	float mult = max(pos.y-2000.0,0.0)/2000.0;
 	float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-	float coverage = clamp(texture2D(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
-	float cloud = coverage*coverage*1.0 - mult*mult*mult*3.0 - mult2*mult2;
+	float coverage = (texture2D(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength)-0.1;
+	float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
 	return max(cloud, 0.0);
 }
 //Erode cloud with 3d Perlin-worley noise, actual cloud value
-#ifdef HQ_CLOUDS
-	float cloudVol(in vec3 pos,in vec3 samplePos,in float cov){
-		//Less erosion on bottom of the cloud
-		float mult2 = (pos.y-1500)/2500.0+rainStrength*0.4;
-		float noise = 1.0-densityAtPos(samplePos*15.);
-						   
-							
-							 
-							  
-							   
-		noise += 0.5-densityAtPos(samplePos*30.)*0.5;
-						  
-   
-		noise /= 1.5;
-		noise = noise*noise;
-		float cloud = clamp(cov-noise*noise*0.33*(0.2+mult2),0.0,1.0);
-		//float cloud = clamp(cov-0.1*(0.2+mult2),0.0,1.0);
-		return cloud;
+float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
+	float noise = 0.0;
+	float totalWeights = 0.0;
+	const float pw = log(2.9);
+	const float pw2 = log(3.0);
+	for (int i = 0; i <= LoD; i++){
+	  float	weight = exp(-i*pw2);
+		noise += weight - densityAtPos(samplePos*8.*exp(i*pw))*weight;
+		totalWeights += weight;
+	}
+	noise /= totalWeights;
+	noise = noise*noise;
+	float cloud = max(cov-noise*noise*(1.1+rainStrength),0.0);
+	//float cloud = clamp(cov-0.1*(0.2+mult2),0.0,1.0);
+	return cloud;
 }
-	//Low quality cloud, noise is replaced by the average noise value, used for shadowing
-	float cloudVolLQ(in vec3 pos){
-		float mult = max(pos.y-2000.0,0.0)/2000.0;
-		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
-		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+cloudSpeed*vec3(0.5,0.,0.5)*25.;
-		float coverage = clamp(texture2D(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
-		float cloud = coverage*coverage*4.0 - mult*mult*mult*3.0 - mult2*mult2 - 0.11 * (0.2 + mult3);
-		return max(cloud, 0.0);
+float getCloudDensity(in vec3 pos, in int LoD){
+	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + frameTimeCounter*vec3(0.5,0.,0.5)*25.;
+	float coverageSP = cloudCov(pos,samplePos);
+	if (coverageSP > 0.001) {
+		if (LoD < 0)
+			return max(coverageSP - 0.27,0.0);
+		return cloudVol(pos,samplePos,coverageSP, LoD);
 	}
-#else
-	float cloudVol(in vec3 pos,in vec3 samplePos,in float cov){
-		float mult2 = (pos.y-1500)/2500.0+rainStrength*0.4;
-		float cloud = clamp(cov-0.11*(0.2+mult2),0.0,1.0);
-		return cloud;
-
-	}
-	//Low quality cloud, noise is replaced by the average noise value, used for shadowing
-	float cloudVolLQ(in vec3 pos){
-		float mult = max(pos.y-2000.0,0.0)/2000.0;
-		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
-		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+cloudSpeed*vec3(0.5,0.,0.5)*25.;
-		float coverage = clamp(texture2D(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
-		float cloud = coverage*coverage*4.0 - mult*mult*mult*3.0 - mult2*mult2 - 0.11 * (0.2 + mult3);
-		return max(cloud, 0.0);
-	}
-#endif
+	else
+		return 0.0;
+}
 
 
 //Mie phase function
@@ -107,23 +86,17 @@ float phaseg(float x, float g){
     return (gg * -0.25 /3.14 + 0.25 /3.14) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5);
 }
 
+float calcShadow(vec3 pos, vec3 ray){
+	float shadowStep = length(ray);
+	float d = 0.0;
+	for (int j=1;j<6;j++){
+		float cloudS=1.0;
+		d += cloudS*cdensity;
 
-float cirrusClouds(vec3 pos){
-	vec2 pos2D = pos.xz/50000.0 + cloudSpeed/200.;
-	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.5+0.7*rainStrength,0.0,1.0);
-	float cloud = texture2D(noisetex, pos2D).r;
-	float weights = 1.0;
-	vec2 posMult = vec2(2.0,1.5);
-	for (int i = 1; i < 4; i++){
-		pos2D *= posMult;
-		float weight =exp2(-i*1.0);
-		cloud += texture2D(noisetex, pos2D).r*weight;
-
-		weights += weight;
-	}
-	cloud = clamp(cloud*cirrusMap*0.2,0.0,1.0);
-	return cloud/weights * float(abs(pos.y - 5500.0) < 200.0);
+		}
+	return max(exp(-shadowStep*d),exp(-0.25*shadowStep*d)*0.7);
 }
+
 
 vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 moonColor,vec3 avgAmbient) {
 		#ifndef VOLUMETRIC_CLOUDS
@@ -171,7 +144,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 
 
 
-		float shadowStep = 240.;
+		float shadowStep = 200.;
 		vec3 dV_Sun = normalize(mat3(gbufferModelViewInverse)*sunVec)*shadowStep;
 
 		float mult = length(dV_view);
@@ -181,9 +154,10 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 
 		total_extinction = 1.0;
 		float SdotV = dot(sunVec,normalize(fragpositi));
+		float SdotV01 = SdotV*0.5+0.5;
 		//fake multiple scattering approx 1 (from horizon zero down clouds)
-		float mieDay = max(phaseg(SdotV,0.7),phaseg(SdotV,0.2));
-		float mieNight = max(phaseg(-SdotV,0.7),phaseg(-SdotV,0.2));
+		float mieDay = max(phaseg(SdotV,0.55),phaseg(SdotV,0.2)*0.7);
+		float mieNight = max(phaseg(-SdotV,0.55),phaseg(-SdotV,0.2)*0.7);
 
 		vec3 sunContribution = mieDay*sunColor*2.14;
 		vec3 moonContribution = mieNight*moonColor*10.14;
@@ -193,89 +167,55 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		float powderMulSun = 1.0;
 
 		for (int i=0;i<maxIT_clouds;i++) {
-		vec3 curvedPos = progress_view;
-		vec2 xz = progress_view.xz-cameraPosition.xz;
-		curvedPos.y -= sqrt(pow(6731e3,2.0)-dot(xz,xz))-6731e3;
-		vec3 samplePos = curvedPos*vec3(1.0,1./32.,1.0)/4+cloudSpeed*vec3(0.5,0.,0.5)*25.;
-			float coverageSP = cloudCov(curvedPos,samplePos);
-			if (coverageSP>0.00){
-				float cloud = cloudVol(curvedPos,samplePos,coverageSP);
-				if (cloud > 0.0005){
-					float muS = cloud*cdensity+0.001;
-					float muE =	cloud*cdensity+0.001;
+			float cloud = getCloudDensity(progress_view, cloudLoD);
+				if (cloud > 0.0001){
+					float muS = cloud*cdensity;
+					float muE =	cloud*cdensity;
 					float muEshD = 0.0;
 					if (sunContribution.g > 1e-5){
 						for (int j=1;j<8;j++){
-							vec3 shadowSamplePos = curvedPos+dV_Sun*j;
+							vec3 shadowSamplePos = progress_view+dV_Sun*j;
 							if (shadowSamplePos.y < maxHeight)
 							{
-								float cloudS=cloudVolLQ(vec3(shadowSamplePos));
-								muEshD += cloudS*cdensity;
+								float cloudS=getCloudDensity(vec3(shadowSamplePos), cloudShadowLoD);
+								muEshD += cloudS*cdensity*shadowStep;
 							}
 						}
 					}
 					float muEshN = 0.0;
 					if (moonContribution.g > 1e-5){
 						for (int j=1;j<8;j++){
-							vec3 shadowSamplePos = curvedPos-dV_Sun*j;
+							vec3 shadowSamplePos = progress_view-dV_Sun*j;
 							if (shadowSamplePos.y < maxHeight)
 							{
-								float cloudS=cloudVolLQ(vec3(shadowSamplePos));
-								muEshN += cloudS*cdensity;
+								float cloudS=getCloudDensity(vec3(shadowSamplePos), cloudShadowLoD);
+								muEshN += cloudS*cdensity*shadowStep;
 							}
 						}
 					}
 					//fake multiple scattering approx 2  (from horizon zero down clouds)
-					float sunShadow = max(exp2(-shadowStep*muEshD),exp2(-0.25*shadowStep*muEshD))*(1.0-exp(-muE*100.0*2.0));
-					float moonShadow = max(exp2(-shadowStep*muEshN),exp2(-0.25*shadowStep*muEshN))*(1.0-exp(-muE*100.0*2.0));
-					float h = 0.5-0.5*clamp(curvedPos.y/4000.-1500./4000.,0.0,1.0);
-					float ambientPowder = (1.0-h*exp2(-muE*100.0*2.0));
+					float h = 0.5-0.5*clamp(progress_view.y/4000.-1500./4000.,0.0,1.0);
+					float powder = 1.0-exp(-muE*mult);
+					float sunShadow = max(exp(-muEshD),0.7*exp(-0.25*muEshD))*mix(1.0, powder,  h);
+					float moonShadow = max(exp2(-muEshN),0.7*exp(-0.25*muEshN))*mix(1.0, powder,  h);
+					float ambientPowder = mix(1.0,powder,h);
 					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
 
 
-					vec3 Sint=(S - S * exp2(-mult*muE)) / (muE);
+					vec3 Sint=(S - S * exp(-mult*muE)) / (muE);
 					color += muS*Sint*total_extinction;
-					total_extinction *= exp2(-muE*mult);
+					total_extinction *= exp(-muE*mult);
 
-
-					if (total_extinction < 1/250.) break;
+					if (total_extinction < 1e-5) break;
 				}
+				progress_view += dV_view;
 			}
 
-			progress_view += dV_view;
-		}
 
-		//high altitude clouds
-		progress_view = progress_view + (5500.0-progress_view.y) * dV_view / dV_view.y;
-		mult = 400.0 * inversesqrt(abs(normalize(dV_view).y));
-		float cirrus = cirrusClouds(vec3(progress_view.x,5500.0,progress_view.z))*cdensity*1.0;
-		if (cirrus > 1e-5){
-			float muEshD = 0.0;
-			if (sunContribution.g > 1e-5){
-				for (int j=1;j<8;j++){
-					float cloudS=cirrusClouds(vec3(progress_view+dV_Sun*j));
-					muEshD += cloudS*cdensity*2.;
-				}
-			}
-			float muEshN = 0.0;
-			if (moonContribution.g > 1e-5){
-				for (int j=1;j<8;j++){
-					float cloudS=cirrusClouds(vec3(progress_view-dV_Sun*j));
-					muEshN += cloudS*cdensity*2.0;
-				}
-			}
-			float sunShadow = max(exp(-shadowStep*muEshD),exp(-0.25*shadowStep*muEshD)*0.4)*(1.0-exp(-cirrus*mult*2.0));
-			float moonShadow = max(exp(-shadowStep*muEshN),exp(-0.25*shadowStep*muEshN)*0.4)*(1.0-exp(-cirrus*mult*2.0));
-			float ambientPowder = (1.0-exp(-cirrus*mult*2.0));
-			vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder*0.5);
-			vec3 Sint=(S - S * exp(-mult*cirrus)) / (cirrus);
-			color += Sint * cirrus * total_extinction;
-			total_extinction *= exp(-mult*cirrus);
-		}
+
 		float cosY = normalize(dV_view).y;
 
 
-		return mix(vec4(color,clamp(total_extinction*(1.0+1/250.)-1/250.,0.0,1.0)),vec4(0.0,0.0,0.0,1.0),1-smoothstep(0.02,0.15,cosY));
+		return mix(vec4(color,clamp(total_extinction,0.0,1.0)),vec4(0.0,0.0,0.0,1.0),1-smoothstep(0.02,0.15,cosY));
 
 }
-

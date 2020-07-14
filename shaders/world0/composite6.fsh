@@ -77,7 +77,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	dVWorld *= maxLength;
 
 	vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
-	vec3 vL = vec3(0.)*eyeBrightnessSmooth.y;
+	vec3 vL = vec3(0.0)*eyeBrightnessSmooth.y;
 
 	float SdotV = dot(sunVec,normalize(fragpos))*lightCol.a;
 	float dL = length(dVWorld);
@@ -95,8 +95,8 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 	ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
-	vec3 skyCol0 = ambientLight*8.*2./150./3.*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*2.0/3.1415;
-	vec3 sunColor = lightCol.rgb*8./150./3.;
+	vec3 skyCol0 = (ambientLight*8.*2./150./3.*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*2.0/3.1415);
+	vec3 sunColor = (lightCol.rgb*8./150./3.0)*(eyeBrightnessSmooth.y/240);
 
 	vec3 rC = vec3(fog_coefficientRayleighR*1e-6, fog_coefficientRayleighG*1e-5, fog_coefficientRayleighB*1e-5);
 	vec3 mC = vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6);
@@ -156,7 +156,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 }
 float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 0.43015971 * frameCounter);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
 }
 void main() {
   /* DRAWBUFFERS:3 */

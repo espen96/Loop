@@ -337,35 +337,7 @@ void main() {
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
-		vec2 lightmap = vec2(dataUnpacked1.yz);			
-
-		
-
-#ifdef LIGHTMAP_FILTER
-		float baseDepth = ld(z0);	
-        vec4 data2 = vec4(0.0);
-        for (int i = 0; i <= 16; i++) {
-												  
-														   
-									   
-		
-		    vec2 offset = poissonDisk[i] * texelSize*16;
-            float currentDepth = ld(texture2D(depthtex0, texcoord + offset).r);
-            if (currentDepth >= baseDepth-0.0025 && currentDepth <= baseDepth+0.0025) {
-                data2 += vec4(decodeVec2(texture2D(colortex1, texcoord + offset).z),(decodeVec2(texture2D(colortex1, texcoord + offset).w)));
-            } else {
-                data2.yz += lightmap.xy;
-            }
-        }
-        data2 /= 16.0;
-        vec4 dataUnpacked3 = vec4(dataUnpacked1.x,data2.y,data2.z,dataUnpacked1.w);
-	 lightmap = vec2(dataUnpacked3.yz);		
-
-
-#endif	
-
-		
-		
+		vec2 lightmap = vec2(dataUnpacked1.yz);				
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = abs(entityg.y) >0.9;
@@ -373,8 +345,8 @@ void main() {
 		float NdotL = dot(normal,WsunVec);
 
 
-		float diffuseSun = clamp(NdotL,0.,1.0);
-		float shading = 0.1;
+		float diffuseSun = clamp(NdotL,0.0,1);
+		float shading = 1.0;
 
 
 
@@ -385,7 +357,7 @@ void main() {
 		}
 
 
-		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
+		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.0));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);
 		ambientLight += ambientDown*clamp(-ambientCoefs.y,0.,1.);
@@ -395,7 +367,13 @@ void main() {
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		ambientLight *= (1.0+rainStrength*0.2);
 		vec3 directLightCol = lightCol.rgb;
+
+		if (lightmap.y < 0.9) directLightCol = vec3(0.0);
+		
+		
+		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*4./150./3.;
+		vec3 custom_lightmap2 = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,0.))*texelSize).rgb*4./150./3.;
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		if (emissive || (hand && heldBlockLightValue > 0.1))
@@ -427,7 +405,7 @@ void main() {
 			ambientLight *= exp(-totEpsilon*estimatedDepth*1.1)*0.8*8./150./3.;
 			if (isEyeInWater == 0){
 			
-				ambientLight *= custom_lightmap.x/(8./150./3.);
+				ambientLight *= custom_lightmap.x/(10./150./3.);
 				ambientLight += custom_lightmap.z;
 			}
 			else
@@ -438,7 +416,11 @@ void main() {
 						else{ ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);}
 
 			//combine all light sources
+			
+			
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + filtered.y*ambientLight)*albedo;
+			
+			
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
 			vec3 ambientColVol =  ambientUp*8./150./3.*0.84*2.0/pi / 240.0 * eyeBrightnessSmooth.y;
@@ -448,10 +430,16 @@ void main() {
 		}
 		else {
 			#ifndef SSPT
+			
+				vec3 colorContrasted = (custom_lightmap2) *20;
+				vec3 bright = clamp(colorContrasted - vec3(19),0,255);
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-			// gl_FragData[0].rgb = filtered.yyy;
+			
+			gl_FragData[0].rgb = ((bright.y*diffuseSun)/pi/150./3.0*(directLightCol.rgb*lightmap.yyy) + (ambientLight))*albedo;
+
+
+		//	 gl_FragData[0].rgb = bright*diffuseSun;
 			#else
 			
 		  		

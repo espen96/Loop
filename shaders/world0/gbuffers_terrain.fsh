@@ -67,7 +67,7 @@ vec4 encode (vec3 unenc)
 vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 {
 
-		float bumpmult = BUMP_MULT-wetness*0.95;
+		float bumpmult = (BUMP_MULT*lmtexcoord.y)-wetness*0.95;
 
 		bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
 

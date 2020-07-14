@@ -41,7 +41,7 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 vec3 stepv = direction/len;
 
   
-	vec3 spos = clipPosition + stepv;
+	vec3 spos = clipPosition + stepv *noise;
 	spos.xy+=TAA_Offset*texelSize*0.5;
 		float minZ = clipPosition.z;
 		float maxZ = spos.z+stepv.z*0.5;
@@ -167,10 +167,13 @@ vec2 WeylNth(int n) {
 
 vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha * n*4);
+	return fract(alpha * n);
 }
 
-
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
+}
 
 
 vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
@@ -178,11 +181,22 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 	vec3 intRadiance = vec3(0.0);
 	float occlusion = 0.0;
 	for (int i = 0; i < nrays; i++){
+
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+	vec3 fragposition = toScreenSpace(closestToCamera);
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+    float vel = (velocity.x+velocity.y);		
+	
+	
 		int seed = (frameCounter%10000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 		rayDir = TangentToWorld(normal,rayDir);
-		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
+		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b)+vel);
+
 		if (rayHit.z < 1.){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;

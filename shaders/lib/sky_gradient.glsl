@@ -12,7 +12,7 @@ vec2 sphereToCarte(vec3 dir) {
 }
 vec3 skyFromTex(vec3 pos,sampler2D sampler){
 	vec2 p = sphereToCarte(pos);
-	return texture2D(sampler,p*texelSize*256.+vec2(18.5,1.5)*texelSize).rgb;
+	return texture2D(sampler,p*texelSize*256.0+vec2(18.5,1.5)*texelSize).rgb;
 }
 float w0(float a)
 {

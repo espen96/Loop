@@ -126,6 +126,11 @@ if (gl_FragCoord.x > 12. && gl_FragCoord.x < 13.  && gl_FragCoord.y > 19.+18. &&
 gl_FragData[0] = vec4(sunColorCloud,1.0);
 if (gl_FragCoord.x > 13. && gl_FragCoord.x < 14.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
 gl_FragData[0] = vec4(moonColorCloud,1.0);
+
+
+
+
+
 //Sky gradient (no clouds)
 const float pi = 3.141592653589793238462643383279502884197169;
 if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){

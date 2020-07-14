@@ -5,6 +5,7 @@
 #include "/lib/settings.glsl"
 
 
+//#define SPEC
 
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
@@ -28,13 +29,17 @@ const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 #ifdef POM
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
-uniform vec2 texelSize;
+
 uniform int framemod8;
 #endif
-
+uniform vec2 texelSize;
 varying vec4 lmtexcoord;
 varying vec4 color;
  varying vec4 normalMat;
+ 
+ 
+ 
+ 
 #ifdef MC_NORMAL_MAP
 varying vec4 tangent;
 uniform float wetness;
@@ -46,8 +51,54 @@ vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq);
 #endif
 uniform sampler2D texture;
+
+
+
+uniform sampler2D noisetex;
+uniform sampler2DShadow shadow;
+uniform sampler2D gaux2;
+uniform sampler2D gaux1;
+uniform sampler2D depthtex1;
+
+uniform vec4 lightCol;
+uniform vec3 sunVec;
 uniform float frameTimeCounter;
-uniform mat4 gbufferProjectionInverse;
+uniform float lightSign;
+uniform float near;
+uniform float far;
+uniform float moonIntensity;
+uniform float sunIntensity;
+uniform vec3 sunColor;
+uniform vec3 nsunColor;
+uniform vec3 upVec;
+uniform float sunElevation;
+uniform float fogAmount;
+
+uniform float rainStrength;
+uniform float skyIntensityNight;
+uniform float skyIntensity;
+uniform mat4 gbufferPreviousModelView;
+uniform vec3 previousCameraPosition;
+
+uniform int frameCounter;
+uniform int isEyeInWater;
+
+
+#include "/lib/Shadow_Params.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/projections.glsl"
+#include "/lib/sky_gradient.glsl"
+#include "/lib/waterBump.glsl"
+#include "/lib/clouds.glsl"
+#include "/lib/stars.glsl"
+#include "/lib/util2.glsl"
+
+
+
+varying vec3 viewVector;
+
+
+
 float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
@@ -90,12 +141,7 @@ float encodeVec2(float x,float y){
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
-vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
-    vec3 p3 = p * 2. - 1.;
-    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
-    return fragposition.xyz / fragposition.w;
-}
+
 #ifdef POM
 vec4 readNormal(in vec2 coord)
 {
@@ -106,12 +152,7 @@ vec4 readTexture(in vec2 coord)
 	return texture2DGradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
 }
 #endif
-float luma(vec3 color) {
-	return dot(color,vec3(0.21, 0.72, 0.07));
-}
-vec3 toLinear(vec3 sRGB){
-	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
-}
+
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 									vec2(-1.,3.)/8.,
 									vec2(5.0,1.)/8.,
@@ -120,6 +161,119 @@ vec3 toLinear(vec3 sRGB){
 									vec2(-7.,-1.)/8.,
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
+									
+									
+		
+
+#ifdef SPEC		
+									
+float invLinZ (float lindepth){
+	return -((2.0*near/lindepth)-far-near)/(far-near);
+}
+float ld(float dist) {
+    return (2.0 * near) / (far + near - dist * (far - near));
+}
+vec3 nvec3(vec4 pos){
+    return pos.xyz/pos.w;
+}
+float blueNoise(){
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+}
+vec4 nvec4(vec3 pos){
+    return vec4(pos.xyz, 1.0);
+}
+
+
+
+float facos(float sx){
+    float x = clamp(abs( sx ),0.,1.);
+    float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
+    return sx > 0. ? a : pi - a;
+}
+
+
+
+
+	float bayer2(vec2 a){
+	a = floor(a);
+    return fract(dot(a,vec2(0.5,a.y*0.75)));
+}									
+									
+float cdist(vec2 coord) {
+	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
+}									
+									
+									
+									
+	#define PW_DEPTH 1.0 //[0.5 1.0 1.5 2.0 2.5 3.0]
+	#define PW_POINTS 1 //[2 4 6 8 16 32]
+	#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
+#define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
+#define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
+#define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
+#define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
+#define bayer128(a) fract(bayer64(.5*(a))*.25+bayer2(a))									
+									
+vec3 getParallaxDisplacement(vec3 posxz, float iswater,float bumpmult,vec3 viewVec) {
+	float waveZ = mix(20.0,0.25,iswater);
+	float waveM = mix(0.0,4.0,iswater);
+
+	vec3 parallaxPos = posxz;
+	vec2 vec = viewVector.xy * (1.0 / float(PW_POINTS)) * 22.0 * PW_DEPTH;
+	float waterHeight = getWaterHeightmap(posxz.xz, waveM, waveZ, iswater) * 0.5;
+parallaxPos.xz += waterHeight * vec;
+
+	return parallaxPos;
+
+}									
+vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
+{
+    float alpha = (sampleNumber+jitter)/nb;
+    float angle = jitter*6.28 + alpha * nbRot * 6.28;
+
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*sqrt(alpha);
+}
+									
+									
+									
+float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
+  r*=r;r*=r;
+
+  vec3 h = l + v;
+  float hn = inversesqrt(dot(h, h));
+
+  float dotLH = clamp(dot(h,l)*hn,0.,1.);
+  float dotNH = clamp(dot(h,n)*hn,0.,1.);
+  float dotNL = clamp(dot(n,l),0.,1.);
+  float dotNHsq = dotNH*dotNH;
+
+  float denom = dotNHsq * r - dotNHsq + 1.;
+  float D = r / (3.141592653589793 * denom * denom);
+  float F = F0 + (1. - F0) * exp2((-5.55473*dotLH-6.98316)*dotLH);
+  float k2 = .25 * r;
+
+  return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);
+}
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+}									
+									
+									
+#endif									
+									
+									
+									
+									
+									
+									
+									
+									
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////

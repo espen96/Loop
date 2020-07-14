@@ -464,12 +464,14 @@ void main() {
 			filtered.y = filtered.y * 0.55+0.55;
 		}
 #else 
+
+vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
 		if (translucent) {
 			albedo *= 1.1;
-			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.45)*1.52, 3.0*phaseg(dot(np3, WsunVec),0.1))*3.1415, diffuseSun, 0.35);
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5)*2, 3.0*phaseg(dot(np3, WsunVec),0.1))*3.1415, diffuseSun, 0.3);
 									   
 		}
-		vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
+		
 		
 #endif		
 		//compute shadows only if not backfacing the sun

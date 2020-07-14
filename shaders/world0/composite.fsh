@@ -4,6 +4,8 @@
 
 
 #include "/lib/settings.glsl"
+#ifndef TOASTER
+
 flat varying float tempOffsets;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
@@ -218,3 +220,15 @@ void main() {
 
 }
 }
+#else
+
+
+/* DRAWBUFFERS:3 */
+
+
+
+void main() {
+
+}
+#endif
+

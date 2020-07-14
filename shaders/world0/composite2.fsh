@@ -3,9 +3,9 @@
 #version 120
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
-#ifndef TOASTER
-#include "/lib/settings.glsl"
 
+#include "/lib/settings.glsl"
+#ifndef TOASTER
 
 
 flat varying vec4 lightCol;
@@ -281,7 +281,7 @@ void main() {
 #else
 
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:0 */
 
 
 

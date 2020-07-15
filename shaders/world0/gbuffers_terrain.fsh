@@ -242,23 +242,44 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 									
 									
 float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
-  r*=r;r*=r;
 
-  vec3 h = l + v;
+
+
+  vec3 h = l - v;
   float hn = inversesqrt(dot(h, h));
 
-  float dotLH = clamp(dot(h,l)*hn,0.,1.);
-  float dotNH = clamp(dot(h,n)*hn,0.,1.);
-  float dotNL = clamp(dot(n,l),0.,1.);
-  float dotNHsq = dotNH*dotNH;
+  float dotLH = (dot(h,l)*hn);
+  float dotNH = (dot(h,n)*hn);
+  float dotNL = (dot(n,l));
 
-  float denom = dotNHsq * r - dotNHsq + 1.;
+  float denom = dotNH * r - dotNH + 1.;
   float D = r / (3.141592653589793 * denom * denom);
   float F = F0 + (1. - F0) * exp2((-5.55473*dotLH-6.98316)*dotLH);
   float k2 = .25 * r;
 
   return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);
 }
+
+float get_specGGX(vec3 normal, vec3 svec, vec2 material) {
+    float f0  = material.y;
+    float roughness = pow2(material.x);
+
+    vec3 h      = sunVec - svec;
+    float hn    = inversesqrt(dot(h, h));
+    float hDotL = saturate(dot(h, sunVec)*hn);
+    float hDotN = saturate(dot(h, normal)*hn);
+    float nDotL = saturate(dot(normal, sunVec));
+    float denom = (hDotN * roughness - hDotN) * hDotN + 1.0;
+    float D     = roughness / (3.14 * denom * denom);
+    float F     = f0 + (1.0-f0) * exp2((-5.55473*hDotL-6.98316)*hDotL);
+    float k2    = 0.25 * roughness;
+
+    return nDotL * D * F / (hDotL * hDotL * (1.0-k2) + k2);
+}
+
+
+
+
 float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
@@ -284,7 +305,7 @@ vec2( 0.1250,  0.0000 ));
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17 */
+/* DRAWBUFFERS:137 */
 void main() {	
 	
 vec2 tempOffset=offsets[framemod8];
@@ -293,6 +314,7 @@ vec2 tempOffset=offsets[framemod8];
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
 	vec3 specularity = vec3(1.0);
+	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 		vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
@@ -448,9 +470,10 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		vec4 reflection = vec4(sky_c.rgb,0.);
 		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0;
 
-			float sunSpec = GGX(normal,-normalize(fragpos),  lightSign*sunVec, rainStrength*0.2+roughness+0.05+clamp(-lightSign*0.15,0.0,1.0), f0);
+		//	float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, rainStrength+roughness, f0);
+			float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
-		vec4 reflected = vec4(reflection.rgb,0);
+		 reflected = vec4(reflection.rgb,0);
 		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
 
 
@@ -462,7 +485,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 
 		
-vec4 data0 = clamp(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)+reflected,0,1);
+vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
@@ -477,9 +500,8 @@ vec4 data0 = clamp(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)+refl
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-
-
-
+	gl_FragData[1] = vec4(reflected.rgb,0);
+	gl_FragData[2] = vec4(0.0);
 	#else
 
 
@@ -509,6 +531,8 @@ vec4 data0 = clamp(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)+refl
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
-	gl_FragData[1] = vec4(0.0);
+
+	gl_FragData[1] = vec4(reflected.rgb,0);
+	gl_FragData[2] = vec4(0.0);
 
 }

@@ -409,7 +409,7 @@ void main() {
 
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 entityg = texture2D(colortex7,texcoord);
-		vec3 spc = texture2D(colortex7,texcoord).rgb;
+		vec3 spc = texture2D(colortex3,texcoord).bbb;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -449,8 +449,7 @@ void main() {
 		bool entity = abs(entityg.r) >0.9;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
-
-
+if (!entity) albedo += spc;
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		float shading = 1.0;
 		
@@ -605,7 +604,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb = (filtered.yyy);
+		//	gl_FragData[0].rgb = (spc.rgb);
 			#else
 			
 		  		
@@ -621,7 +620,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		else{	
 				
 		  
-		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B))+filtered.z;
 		
 		  
 }

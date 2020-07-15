@@ -79,7 +79,7 @@
 
 #define RAYS 4 //[1 2 3 4 5 6 7 8 9 10] number of rays for SSPT
 #define STEPSIZE 15 //[1 2 5 10 15 20 30 40 50 75 100] Step Size
-#define MAXSTEPS 15 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
+#define MAXSTEPS 100 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
 #define MAXLENGTH 15 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
 
 /* - shadows - */

@@ -202,7 +202,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
+				intRadiance += texture2D(colortex5,previousPosition.xy).rgb*specular;
 			occlusion += 1.0;
 			if (translucent)
 				intRadiance += ambient*0.25;

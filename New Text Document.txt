@@ -1,0 +1,8 @@
+	const float maxDistance = MAX_RAYLENGTH;
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+	vec3 fragposition = toScreenSpace(closestToCamera);
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+    float vel = abs(velocity.x+velocity.y)*100;		

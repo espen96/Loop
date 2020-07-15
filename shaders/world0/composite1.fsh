@@ -319,11 +319,25 @@ void main() {
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
-	//sky
-	
 	if (z >=1.0) {
-	
-		
+
+		vec3 color = vec3(0.0);
+		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
+		if (np3.y > 0.){
+			color += stars(np3);
+			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
+		}
+		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+		color = color*cloud.a+cloud.rgb;
+		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.0,triangularize(noise)),0.0,65000.);
+		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
+		vec4 trpData = texture2D(colortex7,texcoord);
+		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		if (iswater){
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+
+
+		}
 	}
 	//land
 	else {
@@ -358,6 +372,10 @@ void main() {
 			filtered = texture2D(colortex3,texcoord).rgb;
 		}
 
+			if (translucent) {
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.1), 1.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.5);
+			filtered.y = filtered.y * 0.55+0.55;
+		}
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.0));
 
@@ -462,10 +480,11 @@ void main() {
 		  
 }
 			
-
+	vec3 colorContrasted = (custom_lightmap2) *2;
+				vec3 bright = clamp(colorContrasted - vec3(1),0,255);
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
+			gl_FragData[0].rgb = ((bright.y*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
 		    
 			#endif
    vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);

@@ -347,7 +347,7 @@ float shading = 1.0;
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		//vec3 color = diffuseLight*albedo*8./150./3.;	
+		vec3 color = color.rgb*clamp(diffuseLight,0,1);	
 	
 	
 	
@@ -451,14 +451,14 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 			float sunSpec = GGX(normal,-normalize(fragpos),  lightSign*sunVec, rainStrength*0.2+roughness+0.05+clamp(-lightSign*0.15,0.0,1.0), f0);
 
 		vec4 reflected = vec4(reflection.rgb,0);
-		vec3 sp = (reflection.rgb*fresnel)+shading*sunSpec;
+		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
 
 
 		if (is_metal) {
 			reflected.rgb *= alb.rgb * 0.5 + 0.5;
-			reflected.rgb += sunSpec * alb.rgb ;
+			reflected.rgb += shading*sunSpec * alb.rgb ;
 		} else {
-			reflected.rgb += sunSpec ;
+			reflected.rgb += shading*sunSpec ;
 		}
 
 		

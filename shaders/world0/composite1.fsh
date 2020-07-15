@@ -386,7 +386,7 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		ambientLight *= (1.0+rainStrength*0.2);
-		vec3 directLightCol = lightCol.rgb;
+		vec3 directLightCol = lightCol.rgb*((lightmap.y-0.9)*10);
 
 		if (lightmap.y < 0.9) directLightCol = vec3(0.0);
 		
@@ -459,7 +459,7 @@ void main() {
 			gl_FragData[0].rgb = ((bright.y*diffuseSun)/pi/150./3.0*(directLightCol.rgb*lightmap.yyy) + (ambientLight))*albedo;
 
 
-		//	 gl_FragData[0].rgb = bright*diffuseSun;
+		//	 gl_FragData[0].rgb = (lightmap.yyy-0.6)*4;
 			#else
 			
 		  		

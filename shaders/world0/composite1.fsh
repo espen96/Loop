@@ -373,7 +373,7 @@ void main() {
 		}
 
 			if (translucent) {
-			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.1), 1.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.5);
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.1), 2.0*phaseg(dot(np3, WsunVec),0.1))*PI*PI*(1.0-filtered.y*0.5), diffuseSun, 0.3);
 			filtered.y = filtered.y * 0.55+0.55;
 		}
 
@@ -454,7 +454,7 @@ void main() {
 				vec3 colorContrasted = (custom_lightmap2) *20;
 				vec3 bright = clamp(colorContrasted - vec3(19),0,255);
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
+			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.5;
 			
 			gl_FragData[0].rgb = ((bright.y*diffuseSun)/pi/150./3.0*(directLightCol.rgb*lightmap.yyy) + (ambientLight))*albedo;
 
@@ -465,7 +465,7 @@ void main() {
 		  		
 			
 				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*albedo;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))));
 
 
 

@@ -349,6 +349,8 @@ vec2( 0.1250,  0.0000 ));
 //////////////////////////////VOID MAIN//////////////////////////////
 /* DRAWBUFFERS:137 */
 void main() {	
+
+float ao = 0.0;
 	
 vec2 tempOffset=offsets[framemod8];
 	float iswater = normalMat.w;
@@ -478,7 +480,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	
 	}	
 		vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
-		
+		 ao = texture2DGradARB(normals, adjustedTexCoord, dcdx, dcdy).z;
 	float normalCheck = normal2.x + normal2.y;
     if (normalCheck > -1.999){
         if (length(normal2.xy) > 1.0) normal2.xy = normalize(normal2.xy);
@@ -486,6 +488,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
         normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
     }else{
         normal2 = vec3(0.0, 0.0, 1.0);
+		        ao = 1.0;
 
     }
 	
@@ -562,7 +565,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 
 		
-vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
+vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
@@ -611,7 +614,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
         normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
     }else{
         normal2 = vec3(0.0, 0.0, 1.0);
-
+        ao = 1.0;
     }
 
 	normal = applyBump(tbnMatrix,normal2);

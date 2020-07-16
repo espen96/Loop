@@ -125,7 +125,8 @@ option.Stochastic_Transparent_Shadows=Transparent shadows
 
 #POM
 option.POM_DEPTH=Parallax Depth
-option.POM=Parallax Occlusion
+option.POM2=Parallax Occlusion
+option.POM=Physically Based Rendering
 option.POM_MAP_RES=POM resolution
 option.MAX_ITERATIONS=Iterations
 option.MAX_DIST=Distance

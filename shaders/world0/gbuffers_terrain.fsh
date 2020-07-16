@@ -5,15 +5,15 @@
 #include "/lib/settings.glsl"
 
 
-
+#define SPEC
 
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
-#undef PBR
+#undef POM
 #endif
 #endif
 
-#ifdef PBR
+#ifdef POM
 #define MC_NORMAL_MAP
 #endif
 
@@ -26,7 +26,7 @@ const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
 const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 uniform int framemod8;
 
-#ifdef PBR
+#ifdef POM
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 
@@ -46,7 +46,7 @@ uniform float wetness;
 uniform sampler2D normals;
 uniform sampler2D specular;
 #endif
-#ifdef PBR
+#ifdef POM
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq);
 #endif
@@ -142,7 +142,7 @@ float encodeVec2(float x,float y){
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 
-#ifdef PBR
+#ifdef POM
 vec4 readNormal(in vec2 coord)
 {
 	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
@@ -165,7 +165,7 @@ vec4 readTexture(in vec2 coord)
 									
 		
 
-#ifdef PBR		
+#ifdef SPEC		
 									
 float invLinZ (float lindepth){
 	return -((2.0*near/lindepth)-far-near)/(far-near);
@@ -350,11 +350,7 @@ vec2( 0.1250,  0.0000 ));
 /* DRAWBUFFERS:137 */
 void main() {	
 
-
-
 float ao = 0.0;
-	
-	
 	
 vec2 tempOffset=offsets[framemod8];
 	float iswater = normalMat.w;
@@ -378,9 +374,6 @@ vec2 tempOffset=offsets[framemod8];
 		float diffuseSun = clamp(NdotL,0.0f,1.0f);	
 		vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
 float shading = 1.0;
-
-#ifdef PBR
-
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
@@ -417,8 +410,6 @@ float shading = 1.0;
 			}
 
 		}	
-		#endif
-		
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
@@ -435,7 +426,7 @@ float shading = 1.0;
 						     	  tangent.z, tangent2.z, normal.z);
 	#endif
 
-#ifdef PBR
+#ifdef POM
 
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
@@ -443,7 +434,7 @@ float shading = 1.0;
 		
 		
 		
-#ifdef POM		
+#ifdef POM2		
 if (dist < MAX_OCCLUSION_DISTANCE) {
 	#ifndef USE_LUMINANCE_AS_HEIGHTMAP
 		if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001)

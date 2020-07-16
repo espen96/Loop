@@ -79,7 +79,7 @@
 
 #define RAYS 4 //[1 2 3 4 5 6 7 8 9 10] number of rays for SSPT
 #define STEPSIZE 15 //[1 2 5 10 15 20 30 40 50 75 100] Step Size
-#define MAXSTEPS 100 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
+#define MAXSTEPS 15 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
 #define MAXLENGTH 15 //[1 2 5 10 15 20 30 40 50 75 100] Max Steps
 
 /* - shadows - */
@@ -116,8 +116,8 @@
 #define MAX_ITERATIONS 50 // [5 10 15 20 25 30 40 50 60 70 80 90 100 125 150 200 400] //Improves quality at grazing angles (reduces performance)
 #define MAX_DIST 25.0 // [5.0 10.0 15.0 20.0 25.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0 125.0 150.0 200.0 400.0] //Increases distance at which POM is calculated
 #define BUMP_MULT 1.0 // [0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0] //Increase to increase Normal map strength
-//#define POM
-//#define PBR
+//#define POM2
+#define POM
 //#define USE_LUMINANCE_AS_HEIGHTMAP	//Can generate POM on any texturepack (may look weird in some cases)
 
 

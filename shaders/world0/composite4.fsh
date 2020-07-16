@@ -24,7 +24,7 @@ const int colortex3Format = R11F_G11F_B10F;			//frame buffer + bloom (deferred6-
 const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
 const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
 const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
-const int colortex7Format = RGBA16F;			//Final output, transparencies id (gbuffer->composite4)
+const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
 */
 //no need to clear the buffers, saves a few fps
 const bool colortex0Clear = false;
@@ -234,7 +234,7 @@ void main() {
 
 #ifdef SSPT
 	vec3 color = TAA_sspt();
-	gl_FragData[0].rgb = color;
+	gl_FragData[0].rgb = color;--
 #else
 	vec3 color2 = texture2D(colortex3,texcoord).rgb;
 	gl_FragData[0].rgb = color2;

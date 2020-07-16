@@ -182,7 +182,48 @@ float blueNoise(){
 vec4 nvec4(vec3 pos){
     return vec4(pos.xyz, 1.0);
 }
+vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 
+    float quality = mix(10,SSR_STEPS,fresnel);
+    vec3 clipPosition = toClipSpace3(position);
+	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
+       (-near -position.z) / dir.z : far*sqrt(3.);
+    vec3 direction = normalize(toClipSpace3(position+dir*rayLength)-clipPosition);  //convert to clip space
+    direction.xy = normalize(direction.xy);
+
+    //get at which length the ray intersects with the edge of the screen
+    vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
+    float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+
+
+    vec3 stepv = direction * mult / quality;
+
+
+
+
+	vec3 spos = clipPosition + stepv*dither;
+	float minZ = clipPosition.z;
+	float maxZ = spos.z+stepv.z*0.5;
+	spos.xy+=offsets[framemod8]*texelSize*0.5;
+	//raymarch on a quarter res depth buffer for improved cache coherency
+
+
+    for (int i = 0; i < int(quality+1); i++) {
+
+			float sp=texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).x;
+
+            if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
+							return vec3(spos.xy,sp);
+
+	        }
+        spos += stepv;
+		//small bias
+		minZ = maxZ-0.00004/ld(spos.z);
+		maxZ += stepv.z;
+    }
+
+    return vec3(1.1);
+}
 
 
 float facos(float sx){
@@ -283,7 +324,7 @@ float get_specGGX(vec3 normal, vec3 svec, vec2 material) {
 
 float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y );
 }									
 									
 const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
@@ -469,20 +510,41 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
-		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0;
+		#ifdef SCREENSPACE_REFLECTIONS
+		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
+		if (rtPos.z <1.){
+
+		vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rtPos*2.-1.,1.);
+		fragpositionPrev /= fragpositionPrev.w;
+
+		vec3 sampleP = fragpositionPrev.xyz;
+		fragpositionPrev = gbufferModelViewInverse * fragpositionPrev;
+
+
+
+		vec4 previousPosition = fragpositionPrev + vec4(cameraPosition-previousCameraPosition,0.);
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
+		reflection.a = roughness+0.25;
+		if(is_metal)reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
+		}
+		#endif
+		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.025;
+		if(!is_metal) reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.001;
 
 			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* texelFetch2D(gaux1,ivec2(1,1),0).r*3./3./150.0/3.1415 * (1.0-rainStrength*0.9);
 		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
-		 reflected = vec4(reflection.rgb,0)*0;
+
 		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
 
 
 		if (is_metal) {
 			reflected.rgb *= alb.rgb * 0.5 + 0.5;
-			reflected.rgb += shading*sunSpec * alb.rgb ;
+			reflected.rgb += shading*sp * alb.rgb ;
 		} else {
-			reflected.rgb += shading*sunSpec ;
+			reflected.rgb += shading*sp ;
 		}
 
 		

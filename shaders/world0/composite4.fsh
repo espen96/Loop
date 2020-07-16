@@ -234,7 +234,7 @@ void main() {
 
 #ifdef SSPT
 	vec3 color = TAA_sspt();
-	gl_FragData[0].rgb = color;--
+	gl_FragData[0].rgb = color;
 #else
 	vec3 color2 = texture2D(colortex3,texcoord).rgb;
 	gl_FragData[0].rgb = color2;

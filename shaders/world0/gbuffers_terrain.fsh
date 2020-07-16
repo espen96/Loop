@@ -241,8 +241,9 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 									
 									
 									
-float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
-
+float GGX (vec3 n, vec3 v, vec3 l, vec2 material) {
+     float F0  = material.y;
+    float r = pow2(material.x);
 
 
   vec3 h = l - v;
@@ -470,10 +471,10 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		vec4 reflection = vec4(sky_c.rgb,0.);
 		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0;
 
-		//	float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, rainStrength+roughness, f0);
-			float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* texelFetch2D(gaux1,ivec2(1,1),0).r*3./3./150.0/3.1415 * (1.0-rainStrength*0.9);
+		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
-		 reflected = vec4(reflection.rgb,0);
+		 reflected = vec4(reflection.rgb,0)*0;
 		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
 
 

@@ -108,7 +108,7 @@ void main() {
 	#ifdef MC_NORMAL_MAP
 		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
 	#endif
-
+    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);
 	#ifdef WAVY_PLANTS
 		if ((mc_Entity.x == 10001 && istopv) && abs(position.z) < 64.0) {

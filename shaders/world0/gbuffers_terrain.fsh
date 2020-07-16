@@ -477,7 +477,21 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	#endif	
 	
 	}	
-	normal = applyBump(tbnMatrix,texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz*2.-1.);
+		vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
+		
+	float normalCheck = normal2.x + normal2.y;
+    if (normalCheck > -1.999){
+        if (length(normal2.xy) > 1.0) normal2.xy = normalize(normal2.xy);
+        normal2.z = sqrt(1.0 - dot(normal2.xy, normal2.xy));
+        normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
+    }else{
+        normal2 = vec3(0.0, 0.0, 1.0);
+
+    }
+	
+	
+	
+	normal = applyBump(tbnMatrix,normal2);
 	
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	
@@ -588,7 +602,19 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
   else data0.a = 0.0;
 	#ifdef MC_NORMAL_MAP
-	normal = applyBump(tbnMatrix,texture2D(normals, lmtexcoord.xy).rgb*2.0-1.);
+	vec3 normal2 = vec3(texture2D(normals, lmtexcoord.xy).rgb)*2.0-1.;
+		
+	float normalCheck = normal2.x + normal2.y;
+    if (normalCheck > -1.999){
+        if (length(normal2.xy) > 1.0) normal2.xy = normalize(normal2.xy);
+        normal2.z = sqrt(1.0 - dot(normal2.xy, normal2.xy));
+        normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
+    }else{
+        normal2 = vec3(0.0, 0.0, 1.0);
+
+    }
+
+	normal = applyBump(tbnMatrix,normal2);
 	#endif
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 

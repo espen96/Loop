@@ -15,5 +15,5 @@ vec3 decode (vec2 encn)
 
 vec2 decodeVec2(float a){
     int bf = int(a*65535.);
-    return vec2(bf%256, bf>>8) / 255.;
+    return vec2(bf-(256 *(bf/256)), bf>>8) / 255.;
 }

@@ -449,6 +449,8 @@ void main() {
 		bool entity = abs(entityg.r) >0.9;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
+		
+		
 if (albedo.r <=0.0) spc = vec3(0.0);	
 if (!entity) albedo += spc;
 
@@ -468,6 +470,7 @@ if (!entity) albedo += spc;
 #else 
 
 vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
+
 		if (translucent) {
 			albedo *= 1.1;
 			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5)*2, 3.0*phaseg(dot(np3, WsunVec),0.1))*3.1415, diffuseSun, 0.3);

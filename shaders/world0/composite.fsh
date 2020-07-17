@@ -1,23 +1,27 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
+uniform sampler2D depthtex1;
+uniform sampler2D colortex3;
+uniform vec2 texelSize;
+
 
 
 #include "/lib/settings.glsl"
-#ifndef TOASTER
+
 
 flat varying float tempOffsets;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 #include "/lib/Shadow_Params.glsl"
-uniform sampler2D depthtex1;
+
 uniform sampler2D shadow;
 uniform sampler2D colortex1;
-uniform sampler2D colortex3;
+
 uniform sampler2D colortex7;
 uniform sampler2D noisetex;
 uniform vec3 sunVec;
-uniform vec2 texelSize;
+
 uniform float frameTimeCounter;
 uniform float rainStrength;
 uniform int frameCounter;
@@ -226,15 +230,5 @@ void main() {
 
 }
 }
-#else
 
-
-/* DRAWBUFFERS:37 */
-
-
-
-void main() {
-
-}
-#endif
 

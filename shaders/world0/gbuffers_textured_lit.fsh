@@ -206,7 +206,7 @@ void main() {
 
 
 		gl_FragData[0].rgb = diffuseLight*albedo*8./3.0/150.*0.1;
-		gl_FragData[1] = vec4(1,0,0,0);
+	gl_FragData[1].r = 1;	
 
 
 

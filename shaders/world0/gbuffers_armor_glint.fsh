@@ -36,7 +36,7 @@ void main() {
 
 		gl_FragData[0].rgb = col*color.a;
 		gl_FragData[0].a = 0.0;
-	gl_FragData[1] = vec4(1,0,0,0);
+	gl_FragData[1].r = 1;	
 
 
 }

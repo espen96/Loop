@@ -228,11 +228,14 @@ void main() {
 			gl_FragData[1].b = spec.r;
 			gl_FragData[0].b = spec.g;
 			gl_FragData[0].a = spec.b;
+			gl_FragData[1].a = entityg.a;
 			if (entity){		
 			
 			gl_FragData[1].b = 0;
+			gl_FragData[1].a = entityg.a;
 			gl_FragData[0].b = 0;
 			gl_FragData[0].a = 0;
+			
 			}
 			
 			

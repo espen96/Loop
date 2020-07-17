@@ -371,10 +371,9 @@ void main() {
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
-	//sky
 	
+	//sky
 	if (z >=1.0) {
-
 		vec3 color = vec3(0.0);
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		if (np3.y > 0.){
@@ -383,7 +382,7 @@ void main() {
 		}
 		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
 		color = color*cloud.a+cloud.rgb;
-		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.0,triangularize(noise)),0.0,65000.);
+		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;

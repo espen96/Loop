@@ -315,14 +315,19 @@ void main() {
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec4 entityg = texture2D(colortex7,texcoord);
+		
+		bool entity = abs(entityg.r) >0.9;		
+		vec4 spc = texture2D(colortex3,texcoord);		
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
+		if (!entity) albedo += spc.rgb;
+		
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-		bool entity = abs(entityg.y) >0.9;
+
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);

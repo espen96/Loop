@@ -143,7 +143,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 void main() {
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:37 */
 
 
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
@@ -154,7 +154,7 @@ void main() {
 	if (z < 1.0){
 
 		vec4 data = texture2D(colortex1,texcoord);
-		vec4 spec = texture2D(colortex3,texcoord);
+		vec3 spec = texture2D(colortex3,texcoord).rgb;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
@@ -219,7 +219,9 @@ void main() {
 				ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 				gl_FragData[0].g = ao;
 			#endif
-			gl_FragData[0].b = spec.r+spec.g+spec.b;
+			gl_FragData[1].b = spec.r;
+			gl_FragData[0].b = spec.g;
+			gl_FragData[0].a = spec.b;
 		}
 
 }
@@ -227,7 +229,7 @@ void main() {
 #else
 
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:37 */
 
 
 

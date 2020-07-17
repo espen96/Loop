@@ -527,11 +527,11 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousModelView * previousPosition;
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
-		reflection.a = roughness+0.25;
+		reflection.a = roughness+0.15;
 		if(is_metal)reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
 		}
 		#endif
-		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.025;
+		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.05;
 		if(!is_metal) reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.001;
 
 			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* texelFetch2D(gaux1,ivec2(1,1),0).r*3./3./150.0/3.1415 * (1.0-rainStrength*0.9);

@@ -504,7 +504,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 		vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
 		vec4 sky_c = skyCloudsFromTex(wrefl,gaux1)*(1.0-isEyeInWater);
-		sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240./240./150.*8./3.;
+		if(is_metal){sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/3.0;}
+		else{sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/15.0;}
 
 
 
@@ -527,14 +528,16 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousModelView * previousPosition;
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
-		reflection.a = clamp(clamp(F0,0,229),0,0.25);
+		if(is_metal){reflection.a = clamp(F0+(1-roughness),0,0.25);
+		}else{reflection.a = clamp(F0+(1-roughness*2),0,0.1);}
+		
 
 	    reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
 		if (reflection.b <= 0.25) reflection.rgb = sky_c.rgb;
 		}
 		#endif
-		reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a)*0.5;
-		if(!is_metal) reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a)*0.015;
+		reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a);
+
 
 			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(1,1),0).rgb)*2.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
 		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);

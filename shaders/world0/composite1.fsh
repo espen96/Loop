@@ -408,7 +408,7 @@ void main() {
 
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 entityg = texture2D(colortex7,texcoord);
-		vec3 spc = vec3(texture2D(colortex7,texcoord).b,texture2D(colortex3,texcoord).b,texture2D(colortex3,texcoord).a);
+		vec3 spc = clamp(vec3(texture2D(colortex7,texcoord).b,texture2D(colortex3,texcoord).b,texture2D(colortex3,texcoord).a),0,1);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 

@@ -511,7 +511,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
-		#ifdef SCREENSPACE_REFLECTIONS
+		#ifdef SPEC_SCREENSPACE_REFLECTIONS
 		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
 		if (rtPos.z <1.){
 
@@ -527,16 +527,16 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousModelView * previousPosition;
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
-		reflection.a = roughness+0.15;
+		reflection.a = clamp(clamp(F0,0,229),0,0.25);
 
 		if(is_metal)reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
 		if (reflection.b <= 0.25) reflection.rgb = sky_c.rgb;
 		}
 		#endif
-		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*1;
+		reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a)*0.5;
 		if(!is_metal) reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.001;
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(1,1),0).rgb)*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(1,1),0).rgb)*2.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
 		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
 

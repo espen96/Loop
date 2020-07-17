@@ -211,7 +211,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 			intRadiance += ambient;
 		}
 	}
-	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,10);
+	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,1);
 }
 
 

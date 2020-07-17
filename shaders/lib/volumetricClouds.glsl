@@ -67,6 +67,20 @@ float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
 	//float cloud = clamp(cov-0.1*(0.2+mult2),0.0,1.0);
 	return cloud;
 }
+
+
+	//Low quality cloud, noise is replaced by the average noise value, used for shadowing
+	float cloudVolLQ(in vec3 pos){
+		float mult = max(pos.y-2000.0,0.0)/2000.0;
+		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
+		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
+		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+frameTimeCounter*vec3(0.5,0.,0.5)*25.;
+		float coverage = (texture2D(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength)-0.1;
+		float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
+		return max(cloud, 0.0);
+	}
+
+
 float getCloudDensity(in vec3 pos, in int LoD){
 	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + frameTimeCounter*vec3(0.5,0.,0.5)*25.;
 	float coverageSP = cloudCov(pos,samplePos);

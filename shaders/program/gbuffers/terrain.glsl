@@ -320,7 +320,7 @@ float get_specGGX(vec3 normal, vec3 svec, vec2 material) {
 
 float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y );
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
 }									
 									
 const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
@@ -487,18 +487,18 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
     specularity.y  = (specularity.y);
 
 	 bool is_metal    = (specularity.y * 255.0) > 229.5;
-	float f0 = iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a);
+
 
 		float roughness = specularity.x;
 
 		float emissive = 0.0;
 		float F0 = specularity.y;
-
+	float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a))*F0;
 		vec3 reflectedVector = reflect(normalize(fragpos), normal);
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
-		fresnel = mix(F0,1.0,fresnel);
-		
+		fresnel = mix(f0,1.0,fresnel);
+
 
 
 
@@ -528,13 +528,15 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
 		reflection.a = roughness+0.15;
+
 		if(is_metal)reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
+		if (reflection.b <= 0.25) reflection.rgb = sky_c.rgb;
 		}
 		#endif
-		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.05;
+		reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*1;
 		if(!is_metal) reflection.rgb = mix(sky_c.rgb, reflection.rgb, reflection.a)*0.001;
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* texelFetch2D(gaux1,ivec2(1,1),0).r*3./3./150.0/3.1415 * (1.0-rainStrength*0.9);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(1,1),0).rgb)*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);
 		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
 

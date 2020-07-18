@@ -31,7 +31,7 @@ varying vec4 vtexcoord;
 uniform vec2 texelSize;
 varying vec4 lmtexcoord;
 varying vec4 color;
- varying vec4 normalMat;
+varying vec4 normalMat;
  
  
  
@@ -353,7 +353,7 @@ vec2 tempOffset=offsets[framemod8];
 	
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
-	vec3 specularity = vec3(1.0);
+	vec4 specularity = vec4(1.0);
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
@@ -482,7 +482,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	
-	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgb;
+	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgba;
     specularity.x  = pow2(1.0 - specularity.x);
     specularity.y  = (specularity.y);
 
@@ -570,7 +570,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1] = vec4(reflected.rgb,0);
-	gl_FragData[2].rgb = vec3(0.0);
+	gl_FragData[2].rgb = vec3(0,specularity.a,0);
 	#else
 
 
@@ -614,6 +614,6 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 	#endif
 
 	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
-	gl_FragData[2].rgb = vec3(0.0);
+	gl_FragData[2].rgb = vec3(0,specularity.a,0);
 
 }

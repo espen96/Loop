@@ -13,45 +13,31 @@
 #define MC_NORMAL_MAP
 #endif
 
+
+
 const float mincoord = 1.0/4096.0;
 const float maxcoord = 1.0-mincoord;
-const vec3 intervalMult = vec3(1.0, 1.0, 1.0/POM_DEPTH)/POM_MAP_RES * 1.0;
-
-const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
-const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
-const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
-uniform int framemod8;
-
-#ifdef POM
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
 
 
-#endif
-uniform vec2 texelSize;
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
- 
- 
- 
- 
+
 #ifdef MC_NORMAL_MAP
 varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
-uniform sampler2D specular;
+
 #endif
-#ifdef POM
+
+
+
+
+
+
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq);
-#endif
-uniform sampler2D texture;
-
-
-
-uniform sampler2D noisetex;
 uniform sampler2DShadow shadow;
+
 uniform sampler2D gaux2;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
@@ -79,15 +65,46 @@ uniform vec3 previousCameraPosition;
 uniform int frameCounter;
 uniform int isEyeInWater;
 
+uniform sampler2D texture;
+uniform sampler2D noisetex;
+
 
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/projections.glsl"
-#include "/lib/sky_gradient.glsl"
+
 #include "/lib/waterBump.glsl"
 #include "/lib/clouds.glsl"
 #include "/lib/stars.glsl"
 #include "/lib/util2.glsl"
+
+
+#ifdef POM2
+uniform sampler2D specular;
+const vec3 intervalMult = vec3(1.0, 1.0, 1.0/POM_DEPTH)/POM_MAP_RES * 1.0;
+const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
+const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
+const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
+#endif
+#ifdef POM
+
+#endif
+
+
+
+uniform vec2 texelSize;
+varying vec4 lmtexcoord;
+varying vec4 color;
+varying vec4 normalMat;
+ uniform int framemod8;
+
+
+
+
+
+
+#include "/lib/sky_gradient.glsl"
+
 
 
 
@@ -138,16 +155,7 @@ float encodeVec2(float x,float y){
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 
-#ifdef POM
-vec4 readNormal(in vec2 coord)
-{
-	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
-}
-vec4 readTexture(in vec2 coord)
-{
-	return texture2DGradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
-}
-#endif
+
 
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 									vec2(-1.,3.)/8.,
@@ -158,10 +166,21 @@ vec4 readTexture(in vec2 coord)
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
 									
-									
-		
 
-#ifdef SPEC		
+
+
+
+
+#ifdef POM
+vec4 readNormal(in vec2 coord)
+{
+	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+}
+vec4 readTexture(in vec2 coord)
+{
+	return texture2DGradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+}
+		
 									
 float invLinZ (float lindepth){
 	return -((2.0*near/lindepth)-far-near)/(far-near);
@@ -253,9 +272,11 @@ float cdist(vec2 coord) {
 									
 									
 									
-	#define PW_DEPTH 1.0 //[0.5 1.0 1.5 2.0 2.5 3.0]
-	#define PW_POINTS 1 //[2 4 6 8 16 32]
-	#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
+#define PW_DEPTH 1.0 //[0.5 1.0 1.5 2.0 2.5 3.0]
+#define PW_POINTS 1 //[2 4 6 8 16 32]
+
+
+#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
 #define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
 #define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
 #define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
@@ -340,7 +361,7 @@ vec2(  0.3536, -0.3536 ),
 vec2( -0.0000,  0.3750 ),
 vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));									
-#endif									
+									
 									
 									
 									
@@ -358,7 +379,7 @@ vec3 decode_lab(vec4 unpacked_tex, out bool is_metal) {
 
 	return mat_data;
 }										
-									
+#endif									
 									
 									
 									
@@ -373,7 +394,7 @@ void main() {
 
 	
 vec2 tempOffset=offsets[framemod8];
-	float iswater = normalMat.w;
+
 	
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
@@ -382,18 +403,17 @@ vec2 tempOffset=offsets[framemod8];
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
-		vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
-	vec3 albedo = toLinear(gl_FragData[0].rgb);
-	if (iswater > 0.4) {
-		albedo = vec3(0.42,0.6,0.7);
-		gl_FragData[0] = vec4(0.42,0.6,0.7,0.7);
-	}
+	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
-		float NdotL = lightSign*dot(normal,sunVec);
-		float NdotU = dot(upVec,normal);
-		float diffuseSun = clamp(NdotL,0.0f,1.0f);	
-		vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
+vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
+float ao = 1.0;
+		
+#ifdef POM		
+float iswater = normalMat.w;		
+float NdotL = lightSign*dot(normal,sunVec);
+float NdotU = dot(upVec,normal);
+
+float diffuseSun = clamp(NdotL,0.0f,1.0f);	
 float shading = 1.0;
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
@@ -432,8 +452,8 @@ float shading = 1.0;
 
 		}	
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
-		float ao = 1.0;
-		#ifdef POM
+		
+		
         ao = texture2D(normals, lmtexcoord.xy).z*2.0-1.;
 		#endif
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
@@ -577,17 +597,17 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
-		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+mat_data.xy);
 
 
-		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
+
+		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);
 
 
 		if (is_metal) {
 			reflected.rgb *= alb.rgb * 0.5 + 0.5;
-			reflected.rgb += shading*sp * alb.rgb ;
+			reflected.rgb += sp * alb.rgb ;
 		} else {
-			reflected.rgb += shading*sp ;
+			reflected.rgb += sp ;
 		}
 
 		
@@ -616,13 +636,13 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	
 	vec4 data0 = texture2D(texture, lmtexcoord.xy);
 
-	data0.rgb*=color.rgb;
+  data0.rgb*=color.rgb;
   data0.rgb = toLinear(data0.rgb);
   float avgBlockLum = dot(toLinear(texture2D(texture, lmtexcoord.xy,128).rgb),vec3(0.333));
   data0.rgb = pow(clamp(mix(data0.rgb*1.7,data0.rgb*0.8,avgBlockLum),0.0,1.0),vec3(1.0/2.2333));
   
-  //data0.rgb = clamp(data0.rgb*pow((0.55+avgBlockLum),-(1.0/2.233)),0.0,1.0);
-  //if (luma(toLinear(data0.rgb)) > 0.85) data0.rgb=vec3(1.,0.,0.);
+
+
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;
   #endif

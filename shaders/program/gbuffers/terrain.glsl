@@ -529,7 +529,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
 		if(is_metal){reflection.a = clamp(F0+(1-roughness),0,0.25);
-		}else{reflection.a = clamp(F0+(1-roughness),0,0.05);}
+		}else{reflection.a = clamp(F0+(1-roughness),0,0.01);}
 		
 
 	    reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;

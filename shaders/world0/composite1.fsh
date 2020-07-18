@@ -569,7 +569,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0))*20;
 	#else
 	
-	if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(emissive2-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;	
+	if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(alblum-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;	
 	
 
 	#endif

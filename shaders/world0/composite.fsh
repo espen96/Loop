@@ -158,7 +158,7 @@ void main() {
 	if (z < 1.0){
 
 		vec4 data = texture2D(colortex1,texcoord);
-		vec3 spec = texture2D(colortex3,texcoord).rgb;
+		vec4 spec = texture2D(colortex3,texcoord).rgba;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);

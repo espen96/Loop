@@ -222,6 +222,17 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 }
 
 
+
+
+
+
+float linStep(float x, float low, float high) {
+    float t = clamp(((x-low)/(high-low)),0,1);
+    return t;
+}
+
+
+
 float facos(float sx){
     float x = clamp(abs( sx ),0.,1.);
     float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
@@ -333,7 +344,20 @@ vec2( 0.1250,  0.0000 ));
 									
 									
 									
-									
+vec3 decode_lab(vec4 unpacked_tex, out bool is_metal) {
+	vec3 mat_data = vec3(1.0, 0.0, 0.0);
+
+    mat_data.x  = pow2(1.0 - unpacked_tex.x);   //roughness
+    mat_data.y  = (unpacked_tex.y);         //f0
+
+    unpacked_tex.w = unpacked_tex.w * 255.0;
+
+    mat_data.z  = unpacked_tex.w < 254.5 ? linStep(unpacked_tex.w, 0.0, 254.0) : 0.0; //emission
+
+    is_metal    = (unpacked_tex.y * 255.0) > 229.5;
+
+	return mat_data;
+}										
 									
 									
 									
@@ -346,7 +370,7 @@ vec2( 0.1250,  0.0000 ));
 /* DRAWBUFFERS:137 */
 void main() {	
 
-float ao = 0.0;
+
 	
 vec2 tempOffset=offsets[framemod8];
 	float iswater = normalMat.w;
@@ -354,6 +378,7 @@ vec2 tempOffset=offsets[framemod8];
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
 	vec4 specularity = vec4(1.0);
+	vec3 mat_data = vec3(0.0);
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
@@ -407,9 +432,12 @@ float shading = 1.0;
 
 		}	
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
-
+		float ao = 1.0;
+		#ifdef POM
+        ao = texture2D(normals, lmtexcoord.xy).z*2.0-1.;
+		#endif
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		vec3 color = color.rgb*clamp(diffuseLight,0,1);	
+		vec3 color = color.rgb*(clamp(diffuseLight,0,1)*ao);	
 	
 	
 	
@@ -463,8 +491,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 #endif	
 	
 	
-		vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
-		 ao = texture2DGradARB(normals, adjustedTexCoord, dcdx, dcdy).z;
+	vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
 	float normalCheck = normal2.x + normal2.y;
     if (normalCheck > -1.999){
         if (length(normal2.xy) > 1.0) normal2.xy = normalize(normal2.xy);
@@ -472,7 +499,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
         normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
     }else{
         normal2 = vec3(0.0, 0.0, 1.0);
-		        ao = 1.0;
+
 
     }
 	
@@ -482,18 +509,28 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	
+	
+
+	
+	
 	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgba;
-    specularity.x  = pow2(1.0 - specularity.x);
-    specularity.y  = (specularity.y);
-
-	 bool is_metal    = (specularity.y * 255.0) > 229.5;
 
 
-		float roughness = specularity.x;
+
+		bool is_metal = false;
+
+		mat_data = decode_lab(specularity, is_metal);
+
+
+
+
+ 
+
+		float roughness = mat_data.x;
 
 		float emissive = 0.0;
-		float F0 = specularity.y;
-	float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a))*F0;
+		float F0 = mat_data.y;
+		float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a))*F0;
 		vec3 reflectedVector = reflect(normalize(fragpos), normal);
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
@@ -539,8 +576,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a);
 
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
-		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
+		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+mat_data.xy);
 
 
 		vec3 sp = reflection.rgb*fresnel+shading*sunSpec;
@@ -554,7 +591,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 
 		
-vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
+vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
@@ -570,7 +607,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1] = vec4(reflected.rgb,0);
-	gl_FragData[2].rgb = vec3(0,specularity.a,0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#else
 
 
@@ -603,7 +640,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
         normal2 = normalize(clamp(normal2, vec3(-1.0), vec3(1.0)));
     }else{
         normal2 = vec3(0.0, 0.0, 1.0);
-        ao = 1.0;
+
     }
 
 	normal = applyBump(tbnMatrix,normal2);
@@ -614,6 +651,6 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 	#endif
 
 	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
-	gl_FragData[2].rgb = vec3(0,specularity.a,0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 
 }

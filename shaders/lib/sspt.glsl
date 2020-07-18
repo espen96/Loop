@@ -1,6 +1,6 @@
 uniform float lightSign;
 		vec4 data = texture2D(colortex1,texcoord);
-		float specular = texture2D(colortex7,texcoord).b;
+
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec2 lightmap = vec2(dataUnpacked1.yz);	

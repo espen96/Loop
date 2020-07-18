@@ -529,7 +529,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
 		if(is_metal){reflection.a = clamp(F0+(1-roughness),0,0.25);
-		}else{reflection.a = clamp(F0+(1-roughness*2),0,0.1);}
+		}else{reflection.a = clamp(F0+(1-roughness),0,0.05);}
 		
 
 	    reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
@@ -539,7 +539,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		reflection.rgb = mix(sky_c.rgb*0.25, reflection.rgb, reflection.a);
 
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(1,1),0).rgb)*2.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, specularity.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
 		//	float sunSpec = get_specGGX(normal, normalize(fragpos), rainStrength+specularity.xy);
 
 
@@ -613,7 +613,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy)*ao;
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#endif
 
-	gl_FragData[1] = vec4(reflected.rgb,0);
+	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
 	gl_FragData[2].rgb = vec3(0.0);
 
 }

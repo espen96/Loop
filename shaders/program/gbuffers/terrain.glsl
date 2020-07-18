@@ -311,7 +311,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 									
 									
 float GGX (vec3 n, vec3 v, vec3 l, vec2 material) {
-     float F0  = material.y;
+    float F0  = material.y;
     float r = pow2(material.x);
 
 
@@ -330,22 +330,6 @@ float GGX (vec3 n, vec3 v, vec3 l, vec2 material) {
   return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);
 }
 
-float get_specGGX(vec3 normal, vec3 svec, vec2 material) {
-    float f0  = material.y;
-    float roughness = pow2(material.x);
-
-    vec3 h      = sunVec - svec;
-    float hn    = inversesqrt(dot(h, h));
-    float hDotL = saturate(dot(h, sunVec)*hn);
-    float hDotN = saturate(dot(h, normal)*hn);
-    float nDotL = saturate(dot(normal, sunVec));
-    float denom = (hDotN * roughness - hDotN) * hDotN + 1.0;
-    float D     = roughness / (3.14 * denom * denom);
-    float F     = f0 + (1.0-f0) * exp2((-5.55473*hDotL-6.98316)*hDotL);
-    float k2    = 0.25 * roughness;
-
-    return nDotL * D * F / (hDotL * hDotL * (1.0-k2) + k2);
-}
 
 
 
@@ -365,7 +349,7 @@ vec2( 0.1250,  0.0000 ));
 									
 									
 									
-vec3 decode_lab(vec4 unpacked_tex, out bool is_metal) {
+vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 	vec3 mat_data = vec3(1.0, 0.0, 0.0);
 
     mat_data.x  = pow2(1.0 - unpacked_tex.x);   //roughness
@@ -539,7 +523,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 		bool is_metal = false;
 
-		mat_data = decode_lab(specularity, is_metal);
+		mat_data = labpbr(specularity, is_metal);
 
 
 

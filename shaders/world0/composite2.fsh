@@ -2,11 +2,11 @@
 
 #version 120
 //Volumetric fog rendering
-#extension GL_EXT_gpu_shader4 : enable
+
 
 #include "/lib/settings.glsl"
 #ifndef TOASTER
-
+#extension GL_EXT_gpu_shader4 : enable
 
 flat varying vec4 lightCol;
 flat varying vec3 ambientUp;
@@ -126,7 +126,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		//Mie phase + somewhat simulates multiple scattering (Horizon zero down cloud approx)
 		float mie = max(phaseg(SdotV,fog_mieg1),1.0/13.0);
 		float rayL = phaseRayleigh(SdotV);
-	//	wpos.y = clamp(wpos.y,0.0,1.0);
+
 
 		vec3 ambientCoefs = dVWorld/dot(abs(dVWorld),vec3(1.));
 

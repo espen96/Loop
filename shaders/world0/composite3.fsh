@@ -57,7 +57,6 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
   ivec2 posVl = ivec2(coord/2.0);
   float dz = zMults.x;
   ivec2 pos = (ivec2(gl_FragCoord.xy) % 2 )*2;
-	//pos = ivec2(1,-1);
 
   ivec2 tcDepth =  posD + ivec2(-4,-4) + pos*2;
   float dsample = ld(texelFetch2D(depth,tcDepth,0).r);
@@ -131,7 +130,7 @@ void main() {
   if (isEyeInWater == 1){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
     color.rgb *= exp(-length(fragpos)*totEpsilon);
-    //vl.a *= dot(exp(-length(fragpos)*totEpsilon),vec3(0.2,0.7,0.1))*0.5+0.5;
+
 	
 	
   }

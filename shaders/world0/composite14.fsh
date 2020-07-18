@@ -508,12 +508,12 @@ void main() {
 	
 
 	//Purkinje Effect
-  float lum = dot(col,vec3(0.15,0.3,0.55));
+    float lum = dot(col,vec3(0.15,0.3,0.55));
 	float lum2 = dot(col,vec3(0.85,0.7,0.45))/2;
 	float rodLum = pow(lum2*60.,1.5);
 	float rodCurve = mix(1.0, rodLum/(2.5+rodLum), purkinje);
 	col = mix(lum*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+1.5e-3, col, rodCurve);
-//	col =vec3(rodCurve);
+
 	#ifndef USE_ACES_COLORSPACE_APPROXIMATION
   	col = LinearTosRGB(TONEMAP(col));
 	
@@ -524,9 +524,9 @@ void main() {
 		col = TONEMAP(col);
 		col = LinearTosRGB(clamp(col * ACESOutputMat, 0.0, 1.0));
 	#endif
-	//col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
+
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
 	
-	//if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
+
 
 }

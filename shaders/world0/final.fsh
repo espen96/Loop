@@ -117,8 +117,7 @@ void main() {
   vec3 diff = col-lum;
   col = col + diff*(-lum*(CROSSTALK+modWT3) + SATURATION-(rainStrength/4));
 
-  //col = -vec3(-lum*CROSSFADING + SATURATION);
+
 	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
 
-  //gl_FragColor.rgb = vec3(contrast);
 }

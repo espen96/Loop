@@ -152,7 +152,6 @@ if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){
 	sky = sky *exp(-(rainCoef)*rainDensity*L) + scatterRain;
   */
   sky = mix(sky, vec3(0.035)*dot(sunColorCloud+moonColorCloud, vec3(0.21,0.72,0.07))*4000.0, rainStrength*0.99);
-//	transmittance *= exp(-(rainCoef)*rainDensity*L);
   gl_FragData[0] = vec4(sky/4000.*Sky_Brightness,1.0);
 }
 

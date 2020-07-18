@@ -187,11 +187,6 @@ vec3 fp10Dither(vec3 color,float dither){
 
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));
-	// l = (2*n)/(f+n-d(f-n))
-	// f+n-d(f-n) = 2n/l
-	// -d(f-n) = ((2n/l)-f-n)
-	// d = -((2n/l)-f-n)/(f-n)
-
 }
 
 
@@ -279,13 +274,6 @@ vec3 toShadowSpaceProjected(vec3 p3){
 
 
 #include "/lib/sspt.glsl"
-
-
-
-
-
-
-
 
 
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
@@ -650,10 +638,6 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		    //gl_FragData[0].rgb = data2.yyy;
 		    
 			#endif
-
-
-			vec3 clean = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy));		  
-			gl_FragData[1].rgb = clean.rgb;
 		}
 	}
 

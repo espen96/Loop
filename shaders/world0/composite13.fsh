@@ -95,7 +95,6 @@ bloom += texture2D_bicubic(colortex6,texcoord/32.+vec2(0.4375*resScale.x+6.5*tex
 bloom += texture2D_bicubic(colortex6,texcoord/64.+vec2(0.46875*resScale.x+8.5*texelSize.x,.0)).rgb*1.0; //1/128 res
 bloom += texture2D_bicubic(colortex6,texcoord/128.+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb*1.0; //1/256 res
 
-//bloom = texture2D_bicubic(colortex6,texcoord).rgb*6.; //1/8 res
 
 gl_FragData[0].rgb = bloom*2.;
 

@@ -121,10 +121,6 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 }
 #else
-float luma(vec3 color) {
-	return dot(color,vec3(0.299, 0.587, 0.114));
-}
-
 float phaseRayleigh(float cosTheta) {
 	const vec2 mul_add = vec2(0.1, 0.28) /acos(-1.0);
 	return cosTheta * mul_add.x + mul_add.y; // optimized version from [Elek09], divided by 4 pi for energy conservation

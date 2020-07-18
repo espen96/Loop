@@ -15,12 +15,12 @@
 /* ------ TAA ------ */
 
 #define TAA	//if disabled you should increase most samples counts as I rely on TAA to filter noise
-//#define FAST_TAA //disables bicubic resampling and closest velocity, improves fps especially at high resolutions
+
 #define FLICKER_REDUCTION 0.75  //[0.0 0.25 0.5 0.75 1.0] High values reduce flickering but may reduce sharpness
 #define BLEND_FACTOR 0.1 //[0.01 0.02 0.03 0.04 0.05 0.06 0.08 0.1 0.12 0.14 0.16] higher values = more flickering but sharper image, lower values = less flickering but the image will be blurrier
 #define ANTI_GHOSTING 1.0 //[0.0 0.25 0.5 0.75 1.0] High values reduce ghosting but may create flickering
 #define MOTION_REJECTION 0.25 //[0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.5] //Higher values=sharper image in motion at the cost of flickering
-#define CLOSEST_VELOCITY //improves edge quality in motion at the cost of performance
+//#define CLOSEST_VELOCITY //improves edge quality in motion at the cost of performance
 //#define NO_CLIP	//Removes all anti-ghosting techniques used and creates a sharp image (good for still screenshots)
 
 /* ------ CAMERA ------ */
@@ -88,7 +88,7 @@
 #define SHADOW_MAP_BIAS 0.8
 
 #define SSAO //It is also recommended to reduce the ambientOcclusionLevel value with this enabled
-#define SSAO_SAMPLES 6 //[4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
+#define SSAO_SAMPLES 4 //[4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32]
 #define SSAO_STRENGTH 1.6 //[0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0]
 
 //#define SCREENSPACE_CONTACT_SHADOWS	//Raymarch towards the sun in screen-space, in order to cast shadows outside of the shadow map or at the contact of objects. Can get really expensive at high resolutions.
@@ -158,7 +158,7 @@
 
 /* ------ REFLECTIONS ------ */
 #define SCREENSPACE_REFLECTIONS	//can be really expensive at high resolutions/render quality, especially on ice
-#define SSR_STEPS 25 //[10 15 20 25 30 35 40 50 100 200 400]
+#define SSR_STEPS 15 //[10 15 20 25 30 35 40 50 100 200 400]
 #define SUN_MICROFACET_SPECULAR // If enabled will use realistic rough microfacet model, else will just reflect the sun. No performance impact.
 
 

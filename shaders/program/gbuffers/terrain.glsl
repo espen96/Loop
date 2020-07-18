@@ -437,7 +437,7 @@ float shading = 1.0;
         ao = texture2D(normals, lmtexcoord.xy).z*2.0-1.;
 		#endif
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		vec3 color = color.rgb*(clamp(diffuseLight,0,1)*ao);	
+		vec3 color = color.rgb*(clamp(clamp(diffuseLight,0,1)*ao,0,1));	
 	
 	
 	

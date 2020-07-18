@@ -557,8 +557,11 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		float alblum = clamp(luma(albedo),0.37,0.40); 
 		
 		#ifdef POM
-		float emissive2 = mix(entityg.g < 1.0 ? entityg.g : 0.0, 1.0, -entityg.g);
-		custom_lightmap.y *= pow(clamp(emissive2-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;	
+		
+		float emissive3 = float(entityg.g > 1.98 && entityg.g < 2.02) * 0.25;
+		float emissive2 = mix(entityg.g < 1.0 ? entityg.g : 0.0, 1.0, emissive3);
+		
+		custom_lightmap.y += clamp(emissive2,0.0,1.0)*2;	
 		
 		#else
 	#ifdef SSPT	

@@ -545,11 +545,11 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		float alblum = clamp(luma(albedo),0.37,0.40); 
 		
 		#ifdef POM
-		
+if (!iswater){		
 		float emissive3 = float(entityg.g > 1.98 && entityg.g < 2.02) * 0.25;
 		float emissive2 = mix(entityg.g < 1.0 ? entityg.g : 0.0, 1.0, emissive3);
 		
-		custom_lightmap.y += clamp(emissive2,0.0,1.0)*2;	
+		custom_lightmap.y += clamp(emissive2,0.0,1.0)*2;	}
 		
 		#else
 	#ifdef SSPT	
@@ -609,7 +609,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = spc.rgb;
+		//	gl_FragData[0].rgb  = albedo.rgb;
 			#else
 			
 		  		

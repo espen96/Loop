@@ -155,6 +155,8 @@ void main() {
 	
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
+	vec4 water = texture2D(colortex7,texcoord);
+	gl_FragData[1] = water.rgba;		
 	if (z < 1.0){
 
 		vec4 data = texture2D(colortex1,texcoord);
@@ -162,8 +164,8 @@ void main() {
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
-				vec4 entityg = texture2D(colortex7,texcoord);
-		bool entity = abs(entityg.r) >0.9;
+				
+		bool entity = abs(water.r) >0.9;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		if (!hand){
@@ -225,18 +227,20 @@ void main() {
 				gl_FragData[0].g = ao;
 			#endif
 			
-			gl_FragData[1].b = spec.r;
+
 			gl_FragData[0].b = spec.g;
 			gl_FragData[0].a = spec.b;
-			gl_FragData[1].r = entityg.r;			
-			gl_FragData[1].g = entityg.g;			
-			gl_FragData[1].a = entityg.a;
+			
+			gl_FragData[1].r = water.r;			
+			gl_FragData[1].g = water.g;
+			gl_FragData[1].b = spec.r;			
+			gl_FragData[1].a = water.a;
 			if (entity){		
 			
 			gl_FragData[1].b = 0;
-			gl_FragData[1].r = entityg.r;	
-			gl_FragData[1].g = 1;	
-			gl_FragData[1].a = entityg.a;
+			gl_FragData[1].r = water.r;	
+			gl_FragData[1].g = 0;	
+			gl_FragData[1].a = water.a;
 			gl_FragData[0].b = 0;
 			gl_FragData[0].a = 0;
 			
@@ -246,6 +250,10 @@ void main() {
 		}
 
 }
+
+
+		
+
 }
 
 

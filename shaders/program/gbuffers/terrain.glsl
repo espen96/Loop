@@ -627,7 +627,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1] = vec4(reflected.rgb,0);
-	gl_FragData[2].rgb = vec3(0,0,0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#else
 
 
@@ -671,6 +671,6 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	#endif
 
 	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
-	gl_FragData[2].rgb = vec3(0,0,0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 
 }

@@ -347,7 +347,19 @@ vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));									
 									
 									
-									
+vec3 MetalCol(float f0){
+    int metalidx = int(f0 * 255.0);
+
+    if (metalidx == 230) return vec3(0.24867, 0.22965, 0.21366); //iron
+    if (metalidx == 231) return vec3(0.88140, 0.57256, 0.11450); //gold
+    if (metalidx == 232) return vec3(0.81715, 0.82021, 0.83177); //aluminium
+    if (metalidx == 233) return vec3(0.27446, 0.27330, 0.27357); //chrome
+    if (metalidx == 234) return vec3(0.84430, 0.48677, 0.22164); //copper
+    if (metalidx == 235) return vec3(0.36501, 0.35675, 0.37653); //lead
+    if (metalidx == 236) return vec3(0.42648, 0.37772, 0.31138); //platinum
+    if (metalidx == 237) return vec3(0.91830, 0.89219, 0.83662); //silver
+    return vec3(1.0);
+}									
 									
 vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 	vec3 mat_data = vec3(1.0, 0.0, 0.0);
@@ -360,6 +372,7 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
     mat_data.z  = unpacked_tex.w < 254.5 ? linStep(unpacked_tex.w, 0.0, 254.0) : 0.0; //emission
 
     is_metal    = (unpacked_tex.y * 255.0) > 229.5;
+
 
 	return mat_data;
 }										
@@ -438,12 +451,12 @@ float shading = 1.0;
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 		
 		
-        ao = texture2D(normals, lmtexcoord.xy).z*2.0-1.;
-		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
+
+		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz)*2-1;
 		ao = linao.z;
 		#endif
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		vec3 color = color.rgb*(clamp(clamp(diffuseLight,0,1)*ao,0,1));	
+		vec3 color = color.rgb*ao;	
 	
 	
 	
@@ -590,17 +603,18 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 		if (is_metal) {
-			reflected.rgb *= alb.rgb * 0.5 + 0.5;
-			reflected.rgb += sp * alb.rgb ;
+			if (F0 < 1.0) sp.rgb *= MetalCol(F0);	
+				else sp *= alb.rgb;			
+			reflected.rgb += sp;
+			
 		} else {
 			reflected.rgb += sp ;
 		}
 
 		
-vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
-
+  vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
-	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
+  if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
   else data0.a = 0.0;
 
 
@@ -613,7 +627,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1] = vec4(reflected.rgb,0);
-	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+	gl_FragData[2].rgb = vec3(0,0,0);
 	#else
 
 
@@ -657,6 +671,6 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	#endif
 
 	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
-	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+	gl_FragData[2].rgb = vec3(0,0,0);
 
 }

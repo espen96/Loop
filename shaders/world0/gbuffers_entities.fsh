@@ -8,28 +8,6 @@
 
 
 
-
-//encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 unenc)
-{    
-	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
-	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
-    vec2 encn = unenc.xy * 0.5 + 0.5;
-	
-    return vec4((encn),vec2(lmtexcoord.z,lmtexcoord.w));
-}
-
-
-//encoding by jodie
-float encodeVec2(vec2 a){
-    ivec2 bf = ivec2(a*255.);
-    return float( bf.x|(bf.y<<8) ) / 65535.;
-}
-
-float encodeVec2(float x,float y) {
-	return encodeVec2(vec2(x,y));
-}
-
 													 
 														
 							

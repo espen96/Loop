@@ -439,9 +439,11 @@ float shading = 1.0;
 		
 		
         ao = texture2D(normals, lmtexcoord.xy).z*2.0-1.;
+		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
+		ao = linao.z;
 		#endif
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		vec3 color = color.rgb*(clamp(clamp(diffuseLight,0,1),0,1));	
+		vec3 color = color.rgb*(clamp(clamp(diffuseLight,0,1)*ao,0,1));	
 	
 	
 	
@@ -585,17 +587,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 
 		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);
-vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
 
-
-
-reflected.rgb = data0.rgb;
-  reflected.rgb*=color.rgb;
-  reflected.rgb = toLinear(reflected.rgb)*ao;
-  
-  
-  
 		if (is_metal) {
 			reflected.rgb *= alb.rgb * 0.5 + 0.5;
 			reflected.rgb += sp * alb.rgb ;
@@ -604,7 +597,7 @@ reflected.rgb = data0.rgb;
 		}
 
 		
-
+vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
   data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;

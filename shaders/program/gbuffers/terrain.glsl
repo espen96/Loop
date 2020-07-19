@@ -591,7 +591,7 @@ vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 
 
 reflected.rgb = data0.rgb;
-
+  reflected.rgb*=color.rgb;
   reflected.rgb = toLinear(reflected.rgb)*ao;
   
   

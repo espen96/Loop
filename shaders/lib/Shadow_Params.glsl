@@ -12,11 +12,28 @@ const float d1 = 0.61;
 float a = exp(d0);
 float b = (exp(d1)-a)*shadowDistance/128.0;
 
+
+
+
+
+
+#define shadowmapBias 0.9
+
+
+float getWarpFactor(in vec2 x) {
+//      return log(length(x)*b+a)*k;
+        return length(x * 1.169) * shadowmapBias + (1.0 - shadowmapBias);
+}
+
+
 vec4 BiasShadowProjection(in vec4 projectedShadowSpacePosition) {
-  float distortFactor = log(length(projectedShadowSpacePosition.xy)*b+a)*k;
+
+  float distortFactor = getWarpFactor(projectedShadowSpacePosition.xy);
   projectedShadowSpacePosition.xy /= distortFactor;
   return projectedShadowSpacePosition;
 }
+
+
 float calcDistort(vec2 worldpos){
-  return 1.0/(log(length(worldpos)*b+a)*k);
+  return 1.0/getWarpFactor(worldpos.xy);
 }

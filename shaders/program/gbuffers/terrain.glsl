@@ -78,9 +78,9 @@ uniform sampler2D noisetex;
 #include "/lib/stars.glsl"
 #include "/lib/util2.glsl"
 
-
-#ifdef POM2
 uniform sampler2D specular;
+#ifdef POM2
+
 const vec3 intervalMult = vec3(1.0, 1.0, 1.0/POM_DEPTH)/POM_MAP_RES * 1.0;
 const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
 const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;

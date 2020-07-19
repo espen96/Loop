@@ -17,7 +17,7 @@ screen.Sun_and_Moon_Colors = Sun and Moon Colors
 screen.TAA_OPTIONS=TAA options
 screen.DepthOfField=Depth of field
 screen.Purkinje_effect=Purkinje effect
-screen.POM= Physically Based Rendering
+screen.PBR= Physically Based Rendering
 screen.Shadows=Shadows
 screen.Fog_Color=Fog color
 screen.Fog_Densities=Fog densities
@@ -123,11 +123,12 @@ option.Stochastic_Transparent_Shadows=Transparent shadows
 
 #FILTERING
 
-#POM
+#PBR
 option.POM_DEPTH=Parallax Depth
 option.POM2=Parallax Occlusion
 option.POM=Physically Based Rendering
 option.SPEC_SCREENSPACE_REFLECTIONS= Reflections
+option.EMISSIVES= LabPBR Emissives
 
 
 option.POM_MAP_RES=POM resolution

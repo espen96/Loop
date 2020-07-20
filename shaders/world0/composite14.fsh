@@ -494,11 +494,9 @@ void main() {
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 
 	vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5).rgb/2./7.0;
-#ifdef SSPT
-	float lightScat = clamp((BLOOM_STRENGTH/2)*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
-#else	
+
 	float lightScat = clamp(BLOOM_STRENGTH*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
-#endif	
+
   float VL_abs = texture2D(colortex7,texcoord).r;
 	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
   VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);

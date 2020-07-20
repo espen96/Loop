@@ -1,7 +1,7 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
-const int shadowMapResolution = 3172; //[512 768 1024 1536 2048 3172 4096 8192]
+
 
 
 varying vec4 lmtexcoord;

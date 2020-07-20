@@ -17,7 +17,7 @@ float b = (exp(d1)-a)*shadowDistance/128.0;
 
 
 //method based on code from robobo1221
-#define shadowmapBias 0.9
+#define shadowmapBias 0.91
 
 
 float getWarpFactor(in vec2 x) {

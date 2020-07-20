@@ -203,8 +203,7 @@ vec3 toShadowSpaceProjected(vec3 p3){
     return p3;
 }
 
-#define END
-#include "/lib/sspt.glsl"
+
 
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
@@ -337,8 +336,7 @@ void main() {
 		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;
 			
 
-
-#ifndef SSPT		
+		
 				
 				if (emissive)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;
 				}
@@ -356,68 +354,13 @@ void main() {
 		#endif
 		}
 		gl_FragData[0].rgb = ambientLight*albedo*ao;
-		
-		
-#else	
-
-
-
-				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z;
-				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;
-				}
-						else{			
-		
-		ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
-		ambientLight += (rtGI(normal, noise, fragpos)*10.0/150./3.0 ) *((ambientLight.y));	}
-
-		
-		
-		float ao = 1.0;
-		if (!hand)
-		{
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		}
-		gl_FragData[0].rgb = ambientLight*ao;
-
-		
-
-#endif   
-
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		
-
-		vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
-		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
-
-			vec3 ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y*vec3(E_TORCH_R,E_TORCH_G,E_TORCH_B) + custom_lightmap.z);
-			if (emissive) ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*albedo+0.1;	  
-			gl_FragData[1].rgb = ambientLight2.rgb*ao;
-			if (emissive) gl_FragData[1].rgb = ambientLight2.rgb;}
-
-
-
-
-
-
-
-
-
-
-
 				
 
-
-
-
 		
 
-/* DRAWBUFFERS:36 */
+}
+
+
+
+/* DRAWBUFFERS:3 */
 }

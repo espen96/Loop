@@ -46,7 +46,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferPreviousModelView;
-
+uniform vec3 fogColor;
 
 
 uniform vec2 texelSize;
@@ -220,8 +220,7 @@ vec3 toShadowSpaceProjected(vec3 p3){
     return p3;
 }
 
-#define nether
-#include "/lib/sspt.glsl"
+
 
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
@@ -302,7 +301,7 @@ void main() {
 
 	//sky
 	if (z >=1.0) {
-		vec3 color = vec3(1.0,0.4,0.12)* vec3(1.5,1.2,1.05)/4000.0*150.0*0.25;
+		vec3 color = (fogColor/5);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
@@ -348,10 +347,10 @@ void main() {
 		vec3 directLightCol = lightCol.rgb;
 		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*1.5;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*3;
 		
 		
-#ifndef SSPT		
+
 				
 				if (emissive)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
 				}
@@ -371,49 +370,10 @@ void main() {
 		gl_FragData[0].rgb = ambientLight*albedo*ao;
 		
 		
-#else	
 
-
-
-				if (entity || emissive) { ambientLight = ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
-				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);
-				}
-						else{
-		
-			ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z)/2.5;
-			
-
-			
-			ambientLight += (rtGI(normal, noise, fragpos)*20.0/150./3.0 ) *((ambientLight.y*2));  }
-			
-		//combine all light sources
-		float ao = 1.0;
-		if (!hand)
-		{
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		}
-		gl_FragData[0].rgb = ambientLight*ao;
 		
 
-#endif   
+}
 
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		
-
-		vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
-		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
-
-			vec3 ambientLight2 = ambientLight3 * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z;
-			if (emissive) ambientLight2 = (ambientLight3 * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z);	  
-			gl_FragData[1].rgb = ambientLight2.rgb*ao;}
-
-/* DRAWBUFFERS:36 */
+/* DRAWBUFFERS:3 */
 }

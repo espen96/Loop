@@ -60,17 +60,42 @@ float phaseg(float x, float g){
     float gg = g * g;
     return (gg * -0.25 + 0.25) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5) /3.1415;
 }
+float densityAtPos(in vec3 pos)
+{
+
+	pos /= 18.;
+	pos.xz *= 0.5;
+
+
+	vec3 p = floor(pos);
+	vec3 f = fract(pos);
+
+	f = (f*f) * (3.-2.*f);
+
+	vec2 uv =  p.xz + f.xz + p.y * vec2(0.0,193.0);
+
+	vec2 coord =  uv / 512.0;
+
+	vec2 xy = texture2D(noisetex, coord).yx;
+
+	return mix(xy.r,xy.g, f.y);
+}
 float cloudVol(in vec3 pos){
-	float unifCov = exp2(-max(pos.y-70,0.0)/50.);
-	float cloud = unifCov*60.*fogAmount;
-  return cloud;
+
+	vec3 samplePos = pos*vec3(1.0,3./64.,1.0)*5.0+frameTimeCounter*vec3(10,-0.1,10)*2.;
+	float coverage = clamp(exp(-max(pos.y-300,-20.0)/80.0),0.0,1);
+	float noise = densityAtPos(samplePos*2);
+
+	float cloud = pow(clamp(coverage-noise-0.76,0.0,1.0),2.)*(coverage+0.01);
+
+return cloud;
 }
 mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 	vec3 wpos = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 	vec3 dVWorld = (wpos-gbufferModelViewInverse[3].xyz);
 
-	float maxLength = min(length(dVWorld),far)/length(dVWorld);
+	float maxLength = clamp(min(length(dVWorld),far)/length(dVWorld),0.0,far);
 	dVWorld *= maxLength;
 
 	vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
@@ -81,7 +106,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	//Mie phase + somewhat simulates multiple scattering (Horizon zero down cloud approx)
 	float mie = max(phaseg(SdotV,E_fog_mieg1),1.0/13.0);
 	float rayL = phaseRayleigh(SdotV);
-//	wpos.y = clamp(wpos.y,0.0,1.0);
+	wpos.y = clamp(wpos.y,0.0,1.0);
 
 	vec3 ambientCoefs = dVWorld/dot(abs(dVWorld),vec3(1.));
 
@@ -93,31 +118,26 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
 	vec3 skyCol0 = ambientLight*8.*2./150./3.*eyeBrightnessSmooth.y/vec3(240.)*E_Ambient_Mult*2.0/3.1415;
-	vec3 sunColor = lightCol.rgb*8./150./3.;
+
 
 	vec3 rC = vec3(E_fog_coefficientRayleighR*1e-6, E_fog_coefficientRayleighG*1e-5, E_fog_coefficientRayleighB*1e-5);
 	vec3 mC = vec3(E_fog_coefficientMieR*1e-6, E_fog_coefficientMieG*1e-6, E_fog_coefficientMieB*1e-6);
 
 
-	float mu = 1.0;
-	float muS = 1.0*mu;
-	vec3 absorbance = vec3(1.0);
-	float expFactor = 2.7;
+		float mu = 1.0;
+		float muS = 1.05;
+		vec3 absorbance = vec3(1.0);
+		float expFactor = 11.0;
 	for (int i=0;i<E_VL_SAMPLES;i++) {
 		float d = (pow(expFactor, float(i+dither)/float(E_VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 		float dd = pow(expFactor, float(i+dither)/float(E_VL_SAMPLES)) * log(expFactor) / float(E_VL_SAMPLES)/(expFactor-1.0);
 		progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
-    float density = cloudVol(progressW)*1.5*E_ATMOSPHERIC_DENSITY*mu*400.;
-		//Just air
-		vec2 airCoef = exp2(-max(progressW.y-70,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
-
-		//Pbr for air, yolo mix between mie and rayleigh for water droplets
-		vec3 rL = rC*(airCoef.x+density*0.15);
-		vec3 m = (airCoef.y+density*1.85)*mC;
-		vec3 vL0 = sunColor*(rayL*rL+m*mie)*0.75 + skyCol0*(rL+m);
-		vL += vL0 * dd * dL *  absorbance;
-		absorbance *= exp(-(rL+m)*dL*dd);
-	}
+			float densityVol = cloudVol(progressW);
+			float density = densityVol;
+			vec3 vL0 = skyCol0*density*muS;
+			vL += (vL0 - vL0 * exp(-density*mu*dd*dL)) / (density*mu+0.00000001)*absorbance;
+			absorbance *= clamp(exp(-density*mu*dd*dL),0.0,1.0);
+		}
 	return mat2x3(vL,absorbance);
 }
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEyeDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){

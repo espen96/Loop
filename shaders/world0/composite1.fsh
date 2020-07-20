@@ -229,14 +229,6 @@ vec4 blueNoise(vec2 coord){
 
 
 
-#include "/lib/sspt.glsl"
-
-
-
-
-
-
-
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		inColor *= exp(-rayLength * waterCoefs);	//No need to take the integrated value
 		int spCount = rayMarchSampleCount;
@@ -397,11 +389,9 @@ void main() {
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		if (emissive || (hand && heldBlockLightValue > 0.1))
-	#ifdef SSPT	
-			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*20;
-	#else
+
 			custom_lightmap.y = pow(clamp(albedo.r-0.35,0.0,1.0)/0.65*0.65+0.35,2.0)*2;	
-	#endif		
+
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater ==1)){
 
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
@@ -449,7 +439,7 @@ void main() {
 
 		}
 		else {
-			#ifndef SSPT
+
 			
 				vec3 colorContrasted = (custom_lightmap2) *20;
 				vec3 bright = clamp(colorContrasted - vec3(19),0,255);
@@ -460,46 +450,7 @@ void main() {
 
 
 		//	 gl_FragData[0].rgb = (lightmap.yyy-0.6)*4;
-			#else
 			
-		  		
-			
-				if (entity|| emissive){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))));
-
-
-
-
-
-		}
-		else{	
-				
-		  
-		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
-		
-		  
-}
-			
-	vec3 colorContrasted = (custom_lightmap2) *2;
-				vec3 bright = clamp(colorContrasted - vec3(1),0,255);
-			//combine all light sources
-
-			gl_FragData[0].rgb = ((bright.y*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
-		    
-			#endif
-   vec3 ambientLight3 = ambientUp*clamp(ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientDown*clamp(-ambientCoefs.y,0.,1.);
-		ambientLight3 += ambientRight*clamp(ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientLeft*clamp(-ambientCoefs.x,0.,1.);
-		ambientLight3 += ambientB*clamp(ambientCoefs.z,0.,1.);
-		ambientLight3 += ambientF*clamp(-ambientCoefs.z,0.,1.);
-		ambientLight3 *= (1.0+rainStrength*0.2);
-			
-			
-			vec3 ambientLight2 = (ambientLight3 * (filtered.y)* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5))/2.5;
-			if (emissive) ambientLight2 = ((ambientLight3 *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.5;
-			vec3 clean = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight2);		  
-			gl_FragData[1].rgb = clean.rgb;
 		}
 	}
 

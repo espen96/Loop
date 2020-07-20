@@ -584,7 +584,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		previousPosition = gbufferPreviousModelView * previousPosition;
 		previousPosition = gbufferPreviousProjection * previousPosition;
 		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
-		if(roughness <= 0.05){reflection.a = clamp(f0+(1-roughness),0,0.25);
+		if(roughness <= 0.05 || is_metal){reflection.a = clamp(f0+(1-roughness),0,0.25);
 		}else{reflection.a = clamp(f0+(1-roughness),0,0.1);}
 		
 

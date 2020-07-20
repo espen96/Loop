@@ -19,8 +19,7 @@ uniform float skyIntensity;
 uniform float sunElevation;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
+
 
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){

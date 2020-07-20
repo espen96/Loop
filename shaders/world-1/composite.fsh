@@ -2,7 +2,7 @@
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
-const bool shadowHardwareFiltering = true;
+
 
 varying vec2 texcoord;
 
@@ -31,8 +31,7 @@ uniform sampler2D noisetex;//depth
 uniform int heldBlockLightValue;
 uniform int frameCounter;
 uniform int isEyeInWater;
-uniform mat4 shadowModelViewInverse;
-uniform mat4 shadowProjectionInverse;
+
 uniform float far;
 uniform float near;
 uniform float frameTimeCounter;
@@ -40,8 +39,7 @@ uniform float rainStrength;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
+
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
@@ -141,44 +139,6 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
 #define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
 #define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
 #define bayer128(a) fract(bayer64(.5*(a))*.25+bayer2(a)+tempOffsets)
-float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
-
-    const float quality = 16.;
-    vec3 clipPosition = toClipSpace3(position);
-	//prevents the ray from going behind the camera
-	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
-       (-near -position.z) / dir.z : far*sqrt(3.);
-    vec3 direction = toClipSpace3(position+dir*rayLength)-clipPosition;  //convert to clip space
-    direction.xyz = direction.xyz/max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y);	//fixed step size
-
-
-
-
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0);
-
-	vec3 spos = clipPosition+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
-
-
-
-
-
-	for (int i = 0; i < int(quality); i++) {
-		spos += stepv;
-
-		float sp = texture2D(depthtex1,spos.xy).x;
-        if( sp < spos.z) {
-
-			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
-
-			if (dist < 0.01 ) return translucent*exp2(position.z/8.);
-
-
-
-	}
-
-	}
-    return 1.0;
-}
 
 
 
@@ -212,13 +172,6 @@ float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 
-vec3 toShadowSpaceProjected(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
-
-    return p3;
-}
 
 
 

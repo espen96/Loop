@@ -2,7 +2,7 @@
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
-const bool shadowHardwareFiltering = true;
+
 
 const float eyeBrightnessHalflife = 5.0f;
 
@@ -251,8 +251,8 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);
 			vec3 spPos = start.xyz + dV*d;
 			//project into biased shadowmap space
-			float distortFactor = calcDistort(spPos.xy);
-			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
+
+			vec3 pos = vec3(spPos.xy, spPos.z);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;

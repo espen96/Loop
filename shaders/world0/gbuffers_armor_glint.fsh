@@ -1,7 +1,7 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 
-const int shadowMapResolution = 3172; //[512 768 1024 1536 2048 3172 4096 8192]
+
 
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -35,7 +35,7 @@ void main() {
 
 
 		gl_FragData[0].rgb = col*color.a;
-		gl_FragData[0].a = 0.0;
+		gl_FragData[0].a = 0.2;
 	gl_FragData[1].r = 1;	
 
 

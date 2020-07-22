@@ -1,18 +1,6 @@
 
 #include "/program/gbuffers/standard.shared.glsl"
 
-
-
-
-
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -27,7 +15,8 @@ void main() {
 		 data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 		 
 		 
-	data0.a = float(data0.a > noise);
+//	data0.a = float(data0.a > noise);
+	data0.a = float(data0.a > 0.5);
 		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 	else data0.a = 0.0;
 	

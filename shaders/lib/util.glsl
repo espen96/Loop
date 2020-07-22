@@ -74,12 +74,8 @@ vec3 clampNormal(vec3 n, vec3 v){
     return normalize( NoV * v + n );
 }
 
-vec3 srgbToLinear(vec3 srgb){
-    return mix(
-        srgb / 12.92,
-        pow(.947867 * srgb + .0521327, vec3(2.4) ),
-        step( .04045, srgb )
-    );
+vec3 srgbToLinear(vec3 sRGB){
+	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
 }
 
 vec3 linearToSRGB(vec3 linear){

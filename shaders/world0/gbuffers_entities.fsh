@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 
-#define entity
+#define mask
 #include "/lib/settings.glsl"
 #include "/program/gbuffers/solid.glsl"
 

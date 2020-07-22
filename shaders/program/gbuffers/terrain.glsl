@@ -78,8 +78,8 @@ float shading = 1.0;
 		
 		
 
-		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz)*2-1;
-		ao = linao.z;
+		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
+		ao = clamp(linao.z,0,1);
 		#endif
 		
 		

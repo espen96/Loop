@@ -6,7 +6,7 @@
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17 */
+/* DRAWBUFFERS:137 */
 void main() {
 
 
@@ -86,9 +86,9 @@ float shading = 1.0;
 		
 		
 		vec4 color = color;	
-#ifndef entity		
+
 		     color.rgb *= ao;	
-#endif	
+
 	
 	
 	
@@ -177,7 +177,7 @@ float shading = 1.0;
 
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
-		#ifdef SPEC_SCREENSPACE_REFLECTIONS2
+		#ifdef SPEC_SCREENSPACE_REFLECTIONS
 		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
 		if (rtPos.z <1.){
 
@@ -243,7 +243,7 @@ float shading = 1.0;
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifndef entity
-	gl_FragData[1] = vec4(reflected.rgb,0);
+	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
 
 	gl_FragData[2].rgb = vec3(0,mat_data.z,0);	
 	#endif
@@ -293,6 +293,7 @@ data0.a = float(data0.a > 0.5);
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#endif	
 	
 	
@@ -302,14 +303,13 @@ data0.a = float(data0.a > 0.5);
 	
 	
 	
-	
+
+#ifndef block
+
+	gl_FragData[2].r = 1;	
 
 
-
-	gl_FragData[1].r = 1;	
-
-
-
+#endif
 	
 
 

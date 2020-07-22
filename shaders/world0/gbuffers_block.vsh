@@ -80,8 +80,14 @@ void main() {
 	#endif
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),1.0);
 
-	gl_Position = toClipSpace3(position);
 
+	gl_Position = toClipSpace3(position);
+	#ifdef SEPARATE_AO
+	lmtexcoord.z *= sqrt(color.a);
+	lmtexcoord.w *= color.a;
+	#else
+	color.rgb*=color.a;
+	#endif
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
 	#endif

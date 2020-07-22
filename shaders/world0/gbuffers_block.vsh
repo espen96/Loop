@@ -25,6 +25,15 @@ varying vec4 color;
 varying vec4 normalMat;
 
 
+#ifdef MC_NORMAL_MAP
+varying vec4 tangent;
+attribute vec4 at_tangent;
+#endif
+#ifdef POM
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
+#endif
+
 uniform vec2 texelSize;
 uniform int framemod8;
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
@@ -53,11 +62,22 @@ void main() {
 
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
 	lmtexcoord.zw = lmcoord;
-
+#ifdef POM
+	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
+	vtexcoordam.pq  = abs(texcoordminusmid)*2;
+	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
+	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
+	#endif
+	
+	
+	
 	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
 
 	color = gl_Color;
-
+	#ifdef MC_NORMAL_MAP
+		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
+	#endif
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),1.0);
 
 	gl_Position = toClipSpace3(position);

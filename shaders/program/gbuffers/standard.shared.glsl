@@ -15,19 +15,11 @@
 const float mincoord = 1.0/4096.0;
 const float maxcoord = 1.0-mincoord;
 
-
-
 #ifdef MC_NORMAL_MAP
 varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
-
 #endif
-
-
-
-
-
 
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
@@ -61,7 +53,11 @@ uniform vec3 previousCameraPosition;
 
 uniform int frameCounter;
 uniform int isEyeInWater;
-
+uniform vec2 texelSize;
+varying vec4 lmtexcoord;
+varying vec4 color;
+varying vec4 normalMat;
+uniform int framemod8;	
 
 uniform sampler2D noisetex;
 
@@ -86,15 +82,6 @@ const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 #ifdef POM
 
 #endif
-
-
-
-uniform vec2 texelSize;
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
- uniform int framemod8;					   
-
 
 
 uniform sampler2D texture;
@@ -157,14 +144,7 @@ float encodeVec2(float x,float y){
 
 
 
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
+
 									
 
 
@@ -375,5 +355,16 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 
 
 	return mat_data;
-}										
+}	
+
+
+								
 #endif								 
+		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
+									vec2(-1.,3.)/8.,
+									vec2(5.0,1.)/8.,
+									vec2(-3,-5.)/8.,
+									vec2(-5.,5.)/8.,
+									vec2(-7.,-1.)/8.,
+									vec2(3,7.)/8.,
+									vec2(7.,-7.)/8.);	

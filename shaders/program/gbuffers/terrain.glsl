@@ -28,6 +28,9 @@ vec2 tempOffset=offsets[framemod8];
 vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
 float ao = 1.0;
 		
+		
+		
+		
 #ifdef POM		
 float iswater = normalMat.w;		
 float NdotL = lightSign*dot(normal,sunVec);
@@ -78,7 +81,12 @@ float shading = 1.0;
 		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz)*2-1;
 		ao = linao.z;
 		#endif
+		
+		
+		
+		
 		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
+		
 		vec3 color = color.rgb*ao;	
 	
 	
@@ -253,8 +261,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-	gl_FragData[1] = vec4(reflected.rgb,0);
-	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+
 	#else
 
 

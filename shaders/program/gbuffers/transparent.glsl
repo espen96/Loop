@@ -161,8 +161,9 @@ void main() {
 	
 	
 	vec4 albedo = texture2D(texture, texcoord);
+	#ifndef spidereye
 	     albedo.rgb = srgbToLinear(gl_FragData[0].rgb);
-
+	#endif
 	vec3 col = albedo.rgb/exposure*0.1;	
 		
 		
@@ -272,6 +273,7 @@ void main() {
 
 	albedo.rgb *= 0.33;
 	gl_FragData[0] = albedo;
+	
 #endif
 
 

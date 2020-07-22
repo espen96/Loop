@@ -395,6 +395,7 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
+		vec3 tester = texture2D(colortex2,texcoord).rgb;
 		vec4 entityg = texture2D(colortex7,texcoord);
 		vec4 spc = vec4(texture2D(colortex7,texcoord).b,texture2D(colortex3,texcoord).b,texture2D(colortex3,texcoord).a,0);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
@@ -608,7 +609,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = entityg.rgb;
+		//	gl_FragData[0].rgb  = tester.rgb;
 			#else
 			
 		  		

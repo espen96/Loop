@@ -33,7 +33,7 @@ attribute vec4 at_tangent;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 #endif
-
+attribute vec4 mc_midTexCoord;
 uniform vec2 texelSize;
 uniform int framemod8;
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),

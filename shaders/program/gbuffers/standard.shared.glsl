@@ -93,7 +93,14 @@ uniform vec4 entityColor;
 
 #include "/lib/sky_gradient.glsl"
 
-
+		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
+									vec2(-1.,3.)/8.,
+									vec2(5.0,1.)/8.,
+									vec2(-3,-5.)/8.,
+									vec2(-5.,5.)/8.,
+									vec2(-7.,-1.)/8.,
+									vec2(3,7.)/8.,
+									vec2(7.,-7.)/8.);	
 
 
 varying vec3 viewVector;
@@ -360,11 +367,3 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 
 								
 #endif								 
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);	

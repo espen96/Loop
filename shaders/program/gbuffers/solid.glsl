@@ -177,7 +177,7 @@ float shading = 1.0;
 
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
-		#ifdef SPEC_SCREENSPACE_REFLECTIONS
+		#ifdef SPEC_SCREENSPACE_REFLECTIONS2
 		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
 		if (rtPos.z <1.){
 

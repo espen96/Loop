@@ -251,7 +251,7 @@ float shading = 1.0;
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifndef entity
-	gl_FragData[1] = clamp(vec4(reflected.rgb,0)*1,0.0,10.0);
+	gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
 
 	gl_FragData[2].rgb = vec3(0,mat_data.z,0);	
 	#endif
@@ -301,6 +301,7 @@ data0.a = float(data0.a > 0.5);
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+		gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
 gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#endif	
 	

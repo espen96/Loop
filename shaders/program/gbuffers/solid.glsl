@@ -260,8 +260,8 @@ float shading = 1.0;
 
 	
 //////////////////////////////PBR//////////////////////////////	
-	
-	vec4 data0 = texture2D(texture, lmtexcoord.xy);
+
+  vec4 data0 = texture2D(texture, lmtexcoord.xy);
 
   data0.rgb*=color.rgb;
   data0.rgb = toLinear(data0.rgb);
@@ -275,7 +275,7 @@ float shading = 1.0;
   #endif
 
 
-data0.a = float(data0.a > 0.5);
+	data0.a = float(data0.a > 0.5);
 		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 	else data0.a = 0.0;
 	
@@ -294,15 +294,16 @@ data0.a = float(data0.a > 0.5);
     }
 
 	normal = applyBump(tbnMatrix,normal2);
+	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
+
 	#endif
 	
 	
 	
-	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-		gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
-gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+	gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#endif	
 	
 	

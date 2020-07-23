@@ -11,6 +11,7 @@ void main() {
 
 #if MC_VERSION >= 11500 && defined TEMPORARY_FIX
 #undef MC_NORMAL_MAP
+#undef PBR
 #endif
 
 
@@ -95,12 +96,12 @@ float shading = 1.0;
 	
 	
 	
-	#ifdef MC_NORMAL_MAP
+
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
 								  tangent.y, tangent2.y, normal.y,
 						     	  tangent.z, tangent2.z, normal.z);
-	#endif
+
 
 
 	
@@ -135,8 +136,13 @@ float shading = 1.0;
 	
 	
 	
+#if MC_VERSION >= 11500 && defined TEMPORARY_FIX
+#else
 	normal = applyBump(tbnMatrix,normal2);
-	
+#endif	
+
+
+
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	
 	

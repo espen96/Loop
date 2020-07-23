@@ -9,7 +9,9 @@
 /* DRAWBUFFERS:137 */
 void main() {
 
-
+#if MC_VERSION >= 11500 && defined TEMPORARY_FIX
+#undef MC_NORMAL_MAP
+#endif
 
 
 
@@ -239,7 +241,7 @@ float shading = 1.0;
 	
 	
 	
-	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);
+	vec4 data1 = clamp(encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifndef entity

@@ -8,7 +8,14 @@ This code is from Chocapic13' shaders
 Read the terms of modification and sharing before changing something below please !
 !! DO NOT REMOVE !!
 */
+#ifndef MC_NORMAL_MAP
+#undef POM
 
+#endif
+
+#ifdef POM
+#define MC_NORMAL_MAP
+#endif
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;

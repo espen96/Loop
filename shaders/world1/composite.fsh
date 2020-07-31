@@ -319,8 +319,7 @@ void main() {
 		bool entity = abs(entityg.r) >0.9;		
 		vec4 spc = texture2D(colortex3,texcoord);		
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-if (albedo.r <=0.0) spc = vec3(0.0);	
-if (!entity) albedo += spc;
+
 		
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 

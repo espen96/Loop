@@ -6,12 +6,12 @@
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:137 */
+/* DRAWBUFFERS:1372 */
 void main() {
 
 #if MC_VERSION >= 11500 && defined TEMPORARY_FIX
 #undef MC_NORMAL_MAP
-#undef PBR
+#undef POM
 #endif
 
 
@@ -185,30 +185,6 @@ float shading = 1.0;
 
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
-		#ifdef SPEC_SCREENSPACE_REFLECTIONS
-		vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
-		if (rtPos.z <1.){
-
-		vec4 fragpositionPrev = gbufferProjectionInverse * vec4(rtPos*2.-1.,1.);
-		fragpositionPrev /= fragpositionPrev.w;
-
-		vec3 sampleP = fragpositionPrev.xyz;
-		fragpositionPrev = gbufferModelViewInverse * fragpositionPrev;
-
-
-
-		vec4 previousPosition = fragpositionPrev + vec4(cameraPosition-previousCameraPosition,0.);
-		previousPosition = gbufferPreviousModelView * previousPosition;
-		previousPosition = gbufferPreviousProjection * previousPosition;
-		previousPosition.xy = previousPosition.xy/previousPosition.w*0.5+0.5;
-		if(roughness <= 0.05 || is_metal){reflection.a = clamp(f0+(1-roughness),0,0.25);
-		}else{reflection.a = clamp(f0+(1-roughness),0,0.1);}
-		
-
-	    reflection.rgb = texture2D(gaux2,previousPosition.xy).rgb;
-		if (reflection.b <= 0.25) reflection.rgb = sky_c.rgb;
-		}
-		#endif
 		reflection.rgb = mix(sky_c.rgb*0.5, clamp(reflection.rgb,0,5), reflection.a);
 
 
@@ -301,7 +277,8 @@ data0.a = float(data0.a > 0.5);
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-		gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+		gl_FragData[1].rgb = specularity.rgb;
+		gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
 gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	#endif	
 	
@@ -310,8 +287,9 @@ gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 	
 	
 	
-	
-	
+#ifdef entity 	
+gl_FragData[3].rgb = vec3(0.0);
+#endif	
 
 #ifndef block
 

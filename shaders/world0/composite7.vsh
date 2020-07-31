@@ -38,7 +38,6 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 #include "/lib/util.glsl"
 
 void main() {
-
 	gl_Position = ftransform();
 	texcoord = gl_MultiTexCoord0.xy;
 

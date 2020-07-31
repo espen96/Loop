@@ -4,6 +4,8 @@
 
 #define TEMPORARY_FIX
 #define mask
+#define entity
+
 #include "/lib/settings.glsl"
 #include "/program/gbuffers/solid.glsl"
 

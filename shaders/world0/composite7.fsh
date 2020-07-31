@@ -128,7 +128,7 @@ blur1 = filtered.rgb;
     
 
 
-	blur = ssaoVL_blur(texcoord,vec2(1.0,0.0),Depth*far);
+	blur = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far);
 
 
 }

@@ -194,7 +194,7 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
-float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
+float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
     const float quality = 16.;
     vec3 clipPosition = toClipSpace3(position);
@@ -203,11 +203,15 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
        (-near -position.z) / dir.z : far*sqrt(3.);
     vec3 direction = toClipSpace3(position+dir*rayLength)-clipPosition;  //convert to clip space
     direction.xyz = direction.xyz/max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y);	//fixed step size
-	
-	
-	
+
+
+
+
     vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0);
+
 	vec3 spos = clipPosition+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
+
+
 
 
 
@@ -219,7 +223,7 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
 
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 
-			if (dist < 0.01 ) return translucent*exp2(position.z/8.);
+			if (dist < 0.01 ) return 0.0;
 
 
 
@@ -240,7 +244,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 {
 		float alpha0 = sampleNumber/nb;
     float alpha = (sampleNumber+jitter)/nb;
-    float angle = jitter*6.28 + alpha * 4.0 * 6.28;
+    float angle = jitter*6.28 + alpha * 84.0 * 6.28;
 
     float sin_v, cos_v;
 
@@ -405,6 +409,7 @@ void main() {
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
+		vec3 normal2 = decode(dataUnpacked0.yw);
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
 
 		
@@ -524,7 +529,13 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 			if (shading > 0.005){
 				#ifdef SCREENSPACE_CONTACT_SHADOWS
 					vec3 vec = lightCol.a*sunVec;
-					shading *= rayTraceShadow(vec,fragpos,noise,float(translucent));
+					float screenShadow = rayTraceShadow(vec,fragpos,noise);
+					if (translucent){
+						float SSS = max(exp(-(filtered.x-1.412)*5.0), 0.25*exp(-(filtered.x-1.412)*0.6));
+						shading = min(mix(SSS,1.0,screenShadow), shading);
+					}
+					else
+						shading = min(screenShadow, shading);
 				#endif
 				#ifdef CLOUDS_SHADOWS
 					vec3 pos = p3 + cameraPosition + gbufferModelViewInverse[3].xyz;
@@ -633,7 +644,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		else{	
 				
 		  
-		  	ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
 		  
 }

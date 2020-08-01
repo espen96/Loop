@@ -81,7 +81,7 @@ vec3 toScreenSpace(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 
-
+#include "/lib/res_params.glsl"
 #include "/lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
@@ -254,8 +254,8 @@ void main() {
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
+	vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 
-	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
 	
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);

@@ -64,7 +64,10 @@ option.BLEND_FACTOR=Blend factor
 option.ANTI_GHOSTING=Anti ghosting
 option.MOTION_REJECTION=Motion rejection
 option.CLOSEST_VELOCITY=Closest velocity
-option.NO_CLIP=No clip
+option.TAA_UPSCALING=TAA Upscaling
+option.RENDER_SCALE_X=Horizontal render scale
+option.RENDER_SCALE_Y=Vertical render scale
+
 
 #CAMERA
 option.AUTO_EXPOSURE=Auto exposure

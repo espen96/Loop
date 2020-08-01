@@ -10,12 +10,14 @@ flat varying float tempOffsets;
 
 uniform sampler2D colortex4;
 uniform int frameCounter;
+uniform vec2 texelSize;
 #include "/lib/util.glsl"
-
+#include "/lib/res_params.glsl"
 void main() {
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	gl_Position = ftransform();
-	gl_Position.xy = (gl_Position.xy*0.5+0.5)*clamp(0.33+0.01,0.0,1.0)*2.0-1.0;
+	vec2 scaleRatio = max(vec2(0.25), vec2(18.+258*2,258.)*texelSize);
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*clamp(scaleRatio+0.01,0.0,1.0)*2.0-1.0;
 	sunColor = texelFetch2D(colortex4,ivec2(12,37),0).rgb;
 	moonColor = texelFetch2D(colortex4,ivec2(13,37),0).rgb;
 	avgAmbient = texelFetch2D(colortex4,ivec2(11,37),0).rgb;

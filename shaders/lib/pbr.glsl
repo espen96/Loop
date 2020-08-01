@@ -88,13 +88,13 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 
 vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
-	vec3 clipPosition = toClipSpace3(position);
+	vec3 clipPosition = toClipSpace3(position)*vec3(RENDER_SCALE,1.0);
 	
 
 	
 	
 	float stepSize = 15;
-	int maxSteps = 30;	
+	int maxSteps = 15;	
 	int maxLength = 15;	
 	
 	
@@ -102,7 +102,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 
 	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxLength) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxLength;
 
-	vec3 end = toClipSpace3(position+dir*rayLength);
+	vec3 end = toClipSpace3(position+dir*rayLength)*vec3(RENDER_SCALE,1.0);
 	vec3 direction = end-clipPosition;  //convert to clip space
 	
 	
@@ -130,11 +130,11 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	spos += stepv*noise;	
 	
  for(int i = 0; i < iterations; i++){
-		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w+0.001;
+		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
 		float currZ = linZ(spos.z);
 		if( sp < currZ) {
 			float dist = abs(sp-currZ)/currZ;
-			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp));
+			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;
 
@@ -168,7 +168,7 @@ vec3 TangentToWorld2(vec3 N, vec3 H)
 }
 
 vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float fresnel){
-	int nrays = 2;
+	int nrays = 1;
 	vec3 intRadiance = vec3(0.0);
 	for (int i = 0; i < nrays; i++){
 
@@ -198,7 +198,7 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 
 
 			
-			intRadiance = mix(texture2D(colortex5,previousPosition.xy).rgb,texture2D(colortex3,rayHit.xy).rgb,0.75).rgb;
+			intRadiance = mix(texture2D(colortex5,previousPosition.xy).rgb,texture2D(colortex3,rayHit.xy*RENDER_SCALE).rgb,0.75).rgb;
 				
 		
 		} 

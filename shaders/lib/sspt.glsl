@@ -18,42 +18,8 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
 }
 vec3 RT(vec3 dir,vec3 position,float noise){
 
-#ifdef ALT_SSPT
-
-		vec3 clipPosition = toClipSpace3(position);
-		float rayLength = ((position.z + dir.z * sqrt(3.0)*(far*0.75)) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*(far*0.75);
-		vec3 end = toClipSpace3(position+dir*(rayLength*0.75));
-        vec3 direction = end-clipPosition;  //convert to clip space
-
-		
-		
-    //get at which length the ray intersects with the edge of the screen
 	
-		 float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/12.0;	
-         vec3 maxLengths = ((step(0.0,direction)-clipPosition) / direction)*0.95;
-         float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
-
-
-vec3 stepv = direction/len;
-
-  
-	vec3 spos = clipPosition + stepv *noise;
-	spos.xy+=TAA_Offset*texelSize*0.5;
-		float minZ = clipPosition.z;
-		float maxZ = spos.z+stepv.z*0.5;
-	
-
-
-    for(int i = 0; i < min(len, mult*len)-2; i++){
-			float sp= texelFetch2D(depthtex0,ivec2(spos.xy/texelSize),0).x;
-			if( sp < spos.z) {
-				float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
-				if (dist <= 0.035 ) return vec3(spos.xy, sp);
-			}
-			spos += stepv*0.75;
-		}
-#else		
-	vec3 clipPosition = toClipSpace3(position);
+	vec3 clipPosition = toClipSpace3(position)*vec3(RENDER_SCALE,1.0);
 	
 
 	
@@ -64,10 +30,10 @@ vec3 stepv = direction/len;
 	
 	
 	
-//	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+
 	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxLength) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxLength;
 
-	vec3 end = toClipSpace3(position+dir*rayLength);
+	vec3 end = toClipSpace3(position+dir*rayLength)*vec3(RENDER_SCALE,1.0);
 	vec3 direction = end-clipPosition;  //convert to clip space
 	
 	
@@ -93,7 +59,7 @@ vec3 stepv = direction/len;
 
 	if( sp < currZ) {
 		float dist = abs(sp-currZ)/currZ;
-		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp));
+		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 	}	
 	
 	spos += stepv*noise;	
@@ -103,11 +69,11 @@ vec3 stepv = direction/len;
 		float currZ = linZ(spos.z);
 		if( sp < currZ) {
 			float dist = abs(sp-currZ)/currZ;
-			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp));
+			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;
 	}
-#endif		
+	
     return vec3(1.1);
 }
 
@@ -166,7 +132,7 @@ float R2_dither(){
 }
 
 
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
+vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
 	int nrays = RAYS;
 	vec3 intRadiance = vec3(0.0);
 	float occlusion = 0.0;
@@ -179,8 +145,18 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 		rayDir = TangentToWorld(normal,rayDir);
+		//		vec3 offset = rayDir-normal;
+		//		if (offset.x>=0.75) break;
+		
+		vec3 reflectedVector = reflect(normalize(fragpos), normalize(normal2));
+		vec3 reflectedVector2 = reflect(normalize(fragpos), normalize(rayDir));
+		
+		
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
+	//	vec3 rayHit = RT(reflectedVector, fragpos, fract(seed/1.6180339887 + noise.b));
+	//	vec3 rayHit = RT(mix(mat3(gbufferModelView)*rayDir,reflectedVector,0.5), fragpos, fract(seed/1.6180339887 + noise.b));
 
+	
 		if (rayHit.z < 1.){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
@@ -195,7 +171,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 			intRadiance += ambient;
 		}
 	}
-	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,1);
+	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,10);
 }
 
 

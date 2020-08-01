@@ -101,7 +101,7 @@ void main() {
 #ifdef beaconbeam
 
 		diffuseLight = torch_lightmap*vec3(20.,30.,50.)*2./10. ;
-	    gl_FragData[0].a = 1.0;
+	    gl_FragData[0].a += 0.75;
 		gl_FragData[0].rgb = (diffuseLight*albedo.rgb/exposure*5.0)*0.01;
 		
 

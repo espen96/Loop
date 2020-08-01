@@ -93,6 +93,8 @@ void main() {
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
 	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
 	#endif
+	
+	
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
 	lmtexcoord.zw = lmcoord;
 
@@ -145,7 +147,12 @@ void main() {
 	lmtexcoord.z *= sqrt(color.a);
 	lmtexcoord.w *= color.a;
 	#else
+	
 	color.rgb*=color.a;
+	#endif
+	#ifdef glint
+		lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
+		lmtexcoord.zw = lmcoord*lmcoord;
 	#endif
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;

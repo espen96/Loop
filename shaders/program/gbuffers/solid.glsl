@@ -21,7 +21,7 @@ vec2 tempOffset=offsets[framemod8];
 	
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
-	vec4 specularity = vec4(1.0);
+	vec4 specularity = vec4(0.0);
 	vec3 mat_data = vec3(0.0);
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
@@ -184,8 +184,8 @@ float shading = 1.0;
 
 
 
-		vec4 reflection = vec4(sky_c.rgb,0.);
-		reflection.rgb = mix(sky_c.rgb*0.5, clamp(reflection.rgb,0,5), reflection.a);
+		vec4 reflection = vec4(0.0);
+		reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
 
 			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
@@ -227,9 +227,10 @@ float shading = 1.0;
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifndef entity
-	gl_FragData[1] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+		gl_FragData[1].rgb = specularity.rgb;
+		gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+		gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 
-	gl_FragData[2].rgb = vec3(0,mat_data.z,0);	
 	#endif
 	#else
 
@@ -276,10 +277,11 @@ data0.a = float(data0.a > 0.5);
 	
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+		gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 		gl_FragData[1].rgb = specularity.rgb;
 		gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
-gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+		gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+
 	#endif	
 	
 	

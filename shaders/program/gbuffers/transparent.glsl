@@ -1,4 +1,4 @@
-#include "/program/gbuffers/standard.shared.glsl"
+#include "/program/gbuffers/shared.glsl"
 
 
 //////////////////////////////VOID MAIN//////////////////////////////

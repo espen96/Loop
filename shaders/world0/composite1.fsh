@@ -552,7 +552,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		
 		float alblum = clamp(luma(albedo),0.37,0.40); 
 		
-    #ifdef POM
+    #ifdef PBR
 	#ifdef EMISSIVES
 		if (!iswater){		
 		float emissive3 = float(entityg.g > 1.98 && entityg.g < 2.02) * 0.25;

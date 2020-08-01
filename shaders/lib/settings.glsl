@@ -119,7 +119,7 @@
 #define SPEC_SCREENSPACE_REFLECTIONS
 //#define EMISSIVES
 //#define POM2
-//#define POM
+//#define PBR
 //#define USE_LUMINANCE_AS_HEIGHTMAP	//Can generate POM on any texturepack (may look weird in some cases)
 
 

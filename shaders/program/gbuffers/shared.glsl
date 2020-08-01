@@ -2,11 +2,11 @@
 #extension GL_ARB_shader_texture_lod : enable
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
-#undef POM
+#undef PBR
 #endif
 #endif
 
-#ifdef POM
+#ifdef PBR
 #define MC_NORMAL_MAP
 #endif
 
@@ -93,7 +93,7 @@ const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
 const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
 const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 #endif
-#ifdef POM
+#ifdef PBR
 
 #endif
 
@@ -216,7 +216,7 @@ float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
 }	
 
 
-#ifdef POM
+#ifdef PBR
 vec4 readNormal(in vec2 coord)
 {
 	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);

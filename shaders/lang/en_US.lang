@@ -126,7 +126,7 @@ option.Stochastic_Transparent_Shadows=Transparent shadows
 #PBR
 option.POM_DEPTH=Parallax Depth
 option.POM2=Parallax Occlusion
-option.POM=Physically Based Rendering
+option.PBR=Physically Based Rendering
 option.SPEC_SCREENSPACE_REFLECTIONS= Reflections
 option.EMISSIVES= LabPBR Emissives
 

@@ -1,17 +1,21 @@
 
-#include "/program/gbuffers/standard.shared.glsl"
+#include "/program/gbuffers/shared.glsl"
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
+
 /* DRAWBUFFERS:1372 */
-void main() {
+	void main() {
+
+
+
 
 #if MC_VERSION >= 11500 && defined TEMPORARY_FIX
 #undef MC_NORMAL_MAP
-#undef POM
+#undef PBR
 #endif
 
 
@@ -31,9 +35,9 @@ vec2 tempOffset=offsets[framemod8];
 vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
 float ao = 1.0;
 
-//////////////////////////////PBR//////////////////////////////
 
-#ifdef POM		
+
+#ifdef PBR		
 float iswater = normalMat.w;		
 float NdotL = lightSign*dot(normal,sunVec);
 float NdotU = dot(upVec,normal);
@@ -77,11 +81,11 @@ float shading = 1.0;
 
 		}	
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
-		
+		shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));		
 		
 
-		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz)*2-1;
-		ao = linao.z;
+		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
+		ao = clamp(linao.z,0,1);
 		#endif
 
 
@@ -111,7 +115,7 @@ float shading = 1.0;
 
 
 
-#ifdef POM
+#ifdef PBR
 
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
@@ -119,7 +123,56 @@ float shading = 1.0;
 		
 		
 		
+#ifdef POM2		
+if (dist < MAX_OCCLUSION_DISTANCE) {
+	#ifndef USE_LUMINANCE_AS_HEIGHTMAP
+		if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001)
+	{
+		vec3 interval = viewVector.xyz * intervalMult;
+		vec3 coord = vec3(vtexcoord.st, 1.0);
+		coord += noise*interval;
 
+		for (int loopCount = 0;
+				(loopCount < MAX_OCCLUSION_POINTS) && (readNormal(coord.st).a < coord.p) &&coord.p >= 0.0;
+				++loopCount) {
+			coord = coord+interval;
+
+		}
+		if (coord.t < mincoord) {
+			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+				coord.t = mincoord;
+				discard;
+			}
+		}
+		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
+	}
+	#else
+	if ( viewVector.z < 0.0)
+	{
+		vec3 interval = viewVector.xyz * intervalMult;
+		vec3 coord = vec3(vtexcoord.st, 1.0);
+		coord += noise*interval;
+
+		for (int loopCount = 0;
+				(loopCount < MAX_OCCLUSION_POINTS) && (luma(readTexture(coord.st).rgb)/luma(texture2D(texture,lmtexcoord.xy,100).rgb) < coord.p) &&coord.p >= 0.0;
+				++loopCount) {
+			coord = coord+interval;
+
+		}
+		if (coord.t < mincoord) {
+			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+				coord.t = mincoord;
+				discard;
+			}
+		}
+		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
+	}
+	#endif
+	}
+	
+#endif	
+	
+	
 	
 	
 	vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
@@ -170,7 +223,7 @@ float shading = 1.0;
 		vec3 reflectedVector = reflect(normalize(fragpos), normal);
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
-		fresnel = mix(f0,1.0,fresnel);
+		fresnel = mix(F0,1.0,fresnel);
 
 
 
@@ -188,8 +241,7 @@ float shading = 1.0;
 		reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9);
-
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
 
 
 		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);
@@ -205,12 +257,15 @@ float shading = 1.0;
 		}
 
 		
-	vec4 data0 = texture2D(texture, lmtexcoord.xy)*color;
+//  vec4 data0 = texture2D(texture, lmtexcoord.xy)*color;
+    vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
+    data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
+//	vec4 data0 = texture2D(texture, lmtexcoord.xy);
 		 data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 
 //	data0.a = float(data0.a > noise);
 	data0.a = float(data0.a > 0.5);
-		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+  if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
 	else data0.a = 0.0;
 
 
@@ -219,10 +274,17 @@ float shading = 1.0;
 
 	data0.rgb*=color.rgb;
 	
+
 	
-	
-	
-	
+	#ifdef entities
+	normal = normalMat.xyz;
+
+	data0 = texture2D(texture, lmtexcoord.xy)*color;
+	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
+	else data0.a = 0.0;
+	#endif	
+//	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);	
 	vec4 data1 = clamp(encode(normal),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
@@ -236,7 +298,7 @@ float shading = 1.0;
 
 
 	
-//////////////////////////////PBR//////////////////////////////	
+
 	
 	vec4 data0 = texture2D(texture, lmtexcoord.xy);
 
@@ -272,8 +334,14 @@ data0.a = float(data0.a > 0.5);
 
 	normal = applyBump(tbnMatrix,normal2);
 	#endif
-	
-	
+	#ifdef entities
+	normal = normalMat.xyz;
+
+	data0 = texture2D(texture, lmtexcoord.xy)*color;
+	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
+	else data0.a = 0.0;
+	#endif
 	
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 

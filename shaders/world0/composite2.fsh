@@ -297,7 +297,7 @@ void main() {
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
 		
-#ifdef POM
+#ifdef PBR
 #ifdef SPEC_SCREENSPACE_REFLECTIONS
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater ==1)){
 

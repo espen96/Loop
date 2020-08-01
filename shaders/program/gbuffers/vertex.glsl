@@ -1,10 +1,10 @@
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
-#undef POM
+#undef PBR
 #endif
 #endif
 
-#ifdef POM
+#ifdef PBR
 #define MC_NORMAL_MAP
 #endif
 
@@ -18,7 +18,7 @@ Read the terms of modification and sharing before changing something below pleas
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
-#ifdef POM
+#ifdef PBR
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 #endif
@@ -86,7 +86,7 @@ vec3 calcMoveLeaves(in vec3 pos, in float f0, in float f1, in float f2, in float
 
 void main() {
 	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-	#ifdef POM
+	#ifdef PBR
 	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;

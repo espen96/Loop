@@ -6,7 +6,7 @@ const bool shadowHardwareFiltering = true;
 
 const float eyeBrightnessHalflife = 5.0f;
 
-varying vec2 texcoord;
+
 
 flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
 flat varying vec3 ambientUp;
@@ -243,7 +243,7 @@ vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));
 
 void main() {
-
+	vec2 texcoord = gl_FragCoord.xy*texelSize;		
 
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);

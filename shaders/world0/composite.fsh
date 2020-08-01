@@ -13,6 +13,8 @@ uniform vec2 texelSize;
 flat varying float tempOffsets;
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
+
+#include "/lib/res_params.glsl"							   
 #include "/lib/Shadow_Params.glsl"
 
 uniform sampler2D shadow;
@@ -176,7 +178,7 @@ void main() {
 
 				float bn = blueNoise(gl_FragCoord.xy);
 				float noise = fract(bn + frameCounter/1.6180339887);
-				vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+				vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 				#ifdef Variable_Penumbra_Shadows
 					if (NdotL > 0.001) {
 					vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;

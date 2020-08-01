@@ -3,7 +3,7 @@
 
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
-
+#include "/lib/res_params.glsl"
 
 
 
@@ -44,8 +44,43 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 //returns the projected coordinates of the closest point to the camera in the 3x3 neighborhood
-vec3 closestToCamera3x3()
+#ifdef TAA_UPSCALING
+vec3 closestToCamera3x3(vec2 texcoord)
 {
+	vec2 du = vec2(texelSize.x, 0.0);
+	vec2 dv = vec2(0.0, texelSize.y);
+
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
+	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture2D(depthtex0, texcoord - dv).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
+
+	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture2D(depthtex0, texcoord - du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
+	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture2D(depthtex0, texcoord + du).x);
+
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
+	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture2D(depthtex0, texcoord + dv).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+
+	vec3 dmin = dmc;
+
+	dmin = dmin.z > dtc.z? dtc : dmin;
+	dmin = dmin.z > dtr.z? dtr : dmin;
+
+	dmin = dmin.z > dml.z? dml : dmin;
+	dmin = dmin.z > dtl.z? dtl : dmin;
+	dmin = dmin.z > dmr.z? dmr : dmin;
+
+	dmin = dmin.z > dbl.z? dbl : dmin;
+	dmin = dmin.z > dbc.z? dbc : dmin;
+	dmin = dmin.z > dbr.z? dbr : dmin;
+	dmin.xy = clamp(dmin.xy/RENDER_SCALE, vec2(0.0), 1.0-texelSize);
+	return dmin;
+}
+#else
+vec3 closestToCamera3x3(vec2 texcoord)
+{
+
 	vec2 du = vec2(texelSize.x, 0.0);
 	vec2 dv = vec2(0.0, texelSize.y);
 
@@ -76,7 +111,7 @@ vec3 closestToCamera3x3()
 
 	return dmin;
 }
-
+#endif
 //Modified texture interpolation from inigo quilez
 vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 {
@@ -201,13 +236,18 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
 }
 
 vec3 TAA_hq(){
+	#ifdef TAA_UPSCALING
+	vec2 adjTC = clamp(texcoord*RENDER_SCALE,vec2(0.0),RENDER_SCALE-texelSize*2.);
+	#else
+	vec2 adjTC = texcoord;
+	#endif
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
 	#ifdef CLOSEST_VELOCITY
-	vec3 closestToCamera = closestToCamera3x3();
+	vec3 closestToCamera = closestToCamera3x3(adjTC);
 	#endif
 
 	#ifndef CLOSEST_VELOCITY
-	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,adjTC).x);
 	#endif
 
 	//reproject previous frame
@@ -223,18 +263,22 @@ vec3 TAA_hq(){
 	float mixFactor = dot(d,d);
 	float rej = mixFactor*MOTION_REJECTION;
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return texture2D(colortex3, texcoord).rgb;
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return texture2D(colortex3, adjTC).rgb;
 
 	//Samples current frame 3x3 neighboorhood
-	vec3 albedoCurrent0 = texture2D(colortex3, texcoord).rgb;
-  vec3 albedoCurrent1 = texture2D(colortex3, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 = texture2D(colortex3, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 = texture2D(colortex3, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 = texture2D(colortex3, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 = texture2D(colortex3, texcoord + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 = texture2D(colortex3, texcoord + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
-	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
+	#ifdef TAA_UPSCALING
+	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC,vec4(texelSize, 1.0/texelSize), 0.82).xyz, 0.0);
+	#else
+	vec3 albedoCurrent0 = texture2D(colortex3, adjTC).rgb;
+	#endif
+	vec3 albedoCurrent1 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(1.0)),0).rgb;
+	vec3 albedoCurrent2 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(1.0,-1.0)),0).rgb;
+	vec3 albedoCurrent3 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(-1.0,-1.0)),0).rgb;
+	vec3 albedoCurrent4 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(-1.0,1)),0).rgb;
+	vec3 albedoCurrent5 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(0.0,1)),0).rgb;
+	vec3 albedoCurrent6 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(0.0,-1)),0).rgb;
+	vec3 albedoCurrent7 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(-1,0.0)),0).rgb;
+	vec3 albedoCurrent8 = texelFetch2D(colortex3, ivec2(adjTC/texelSize + vec2(1,0.0)),0).rgb;
 
 	#ifndef NO_CLIP
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
@@ -286,3 +330,4 @@ gl_FragData[0].a = 1.0;
 
 
 }
+

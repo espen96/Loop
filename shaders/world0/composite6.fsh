@@ -5,7 +5,7 @@
 
 const float eyeBrightnessHalflife = 5.0f;
 
-varying vec2 texcoord;
+
 
 
 
@@ -51,7 +51,7 @@ uniform float aspectRatio;
 uniform vec3 cameraPosition;
 uniform int framemod8;
 uniform vec3 sunVec;
-
+	vec2 texcoord = gl_FragCoord.xy*texelSize;	
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 

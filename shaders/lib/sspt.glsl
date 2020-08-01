@@ -1,11 +1,7 @@
 uniform float lightSign;
-		vec4 data = texture2D(colortex1,texcoord);
 
-		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
-		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-		vec2 lightmap = vec2(dataUnpacked1.yz);	
-		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+
+
 //#define ALT_SSPT
 
 
@@ -59,16 +55,10 @@ vec3 stepv = direction/len;
 #else		
 	vec3 clipPosition = toClipSpace3(position);
 	
-	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
-	vec3 fragposition = toScreenSpace(closestToCamera);
-	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
-	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
-	previousPosition = toClipSpace3Prev(previousPosition);
-	vec2 velocity = previousPosition.xy - closestToCamera.xy;
-    float vel = abs(velocity.x+velocity.y)*50;		
+
 	
 	
-	float stepSize = STEPSIZE/clamp(vel,1,2);
+	float stepSize = STEPSIZE;
 	int maxSteps = MAXSTEPS;	
 	int maxLength = MAXLENGTH;	
 	
@@ -182,20 +172,14 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, v
 	float occlusion = 0.0;
 	for (int i = 0; i < nrays; i++){
 
-	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
-	vec3 fragposition = toScreenSpace(closestToCamera);
-	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
-	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
-	previousPosition = toClipSpace3Prev(previousPosition);
-	vec2 velocity = previousPosition.xy - closestToCamera.xy;
-    float vel = (velocity.x+velocity.y);		
+	
 	
 	
 		int seed = (frameCounter%10000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 		rayDir = TangentToWorld(normal,rayDir);
-		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b)+vel);
+		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
 
 		if (rayHit.z < 1.){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;

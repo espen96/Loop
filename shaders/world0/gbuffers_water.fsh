@@ -10,7 +10,7 @@ varying vec3 viewVector;
 varying float dist;
 
 #include "/lib/settings.glsl"
-
+#include "/lib/res_params.glsl"
 
 
 uniform sampler2D texture;
@@ -222,11 +222,11 @@ vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));															   
 /* DRAWBUFFERS:27 */
 void main() {
-
+	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 	vec2 tempOffset=offsets[framemod8];
 	float iswater = normalMat.w;
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
-	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
 	vec3 albedo = toLinear(gl_FragData[0].rgb);
 	if (iswater > 0.4) {
@@ -388,4 +388,5 @@ void main() {
 
 		gl_FragData[1] = vec4(albedo,iswater);
 
+}
 }

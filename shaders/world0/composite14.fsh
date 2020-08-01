@@ -11,6 +11,7 @@ uniform float ratio, time;
 uniform float centerDepthSmooth;
 
 
+#include "/lib/res_params.glsl"							   
 #ifdef DOF
 	//hexagon pattern
 	const vec2 hex_offsets[60] = vec2[60] (	vec2(  0.2165,  0.1250 ),
@@ -440,10 +441,10 @@ void main() {
 		
 	#ifdef DOF
 		/*--------------------------------*/
-		float z = ld(texture2D(depthtex0, texcoord.st).r)*far;
+		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 		#ifdef AUTOFOCUS
-			float focus = ld(centerDepthSmooth)*far;
-		  //float focus = ld(texture2D(depthtex0, vec2(0.5)).r)*far;
+//			float focus = ld(centerDepthSmooth)*far;
+			float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
 		#else
 			float focus = MANUAL_FOCUS;
 		#endif
@@ -500,7 +501,7 @@ void main() {
 #else	
 	float lightScat = clamp(BLOOM_STRENGTH*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
 #endif	
-  float VL_abs = texture2D(colortex7,texcoord).r;
+  float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;
 	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
   VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
 

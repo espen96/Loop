@@ -36,7 +36,7 @@ const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 
-varying vec2 texcoord;
+
 flat varying float exposureA;
 flat varying float tempOffsets;
 uniform sampler2D colortex1;
@@ -57,8 +57,9 @@ uniform float viewWidth;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
+#include "/lib/res_params.glsl"
 #include "/lib/projections.glsl"
-
+	vec2 texcoord = gl_FragCoord.xy*texelSize;	
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }

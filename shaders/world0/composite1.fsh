@@ -146,7 +146,7 @@ vec3 toScreenSpace(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 
-
+#include "/lib/res_params.glsl"
 #include "/lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
@@ -343,6 +343,7 @@ vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));
 
 void main() {
+	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
 
 
 	float dirtAmount = Dirt_Amount;
@@ -355,7 +356,7 @@ void main() {
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
-	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 	
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
@@ -376,7 +377,7 @@ void main() {
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
@@ -571,7 +572,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater ==1)){
 
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane

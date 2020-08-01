@@ -32,7 +32,7 @@ uniform vec3 cameraPosition;
 #include "/lib/waterBump.glsl"
 #include "/lib/waterOptions.glsl"
 #include "/lib/encode.glsl"
-
+#include "/lib/res_params.glsl"
 		vec4 data = texture2D(colortex1,texcoord);
 
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -92,6 +92,7 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 	
 	
 void main() {
+  vec2 texcoord = gl_FragCoord.xy*texelSize;											
   /* DRAWBUFFERS:73 */
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;

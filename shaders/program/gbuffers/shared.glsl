@@ -1,3 +1,5 @@
+
+#include "/lib/res_params.glsl"
 #define SPEC
 #extension GL_ARB_shader_texture_lod : enable
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP

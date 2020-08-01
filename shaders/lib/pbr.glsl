@@ -173,7 +173,7 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 	for (int i = 0; i < nrays; i++){
 
 	
-	if (roughness>=0.6) break;
+	//if (roughness>=0.6) break;
 
 	
 
@@ -194,11 +194,16 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
 
+
+
+			
+			intRadiance = mix(texture2D(colortex5,previousPosition.xy).rgb,texture2D(colortex3,rayHit.xy).rgb,0.75).rgb;
+				
+		
 		} 
 //	else { intRadiance += clamp(sky,0,10);}
 
 	}
-	return clamp(intRadiance/nrays,0,255);
+	return clamp(intRadiance/nrays,0,1);
 }

@@ -1,144 +1,4 @@
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
-#include "/lib/settings.glsl"
-
-
-uniform sampler2D gaux1;
-uniform sampler2D texture;
-uniform sampler2DShadow shadow;							   
-varying vec2 texcoord;
-
-uniform vec4 lightCol;
-uniform vec3 sunVec;
-uniform vec3 upVec;
-uniform float lightSign;						
-
-uniform vec2 texelSize;
-uniform float skyIntensityNight;
-uniform float skyIntensity;
-uniform float sunElevation;
-uniform float rainStrength;
-uniform mat4 gbufferProjectionInverse;
-uniform mat4 gbufferModelViewInverse;
-uniform mat4 shadowModelView;
-uniform mat4 shadowProjection;
-
-#include "/lib/util2.glsl"
-#include "/lib/util.glsl"
-#include "/lib/Shadow_Params.glsl"
-
-
-							 
-
-
-vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
-    vec3 p3 = p * 2. - 1.;
-    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
-    return fragposition.xyz / fragposition.w;
-}
-
-
-#ifdef PCF
-const vec2 shadowOffsets[4] = vec2[4](vec2( 0.1250,  0.0000 ),
-vec2( -0.1768, -0.1768 ),
-vec2( -0.0000,  0.3750 ),
-vec2(  0.3536, -0.3536 )
-);
-#endif
-
-							  
-
-
-vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot)
-{
-	float startJitter = (spinAngle/6.28);
-    float alpha = sqrt(sampleNumber + startJitter/nb );
-    float angle = alpha * (nbRot * 6.28) + spinAngle*2.;
-
-    float ssR = alpha;
-    float sin_v, cos_v;
-
-	sin_v = sin(angle);
-	cos_v = cos(angle);
-
-    return vec2(cos_v, sin_v)*ssR;
-}
-uniform int framemod8;
-uniform int framecouter;
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
-
-float w0(float a)
-{
-    return (1.0/6.0)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
-}
-
-float w1(float a)
-{
-    return (1.0/6.0)*(a*a*(3.0*a - 6.0) + 4.0);
-}
-
-float w2(float a)
-{
-    return (1.0/6.0)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
-}
-
-float w3(float a)
-{
-    return (1.0/6.0)*(a*a*a);
-}
-
-float g0(float a)
-{
-    return w0(a) + w1(a);
-}
-
-float g1(float a)
-{
-    return w2(a) + w3(a);
-}
-
-float h0(float a)
-{
-    return -1.0 + w1(a) / (w0(a) + w1(a));
-}
-
-float h1(float a)
-{
-    return 1.0 + w3(a) / (w2(a) + w3(a));
-}
-
-float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
-{
-	vec2 uv = sc.xy*shadowMapResolution;
-	vec2 iuv = floor( uv );
-	vec2 fuv = fract( uv );
-
-    float g0x = g0(fuv.x);
-    float g1x = g1(fuv.x);
-    float h0x = h0(fuv.x);
-    float h1x = h1(fuv.x);
-    float h0y = h0(fuv.y);
-    float h1y = h1(fuv.y);
-
-	vec2 p0 = vec2(iuv.x + h0x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p1 = vec2(iuv.x + h1x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p2 = vec2(iuv.x + h0x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p3 = vec2(iuv.x + h1x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-
-    return g0(fuv.y) * (g0x * shadow2D(tex, vec3(p0,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p1,sc.z)).x) +
-           g1(fuv.y) * (g0x * shadow2D(tex, vec3(p2,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p3,sc.z)).x);
-}
+#include "/program/gbuffers/standard.shared.glsl"
 
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -158,11 +18,11 @@ void main() {
 	float exposure = texelFetch2D(gaux1,ivec2(10,37),0).r;		
 	float torch_lightmap = lmtexcoord.z;	
 	vec3 normal = normalMat.xyz;
-	
-	
-	vec4 albedo = texture2D(texture, texcoord);
-	#ifndef spidereye
-	     albedo.rgb = srgbToLinear(gl_FragData[0].rgb);
+	vec4 albedo = vec4(0.0);
+	#ifdef spidereye
+	 albedo = texture2D(texture, texcoord);
+	#else 
+	  albedo.rgb = srgbToLinear(gl_FragData[0].rgb);
 	#endif
 	vec3 col = albedo.rgb/exposure*0.1;	
 		

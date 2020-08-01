@@ -1,5 +1,5 @@
 #define SPEC
-
+#extension GL_ARB_shader_texture_lod : enable
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
 #undef POM
@@ -31,11 +31,16 @@ uniform sampler2D gaux2;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex0;
-uniform sampler2D texcoord;
+
 uniform sampler2D colortex4;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 
+#ifdef spidereye
+varying vec2 texcoord;
+#else
+uniform sampler2D texcoord;
+#endif
 uniform vec4 lightCol;
 uniform vec3 sunVec;
 uniform float frameTimeCounter;
@@ -66,13 +71,15 @@ uniform int framemod8;
 flat varying vec2 TAA_Offset;
 
 
+					 
+
 uniform sampler2D noisetex;
 
 
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/projections.glsl"
-
+#include "/lib/settings.glsl"
 #include "/lib/waterBump.glsl"
 #include "/lib/clouds.glsl"
 #include "/lib/stars.glsl"
@@ -153,7 +160,14 @@ float encodeVec2(float x,float y){
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 
+const float PI 		= acos(-1.0);
+const float TAU 	= PI * 2.0;
+const float hPI 	= PI * 0.5;
+const float rPI 	= 1.0 / PI;
+const float rTAU 	= 1.0 / TAU;
 
+const float PHI		= sqrt(5.0) * 0.5 + 0.5;
+const float rLOG2	= 1.0 / log(2.0);
 
 
 									
@@ -162,7 +176,44 @@ float linZ(float depth) {
 }
 
 
+vec3 srgbToLinear(vec3 sRGB){
+	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+}
 
+float facos(float sx){
+    float x = clamp(abs( sx ),0.,1.);
+    float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
+    return sx > 0. ? a : pi - a;
+}
+
+
+float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
+{
+	vec2 uv = sc.xy*shadowMapResolution;
+	vec2 iuv = floor( uv );
+	vec2 fuv = fract( uv );
+
+    float g0x = g0(fuv.x);
+    float g1x = g1(fuv.x);
+    float h0x = h0(fuv.x);
+    float h1x = h1(fuv.x);
+    float h0y = h0(fuv.y);
+    float h1y = h1(fuv.y);
+
+	vec2 p0 = vec2(iuv.x + h0x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
+	vec2 p1 = vec2(iuv.x + h1x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
+	vec2 p2 = vec2(iuv.x + h0x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
+	vec2 p3 = vec2(iuv.x + h1x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
+
+    return g0(fuv.y) * (g0x * shadow2D(tex, vec3(p0,sc.z)).x  +
+                        g1x * shadow2D(tex, vec3(p1,sc.z)).x) +
+           g1(fuv.y) * (g0x * shadow2D(tex, vec3(p2,sc.z)).x  +
+                        g1x * shadow2D(tex, vec3(p3,sc.z)).x);
+											  
+ 
+								  
+								 
+}	
 
 
 #ifdef POM
@@ -192,11 +243,7 @@ float blueNoise(){
 
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-    return sx > 0. ? a : pi - a;
-}
+
 
 
 
@@ -246,8 +293,22 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 									
 									
 									
+				   
 
+vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot)
+{
+	float startJitter = (spinAngle/6.28);
+    float alpha = sqrt(sampleNumber + startJitter/nb );
+    float angle = alpha * (nbRot * 6.28) + spinAngle*2.;
 
+    float ssR = alpha;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*ssR;
+}
 
 
 

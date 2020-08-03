@@ -1,7 +1,7 @@
 #version 120
 
 #include "/lib/settings.glsl"
-
+#include "/lib/res_params.glsl"
 
 #ifndef TOASTER
 
@@ -11,7 +11,7 @@ varying vec2 texcoord;
 flat varying vec3 zMults;
 uniform float far;
 uniform float near;
-#include "/lib/res_params.glsl"
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////

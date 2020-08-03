@@ -187,7 +187,12 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					float muE =	cloud*cdensity;
 					float muEshD = 0.0;
 					if (sunContribution.g > 1e-5){
+					#ifndef TOASTER
+						for (int j=1;j<15;j++){
+					#else	
 						for (int j=1;j<8;j++){
+					#endif	
+						
 							vec3 shadowSamplePos = progress_view+dV_Sun*j;
 							if (shadowSamplePos.y < maxHeight)
 							{

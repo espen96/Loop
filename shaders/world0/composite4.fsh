@@ -307,6 +307,7 @@ float R2_dither(){
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 0.43015971 * frameCounter);
 }
 void main() {
+  vec2 texcoord = gl_FragCoord.xy*texelSize;
   /* DRAWBUFFERS:3 */
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;

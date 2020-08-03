@@ -80,5 +80,5 @@ vec4 texture2D_bicubic(sampler2D tex, vec2 uv)
 }
 vec4 skyCloudsFromTex(vec3 pos,sampler2D sampler){
 	vec2 p = sphereToCarte(pos);
-	return texture2D(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
+	return texture2D_bicubic(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
 }

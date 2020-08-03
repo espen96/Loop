@@ -444,19 +444,51 @@ void main() {
 		bool entity = abs(entityg.r) >0.9;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
-		
-		
-		
-
-
-
-
-
-
-
-
 		float diffuseSun = clamp(NdotL,0.,1.0);
-		float shading = 1.0;
+		float shading = 1.0;		
+		
+		
+//////////////////////////////PBR//////////////////////////////		
+
+
+
+
+		vec3 mat_data = vec3(0.0);		
+
+		bool is_metal = false;
+		
+				mat_data = labpbr(specular, is_metal);
+		float roughness = mat_data.x;
+		float F0 = mat_data.y;
+		float f0 = (F0*(1.0-gl_FragData[0].a));
+
+
+		float fresnel = pow(clamp(1.0 + dot(normal, normalize(fragpos.xyz)), 0.0, 1.0), 5.0);
+		fresnel = mix(f0,1.0,fresnel);
+
+	
+		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel);
+		vec3 reflected = ssptr.rgb*fresnel;
+
+
+
+
+		
+
+if (!entity) albedo.rgb += reflected.rgb;
+
+
+
+		
+//////////////////////////////PBR//////////////////////////////		
+
+
+
+
+
+
+
+
 		
 #ifndef TOASTER
 		vec3 filtered = vec3(1.412,1.0,0.0);

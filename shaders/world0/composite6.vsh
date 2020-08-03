@@ -36,13 +36,13 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 
 
 #include "/lib/util.glsl"
-
+#include "/lib/res_params.glsl"
 void main() {
+
 	gl_Position = ftransform();
 		#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif
-
 
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	TAA_Offset = offsets[frameCounter%8];

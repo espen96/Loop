@@ -88,7 +88,7 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 
 vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
-	vec3 clipPosition = toClipSpace3(position)*vec3(RENDER_SCALE,1.0);
+	vec3 clipPosition = toClipSpace3(position);
 	
 
 	
@@ -102,7 +102,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 
 	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxLength) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxLength;
 
-	vec3 end = toClipSpace3(position+dir*rayLength)*vec3(RENDER_SCALE,1.0);
+	vec3 end = toClipSpace3(position+dir*rayLength);
 	vec3 direction = end-clipPosition;  //convert to clip space
 	
 	
@@ -110,8 +110,8 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
 	
 	//get at which length the ray intersects with the edge of the screen
-	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
-	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction*0.75;
+	float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
 
 
 	vec3 stepv = direction/len;
@@ -120,13 +120,18 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	int iterations = min(int(min(len, mult*len)-2), maxSteps);	
 
 	//Do one iteration for closest texel (good contact shadows)
-	vec3 spos = clipPosition + stepv/stepSize*4.0;
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*4.0;
 	spos.xy+= TAA_Offset*texelSize*0.5;
 	
 	float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
 	float currZ = linZ(spos.z);
 
-
+	if( sp < currZ) {
+		float dist = abs(sp-currZ)/currZ;
+		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+	}
+	
+	stepv *= vec3(RENDER_SCALE,1.0);
 	spos += stepv*noise;	
 	
  for(int i = 0; i < iterations; i++){
@@ -137,7 +142,6 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;
-
 	}
 	
     return vec3(1.1);
@@ -173,7 +177,7 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 	for (int i = 0; i < nrays; i++){
 
 	
-	//if (roughness>=0.6) break;
+	if (roughness>=0.75) break;
 
 	
 
@@ -183,27 +187,28 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 		vec3 rayDir = normalize(cosineHemisphereSample2(ij));
 		rayDir = TangentToWorld2(normal*fresnel,rayDir);
 		vec3 offset = rayDir-normal;
-	if (offset.x>=0.6) break;
+		if (offset.x>=0.6) break;
 
 		vec3 reflectedVector = reflect(normalize(fragpos), normalize(mix(normal,rayDir,(roughness))));
 		
-		vec3 rayHit = sspr(reflectedVector, fragpos, fract(seed/1.6180339887),fresnel);
+		vec3 rayHit = sspr(reflectedVector, fragpos, blueNoise(),fresnel);
 
 		if (rayHit.z < 1.){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
+			
+			
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 
 
 
-			
-			intRadiance = mix(texture2D(colortex5,previousPosition.xy).rgb,texture2D(colortex3,rayHit.xy*RENDER_SCALE).rgb,0.75).rgb;
+			intRadiance = texture2D(colortex5,previousPosition.xy).rgb;
 				
 		
 		} 
 //	else { intRadiance += clamp(sky,0,10);}
 
 	}
-	return clamp(intRadiance/nrays,0,1);
+	return clamp(intRadiance/nrays,0,f0);
 }

@@ -1,15 +1,6 @@
 uniform float lightSign;
 
 
-
-//#define ALT_SSPT
-
-
-
-
-
-
-
 float invLinZ (float lindepth){
 	return -((2.0*near/lindepth)-far-near)/(far-near);
 }

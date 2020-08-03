@@ -70,13 +70,7 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 
 
 
-float noise(float x)
-{
-    return     
-	sin(x * 100.0) * 0.1 +
-    sin((x * 200.0) + 3.0) * 0.05 +
-    fract(cos((x * 19.0) + 1.0) * 33.33) * 0.13;
-}
+
 
 
 
@@ -86,32 +80,15 @@ float noise(float x)
 void main() {
 vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 vec2 coord = texcoord.st;
-vec2 coordog = texcoord.st;
 
-float z = (texture2D(depthtex1,texcoord*RENDER_SCALE).x);	
-	
-    vec2 p_m = coord;
-    vec2 p_d = p_m;
-    p_d.xy -= frameTimeCounter * 0.1;
-    vec2 dst_map_val = vec2(noise(p_d.y), noise(p_d.x));
-    vec2 dst_offset = dst_map_val.xy;
-//    dst_offset -= vec2(0.5,0.5);
-    dst_offset *= 2.;
-    dst_offset *= 0.01;
-	
-    //reduce effect towards Y top
-	
-    dst_offset *= (1. - p_m.t);	
-    vec2 dist_tex_coord = p_m.st + (dst_offset*linZ(z)/2);
 
-	coord = dist_tex_coord;
 		 
 		 
   #ifdef BICUBIC_UPSCALING
-//    vec3 col = SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb;
-	vec3 col = mix(SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb,SampleTextureCatmullRom(colortex7,coordog,1.0/texelSize).rgb,0.5);
+    vec3 col = SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb;
+
   #else
-    vec3 col = mix(texture2D(colortex7,coord).rgb,texture2D(colortex7,coordog).rgb,0.5);
+    vec3 col = texture2D(colortex7,coord).rgb;
   #endif
 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING

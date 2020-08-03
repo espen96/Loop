@@ -36,7 +36,7 @@ const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 
-varying vec2 texcoord;
+
 flat varying float exposureA;
 flat varying float tempOffsets;
 uniform sampler2D colortex1;
@@ -49,7 +49,7 @@ uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
 uniform sampler2D noisetex;//depth
 uniform int frameCounter;
-
+flat varying vec2 TAA_Offset;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
 uniform float viewHeight;
@@ -57,8 +57,9 @@ uniform float viewWidth;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
+#include "/lib/res_params.glsl"
 #include "/lib/projections.glsl"
-
+vec2 texcoord = gl_FragCoord.xy*texelSize;	
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
@@ -115,7 +116,7 @@ vec3 closestToCamera3x3()
 
 	return dmin;
 }
-
+	vec2 tempOffset=TAA_Offset;
 
 //Due to low sample count we "tonemap" the inputs to preserve colors and smoother edges
 vec3 weightedSample(sampler2D colorTex, vec2 texcoord){
@@ -169,7 +170,7 @@ vec3 TAA_sspt(){
 	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex2,texcoord).x);
 
 	//reproject previous frame
-	vec3 fragposition = toScreenSpace(closestToCamera);
+	vec3 fragposition =	toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
 	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
 	previousPosition = toClipSpace3Prev(previousPosition);

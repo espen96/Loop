@@ -36,6 +36,7 @@ uniform vec2 texelSize;
 #include "/lib/color_dither.glsl"
 #include "/lib/projections.glsl"
 #include "/lib/sky_gradient.glsl"
+#include "/lib/res_params.glsl"		
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
 float interleaved_gradientNoise(){
@@ -124,7 +125,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		ambientLight += ambientB;
 		ambientLight += ambientF;
 
-		vec3 skyCol0 = (fogColor/3)*N_Ambient_Mult;
+		vec3 skyCol0 = (fogColor/5)*N_Ambient_Mult;
 
 		float mu = 1.0;
 		float muS = 1.05;
@@ -181,7 +182,7 @@ void main() {
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
+		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
 		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
@@ -195,7 +196,7 @@ void main() {
 		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
 		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
+		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		vec3 vl = vec3(0.0);
 		float estEyeDepth = clamp((14.0-eyeBrightnessSmooth.y/255.0*16.0)/14.0,0.,1.0);

@@ -205,7 +205,7 @@ vec3 toShadowSpaceProjected(vec3 p3){
 }
 
 #define END
-#include "/lib/sspt.glsl"
+//#include "/lib/sspt.glsl"
 
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)

@@ -59,6 +59,9 @@ void main() {
 	zMults = vec3(1.0/(far * near),far+near,far-near);
 	gl_Position = ftransform();
 	texcoord = gl_MultiTexCoord0.xy;
+			#ifdef TAA_UPSCALING
+		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
+	#endif
 	vec3 sc = texelFetch2D(colortex4,ivec2(6,37),0).rgb;
 	ambientUp = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
 	ambientDown = texelFetch2D(colortex4,ivec2(1,37),0).rgb;

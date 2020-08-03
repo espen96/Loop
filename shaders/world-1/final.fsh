@@ -2,9 +2,11 @@
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
-varying vec2 texcoord;
-
+#include "/lib/res_params.glsl"	
+uniform float far;
+uniform float near;
 uniform sampler2D colortex7;
+uniform sampler2D depthtex1;
 uniform vec2 texelSize;
 uniform float viewWidth;
 uniform float viewHeight;
@@ -13,7 +15,9 @@ uniform int frameCounter;
 uniform int isEyeInWater;
 #include "/lib/color_transforms.glsl"
 #include "/lib/color_dither.glsl"
-
+float linZ(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));
+}
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
@@ -64,22 +68,59 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
     return result;
 }
 
+
+
+float noise(float x)
+{
+    return     
+	sin(x * 100.0) * 0.1 +
+    sin((x * 200.0) + 3.0) * 0.05 +
+    fract(cos((x * 19.0) + 1.0) * 33.33) * 0.13;
+}
+
+
+
+		
+		
+		
 void main() {
+vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
+vec2 coord = texcoord.st;
+
+float z = (texture2D(depthtex1,texcoord*RENDER_SCALE).x);	
+	
+    vec2 p_m = coord;
+    vec2 p_d = p_m;
+    p_d.xy -= frameTimeCounter * 0.1;
+    vec2 dst_map_val = vec2(noise(p_d.y), noise(p_d.x));
+    vec2 dst_offset = dst_map_val.xy;
+//    dst_offset -= vec2(0.5,0.5);
+    dst_offset *= 2.;
+    dst_offset *= 0.01;
+	
+    //reduce effect towards Y top
+	
+    dst_offset *= (1. - p_m.t);	
+    vec2 dist_tex_coord = p_m.st + (dst_offset*linZ(z)/2);
+
+	coord = dist_tex_coord;
+		 
+		 
   #ifdef BICUBIC_UPSCALING
-    vec3 col = SampleTextureCatmullRom(colortex7,texcoord,1.0/texelSize).rgb;
+    vec3 col = SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb;
   #else
-    vec3 col = texture2D(colortex7,texcoord).rgb;
+    vec3 col = texture2D(colortex7,coord).rgb;
   #endif
 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
-    vec3 albedoCurrent1 = texture2D(colortex7, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent2 = texture2D(colortex7, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent3 = texture2D(colortex7, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent4 = texture2D(colortex7, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent5 = texture2D(colortex7, texcoord + vec2(0.0,texelSize.y)).rgb;
-    vec3 albedoCurrent6 = texture2D(colortex7, texcoord + vec2(0.0,-texelSize.y)).rgb;
-    vec3 albedoCurrent7 = texture2D(colortex7, texcoord + vec2(-texelSize.x,0.0)).rgb;
-    vec3 albedoCurrent8 = texture2D(colortex7, texcoord + vec2(texelSize.x,0.0)).rgb;
+    vec3 albedoCurrent1 = texture2D(colortex7, coord + vec2(texelSize.x,texelSize.y)).rgb;
+    vec3 albedoCurrent2 = texture2D(colortex7, coord + vec2(texelSize.x,-texelSize.y)).rgb;
+    vec3 albedoCurrent3 = texture2D(colortex7, coord + vec2(-texelSize.x,-texelSize.y)).rgb;
+    vec3 albedoCurrent4 = texture2D(colortex7, coord + vec2(-texelSize.x,texelSize.y)).rgb;
+    vec3 albedoCurrent5 = texture2D(colortex7, coord + vec2(0.0,texelSize.y)).rgb;
+    vec3 albedoCurrent6 = texture2D(colortex7, coord + vec2(0.0,-texelSize.y)).rgb;
+    vec3 albedoCurrent7 = texture2D(colortex7, coord + vec2(-texelSize.x,0.0)).rgb;
+    vec3 albedoCurrent8 = texture2D(colortex7, coord + vec2(texelSize.x,0.0)).rgb;
 
     vec3 m1 = (col + albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4 + albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8)/9.0;
     vec3 std = abs(col - m1) + abs(albedoCurrent1 - m1) + abs(albedoCurrent2 - m1) +
@@ -95,6 +136,6 @@ void main() {
   vec3 diff = col-lum;
   col = col + diff*(-lum*N_CROSSTALK + N_SATURATION);
   //col = -vec3(-lum*CROSSFADING + SATURATION);
-	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
+	gl_FragColor.rgb = clamp(int8Dither(col,coord),0.0,1.0);
   //gl_FragColor.rgb = vec3(contrast);
 }

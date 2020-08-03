@@ -20,15 +20,32 @@ Read the terms of modification and sharing before changing something below pleas
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
+
+#ifndef water
+varying vec4 tangent;
+#else
+varying vec3 tangent;
+#endif
+#ifdef water
+
+#define SHADOW_MAP_BIAS 0.8		
+
+varying vec3 binormal;
+
+varying float dist;
+varying vec3 viewVector;
+#endif
+
 #ifdef PBR
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 #endif
 varying vec2 texcoord;
 #ifdef MC_NORMAL_MAP
-varying vec4 tangent;
+
 attribute vec4 at_tangent;
 #endif
+   
 
 uniform float frameTimeCounter;
 const float PI48 = 150.796447372*WAVY_SPEED;
@@ -106,10 +123,11 @@ void main() {
 	color = gl_Color;
 
 	bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
+	#ifndef water
 	#ifdef MC_NORMAL_MAP
 		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
 	#endif
-	
+	#endif
 	
 
 //	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);	
@@ -156,6 +174,43 @@ void main() {
 		lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
 		lmtexcoord.zw = lmcoord*lmcoord;
 	#endif
+	
+	
+#ifdef water
+//   position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
+//  gl_Position = toClipSpace3(position.xyz);
+
+	float mat = 0.0;
+	if(mc_Entity.x == 8.0 || mc_Entity.x == 9.0) {
+    mat = 1.0;
+    gl_Position.z -= 1e-4;
+  }
+
+
+	if(mc_Entity.x == 79.0) mat = 0.5;
+		if (mc_Entity.x == 10002) mat = 0.0001;
+	normalMat = vec4(normalize( gl_NormalMatrix*gl_Normal),mat);
+
+													  
+					 
+																											   
+	   
+
+
+
+	tangent = normalize( gl_NormalMatrix *at_tangent.rgb);
+	binormal = normalize(cross(tangent.rgb,normalMat.xyz)*at_tangent.w);
+
+	mat3 tbnMatrix = mat3(tangent.x, binormal.x, normalMat.x,
+								  tangent.y, binormal.y, normalMat.y,
+						     	  tangent.z, binormal.z, normalMat.z);
+
+		dist = length(gl_ModelViewMatrix * gl_Vertex);
+	viewVector = ( gl_ModelViewMatrix * gl_Vertex).xyz;
+	viewVector = normalize(tbnMatrix * viewVector);	
+	
+#endif	
+	
 		#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;
 	#endif

@@ -5,7 +5,7 @@
 #include "/lib/settings.glsl"
 
 
-varying vec2 texcoord;
+
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D colortex7;
@@ -24,6 +24,7 @@ uniform mat4 gbufferProjectionInverse;
 uniform vec2 texelSize;
 uniform vec3 cameraPosition;
 #include "/lib/waterBump.glsl"
+#include "/lib/res_params.glsl"
 
 float ld(float depth) {
     return 1.0 / (zMults.y - depth * zMults.z);		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
@@ -74,7 +75,9 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 }
 
 void main() {
+  vec2 texcoord = gl_FragCoord.xy*texelSize;
   /* DRAWBUFFERS:73 */
+  
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   float frDepth = ld(z);

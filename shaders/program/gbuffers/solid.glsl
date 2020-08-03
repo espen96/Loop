@@ -9,6 +9,7 @@
 
 /* DRAWBUFFERS:1372 */
 	void main() {
+  float LoDbias = log2(1.0/dot(RENDER_SCALE*sqrt(5.0),vec2(0.5)));	  
 
 
 
@@ -29,7 +30,7 @@ vec2 tempOffset=offsets[framemod8];
 	vec3 mat_data = vec3(0.0);
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
-	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
 vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
@@ -100,12 +101,12 @@ float shading = 1.0;
 	
 	
 	
-
+#ifdef MC_NORMAL_MAP
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
 								  tangent.y, tangent2.y, normal.y,
 						     	  tangent.z, tangent2.z, normal.z);
-
+#endif
 
 
 	
@@ -146,28 +147,28 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 	}
-	#else
-	if ( viewVector.z < 0.0)
-	{
-		vec3 interval = viewVector.xyz * intervalMult;
-		vec3 coord = vec3(vtexcoord.st, 1.0);
-		coord += noise*interval;
+    	#else
+    	if ( viewVector.z < 0.0)
+    	{
+    		vec3 interval = viewVector.xyz * intervalMult;
+    		vec3 coord = vec3(vtexcoord.st, 1.0);
+    		coord += noise*interval;
+        float lum0 = luma(texture2DLod(texture,lmtexcoord.xy,100).rgb);
+    		for (int loopCount = 0;
+    				(loopCount < MAX_OCCLUSION_POINTS) && (luma(readTexture(coord.st).rgb)/lum0 < coord.p) &&coord.p >= 0.0;
+    				++loopCount) {
+    			coord = coord+interval;
 
-		for (int loopCount = 0;
-				(loopCount < MAX_OCCLUSION_POINTS) && (luma(readTexture(coord.st).rgb)/luma(texture2D(texture,lmtexcoord.xy,100).rgb) < coord.p) &&coord.p >= 0.0;
-				++loopCount) {
-			coord = coord+interval;
-
-		}
-		if (coord.t < mincoord) {
-			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
-				coord.t = mincoord;
-				discard;
-			}
-		}
-		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
-	}
-	#endif
+    		}
+    		if (coord.t < mincoord) {
+    			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+    				coord.t = mincoord;
+    				discard;
+    			}
+    		}
+    		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
+    	}
+    	#endif
 	}
 	
 #endif	
@@ -300,8 +301,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	
 
 	
-	vec4 data0 = texture2D(texture, lmtexcoord.xy);
-
+//	vec4 data0 = texture2D(texture, lmtexcoord.xy);
+	vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   data0.rgb*=color.rgb;
   data0.rgb = toLinear(data0.rgb);
   float avgBlockLum = dot(toLinear(texture2D(texture, lmtexcoord.xy,128).rgb),vec3(0.333));
@@ -358,6 +359,10 @@ data0.a = float(data0.a > 0.5);
 	
 	
 #ifdef entity 	
+gl_FragData[3].rgb = vec3(0.0);
+#endif	
+
+#ifdef basic 	
 gl_FragData[3].rgb = vec3(0.0);
 #endif	
 

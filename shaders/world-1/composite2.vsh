@@ -2,7 +2,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
-
+#include "/lib/res_params.glsl"
 flat varying vec4 lightCol;
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
@@ -35,6 +35,9 @@ void main() {
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	gl_Position = ftransform();
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51*2.0-1.0;
+			#ifdef TAA_UPSCALING
+		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
+	#endif
 	vec3 avgAmbient = texelFetch2D(colortex4,ivec2(11,37),0).rgb;
 	ambientUp = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
 	ambientDown = texelFetch2D(colortex4,ivec2(1,37),0).rgb;

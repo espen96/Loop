@@ -4,7 +4,7 @@
 #include "/lib/settings.glsl"
 const bool shadowHardwareFiltering = true;
 
-varying vec2 texcoord;
+
 
 flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
 flat varying vec3 ambientUp;
@@ -17,6 +17,7 @@ flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
 uniform vec3 fogColor; 
+uniform float fogDensity; 
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
@@ -68,7 +69,7 @@ vec3 toScreenSpace(vec3 p) {
 
 #include "/lib/color_transforms.glsl"
 #include "/lib/util.glsl"
-
+#include "/lib/res_params.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/encode.glsl"
 #include "/lib/stars.glsl"
@@ -208,7 +209,7 @@ vec3 toShadowSpaceProjected(vec3 p3){
 }
 
 #define nether
-#include "/lib/sspt.glsl"
+//#include "/lib/sspt.glsl"
 
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
@@ -268,11 +269,12 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-		occlusion = clamp(1.0-occlusion/n*2.0,0.,1.0);
+		occlusion = clamp(1.0-occlusion/n*2.0,0.0,1.0);
 		//occlusion = mult;
 
 }
 void main() {
+	vec2 texcoord = gl_FragCoord.xy*texelSize;		
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
@@ -283,19 +285,19 @@ void main() {
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
-	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
 //sky
 	if (z >=1.0) {
-		vec3 color = (fogColor/5);
+		vec3 color = (fogColor/50);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
@@ -326,8 +328,8 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
-
+	//	bool emissive = abs(dataUnpacked1.w-0.9) >0.4;
+		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);
@@ -339,8 +341,8 @@ void main() {
 		vec3 directLightCol = lightCol.rgb;
 		
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
-		float alblum = clamp(luma(albedo),0.0,0.1);
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = alblum*20;
+		float alblum = clamp(luma(albedo),0.25,1)*2-0.05;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y = alblum;
 		
 		
 #ifndef SSPT		
@@ -349,7 +351,7 @@ void main() {
 				}
 						else{
 	//	ambientLight = ambientLight * custom_lightmap.x*fogColor + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z*fogColor;}
-		ambientLight = ambientLight * custom_lightmap.x*fogColor + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z*fogColor;}
+		ambientLight = (ambientLight * (custom_lightmap.x+fogColor)/2 + (custom_lightmap.y*3 -0.01)*((vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B)/10)+(fogColor/10)));}
 
 		
 		
@@ -361,7 +363,7 @@ void main() {
 			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 		#endif
 		}
-		gl_FragData[0].rgb = ambientLight*albedo*ao;
+		gl_FragData[0].rgb = (ambientLight*albedo*ao)+(fogColor*linZ(z))/5;
 		
 		
 #else	

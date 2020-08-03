@@ -51,7 +51,7 @@ uniform float aspectRatio;
 uniform vec3 cameraPosition;
 uniform int framemod8;
 uniform vec3 sunVec;
-	vec2 texcoord = gl_FragCoord.xy*texelSize;	
+vec2 texcoord = gl_FragCoord.xy*texelSize;	
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 
@@ -62,7 +62,9 @@ vec3 toScreenSpace(vec3 p) {
     vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
     return fragposition.xyz / fragposition.w;
 }
-
+float linZ(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));
+}
 
 
 
@@ -100,18 +102,45 @@ float blueNoise(){
 
 #include "/lib/blur.glsl"
 
+
+
+vec2 noise(vec2 coord)
+{
+     float x = sin(coord.x * 100.0) * 0.1 + sin((coord.x * 200.0) + 3.0) * 0.05 + fract(cos((coord.x * 19.0) + 1.0) * 33.33) * 0.15;
+     float y = sin(coord.y * 100.0) * 0.1 + sin((coord.y * 200.0) + 3.0) * 0.05 + fract(cos((coord.y * 19.0) + 1.0) * 33.33) * 0.25;
+	 return vec2(x,y);
+}
+
+
+
+
 void main() {
-
-
-		vec3 filtered = texture2D(colortex3,texcoord).rgb;
-
+float z = texture2D(depthtex0,texcoord).x;
 
 
 
+    vec2 p_m = texcoord;
+    vec2 p_d = p_m;
+    p_d.xy -= frameTimeCounter * 0.1;
+    vec2 dst_map_val = vec2(noise(p_d.xy));
+    vec2 dst_offset = dst_map_val.xy;
+
+    dst_offset *= 2.0;
+
+    dst_offset *= 0.01;
+	
+    //reduce effect towards Y top
+	
+    dst_offset *= (1. - p_m.t);	
+    vec2 dist_tex_coord = p_m.st + (dst_offset*linZ(z)/3);
+
+	vec2 coord = dist_tex_coord;
+
+vec3 filtered = texture2D(colortex3,coord).rgb;
 		 {
-float Depth = texture2D(depthtex0, texcoord).x;
+float Depth = texture2D(depthtex0, coord).x;
 
-vec3 blur = texture2D(colortex3, texcoord).xyz;
+vec3 blur = texture2D(colortex3, coord).xyz;
 
 #ifndef RT_FILTER
 
@@ -128,7 +157,7 @@ blur1 = filtered.rgb;
     
 
 
-	blur = ssaoVL_blur(texcoord,vec2(0.0,1.0),Depth*far);
+	blur = ssaoVL_blur(coord,vec2(0.0,1.0),Depth*far);
 
 
 }

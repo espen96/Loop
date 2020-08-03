@@ -25,9 +25,7 @@ uniform vec2 texelSize;
 uniform vec3 cameraPosition;
 #include "/lib/waterBump.glsl"
 #include "/lib/res_params.glsl"
-float linZ(float depth) {
-    return (2.0 * near) / (far + near - depth * (far - near));
-}
+
 float ld(float depth) {
     return 1.0 / (zMults.y - depth * zMults.z);		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
 }
@@ -75,12 +73,7 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 
   return vl/sum;
 }
-vec2 noise(vec2 coord)
-{
-     float x = sin(coord.x * 100.0) * 0.1 + sin((coord.x * 200.0) + 3.0) * 0.05 + fract(cos((coord.x * 19.0) + 1.0) * 33.33) * 0.15;
-     float y = sin(coord.y * 100.0) * 0.1 + sin((coord.y * 200.0) + 3.0) * 0.05 + fract(cos((coord.y * 19.0) + 1.0) * 33.33) * 0.25;
-	 return vec2(x,y);
-}
+
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
   /* DRAWBUFFERS:73 */
@@ -90,37 +83,22 @@ void main() {
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
 
-    vec2 p_m = texcoord;
-    vec2 p_d = p_m;
-    p_d.xy -= frameTimeCounter * 0.1;
-    vec2 dst_map_val = vec2(noise(p_d.xy));
-    vec2 dst_offset = dst_map_val.xy;
 
-    dst_offset *= 2.0;
 
-    dst_offset *= 0.01;
-	
-    //reduce effect towards Y top
-	
-    dst_offset *= (1. - p_m.t);	
-    vec2 dist_tex_coord = p_m.st + (dst_offset*linZ(z)/2);
-
-	vec2 coord = dist_tex_coord;
-
-  vec4 transparencies = texture2D(colortex2,coord);
+  vec4 transparencies = texture2D(colortex2,texcoord);
   vec4 trpData = texture2D(colortex7,texcoord);
   bool iswater = trpData.a > 0.99;
-  vec2 refractedCoord = coord;
+  vec2 refractedCoord = texcoord;
 
   if (iswater){
-    vec3 fragpos = toScreenSpace(vec3(coord-vec2(0.0)*texelSize*0.5,z));
+    vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
   	vec3 np3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition;
     float norm = getWaterHeightmap(np3.xz*1.71, 4.0, 0.25, 1.0);
     float displ = norm/(length(fragpos)/far)/35.;
     refractedCoord += displ;
 
     if (texture2D(colortex7,refractedCoord).a < 0.99)
-      refractedCoord = coord;
+      refractedCoord = texcoord;
 
   }
   vec3 color = texture2D(colortex3,refractedCoord).rgb;

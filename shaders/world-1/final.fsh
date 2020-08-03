@@ -86,6 +86,7 @@ float noise(float x)
 void main() {
 vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 vec2 coord = texcoord.st;
+vec2 coordog = texcoord.st;
 
 float z = (texture2D(depthtex1,texcoord*RENDER_SCALE).x);	
 	
@@ -107,9 +108,10 @@ float z = (texture2D(depthtex1,texcoord*RENDER_SCALE).x);
 		 
 		 
   #ifdef BICUBIC_UPSCALING
-    vec3 col = SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb;
+//    vec3 col = SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb;
+	vec3 col = mix(SampleTextureCatmullRom(colortex7,coord,1.0/texelSize).rgb,SampleTextureCatmullRom(colortex7,coordog,1.0/texelSize).rgb,0.5);
   #else
-    vec3 col = texture2D(colortex7,coord).rgb;
+    vec3 col = mix(texture2D(colortex7,coord).rgb,texture2D(colortex7,coordog).rgb,0.5);
   #endif
 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING

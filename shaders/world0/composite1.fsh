@@ -197,7 +197,7 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
 float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
     const float quality = 16.;
-    vec3 clipPosition = toClipSpace3(position);
+    vec3 clipPosition = toClipSpace3(position)*vec3(RENDER_SCALE,1.0);
 	//prevents the ray from going behind the camera
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
        (-near -position.z) / dir.z : far*sqrt(3.);

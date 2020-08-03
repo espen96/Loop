@@ -21,7 +21,7 @@ uniform int isEyeInWater;
 #include "/lib/color_transforms.glsl"
 #include "/lib/color_dither.glsl"
 #include "/lib/encode.glsl"
-
+#include "/lib/res_params.glsl"
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -91,14 +91,14 @@ void main() {
   #endif
 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
-    vec3 albedoCurrent1 = texture2D(colortex7, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent2 = texture2D(colortex7, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent3 = texture2D(colortex7, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent4 = texture2D(colortex7, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent5 = texture2D(colortex7, texcoord + vec2(0.0,texelSize.y)).rgb;
-    vec3 albedoCurrent6 = texture2D(colortex7, texcoord + vec2(0.0,-texelSize.y)).rgb;
-    vec3 albedoCurrent7 = texture2D(colortex7, texcoord + vec2(-texelSize.x,0.0)).rgb;
-    vec3 albedoCurrent8 = texture2D(colortex7, texcoord + vec2(texelSize.x,0.0)).rgb;
+    vec3 albedoCurrent1 = texture2D(colortex7, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent2 = texture2D(colortex7, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent3 = texture2D(colortex7, texcoord + vec2(-texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent4 = texture2D(colortex7, texcoord + vec2(-texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent5 = texture2D(colortex7, texcoord + vec2(0.0,texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent6 = texture2D(colortex7, texcoord + vec2(0.0,-texelSize.y)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent7 = texture2D(colortex7, texcoord + vec2(-texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
+    vec3 albedoCurrent8 = texture2D(colortex7, texcoord + vec2(texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
 
     vec3 m1 = (col + albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4 + albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8)/9.0;
     vec3 std = abs(col - m1) + abs(albedoCurrent1 - m1) + abs(albedoCurrent2 - m1) +
@@ -106,8 +106,8 @@ void main() {
      abs(albedoCurrent5 - m1) + abs(albedoCurrent6 - m1) + abs(albedoCurrent7 - m1) +
      abs(albedoCurrent8 - m1);
     float contrast = 1.0 - luma(std)/9.0;
-    col = col*(1.0+SHARPENING*contrast)
-          - (albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8 + (albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4)/2.0)/6.0 * SHARPENING*contrast;
+    col = col*(1.0+(SHARPENING+UPSCALING_SHARPNENING)*contrast)
+          - (albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8 + (albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4)/2.0)/6.0 * (SHARPENING+UPSCALING_SHARPNENING)*contrast;
   #endif
   vec3 emc = texture2D(colortex7,texcoord).rgb;
   float modWT = sunAngle*10;

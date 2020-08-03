@@ -31,6 +31,13 @@ vec3 LinearTosRGB(in vec3 color)
 
     return clr;
 }
+vec3 ToneMap_Hejl2015(in vec3 hdr)
+{
+    vec4 vh = vec4(hdr*0.85, 3.0);	//0
+    vec4 va = (1.75 * vh) + 0.05;	//0.05
+    vec4 vf = ((vh * va + 0.004f) / ((vh * (va + 0.55f) + 0.0491f))) - 0.0821f+0.000633604888;	//((0+0.004)/((0*(0.05+0.55)+0.0491)))-0.0821
+    return vf.xyz / vf.www;
+}
 vec3 HableTonemap(vec3 linearColor) {
 	// A = shoulder strength
 	const float A = 0.4;

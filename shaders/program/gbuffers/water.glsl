@@ -99,7 +99,8 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 
     for (int i = 0; i <= int(quality); i++) {
 
-			float sp=invLinZ(texelFetch2D(gaux1,ivec2(spos.xy/texelSize/4),0).w);
+			float sp=texelFetch2D(gaux1,ivec2(spos.xy/texelSize/4),0).w;
+			sp = invLinZ(sp);
 
             if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
 							return vec3(spos.xy/RENDER_SCALE,sp);

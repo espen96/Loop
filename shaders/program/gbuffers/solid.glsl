@@ -9,7 +9,8 @@
 
 /* DRAWBUFFERS:1372 */
 	void main() {
-  float LoDbias = log2(1.0/dot(RENDER_SCALE*sqrt(5.0),vec2(0.5)));	  
+ // Level of detail choice by default is log2(abs(dFdx(p)) + abs(dFdy(p)))
+  float LoDbias = -1.0; 
 
 
 
@@ -125,28 +126,25 @@ float shading = 1.0;
 		
 		
 #ifdef POM2		
-if (dist < MAX_OCCLUSION_DISTANCE) {
-	#ifndef USE_LUMINANCE_AS_HEIGHTMAP
-		if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001)
-	{
-		vec3 interval = viewVector.xyz * intervalMult;
-		vec3 coord = vec3(vtexcoord.st, 1.0);
-		coord += noise*interval;
-
-		for (int loopCount = 0;
-				(loopCount < MAX_OCCLUSION_POINTS) && (readNormal(coord.st).a < coord.p) &&coord.p >= 0.0;
-				++loopCount) {
-			coord = coord+interval;
-
-		}
-		if (coord.t < mincoord) {
-			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
-				coord.t = mincoord;
-				discard;
-			}
-		}
-		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
-	}
+    if (dist < MAX_OCCLUSION_DISTANCE) {
+    	#ifndef USE_LUMINANCE_AS_HEIGHTMAP
+    		if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001) {
+      		vec3 interval = viewVector.xyz * intervalMult;
+      		vec3 coord = vec3(vtexcoord.st, 1.0);
+      		coord += noise*interval;
+      		for (int loopCount = 0;
+      				(loopCount < MAX_OCCLUSION_POINTS) && (readNormal(coord.st).a < coord.p) &&coord.p >= 0.0;
+      				++loopCount) {
+      			       coord = coord+interval;
+          }
+      		if (coord.t < mincoord) {
+      			if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+      				coord.t = mincoord;
+      				discard;
+      			}
+      		}
+      		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
+      	}
     	#else
     	if ( viewVector.z < 0.0)
     	{
@@ -169,7 +167,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
     		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
     	}
     	#endif
-	}
+    	}
 	
 #endif	
 	

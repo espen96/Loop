@@ -79,7 +79,7 @@ float R2_dither(){
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
 }
 float blueNoise(vec2 coord){
-  return texelFetch2D(noisetex, ivec2(coord)%512, 0).a;
+  return texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a;
 }
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {

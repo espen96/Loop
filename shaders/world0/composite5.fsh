@@ -9,9 +9,9 @@
 
 
 #define SSPT_FLICKER_REDUCTION 0.5
-#define SSPT_BLEND_FACTOR 0.5
-#define SSPT_ANTI_GHOSTING 0.1
-#define SSPT_MOTION_REJECTION 0.0
+#define SSPT_BLEND_FACTOR 0.75
+#define SSPT_ANTI_GHOSTING 0.75
+#define SSPT_MOTION_REJECTION 0.5
 
 const int noiseTextureResolution = 32;
 

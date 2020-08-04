@@ -115,6 +115,7 @@ vec2 noise(vec2 coord)
 
 
 void main() {
+
 float z = texture2D(depthtex0,texcoord).x;
 
 

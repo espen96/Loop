@@ -24,7 +24,7 @@ uniform vec3 sunPosition;
 uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
-
+#include "/lib/res_params.glsl"
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,
 							vec2(5.0,1.)/8.,

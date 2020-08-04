@@ -122,7 +122,7 @@ float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
 }
-
+//#define RTAO
 
 vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
 	int nrays = RAYS;
@@ -136,16 +136,9 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 		int seed = (frameCounter%10000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
-		rayDir = TangentToWorld(normal,rayDir);
-		//		vec3 offset = rayDir-normal;
-		//		if (offset.x>=0.75) break;
-		
-		vec3 reflectedVector = reflect(normalize(fragpos), normalize(normal2));
-		vec3 reflectedVector2 = reflect(normalize(fragpos), normalize(rayDir));
-		
-		
+			 rayDir = TangentToWorld(normal,rayDir);	
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
-	//	vec3 rayHit = RT(reflectedVector, fragpos, fract(seed/1.6180339887 + noise.b));
+		
 	//	vec3 rayHit = RT(mix(mat3(gbufferModelView)*rayDir,reflectedVector,0.5), fragpos, fract(seed/1.6180339887 + noise.b));
 
 	
@@ -156,8 +149,14 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 			
 			
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
+
+			#ifdef RTAO
+				intRadiance += ambient*0.25;
+
+			#else
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
-				
+			#endif	
+
 			else
 			
 				intRadiance += ambient;

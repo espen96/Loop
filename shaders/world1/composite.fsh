@@ -4,7 +4,7 @@
 #include "/lib/settings.glsl"
 const bool shadowHardwareFiltering = true;
 
-varying vec2 texcoord;
+
 
 flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
 flat varying vec3 ambientUp;
@@ -66,6 +66,7 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/color_transforms.glsl"
 #include "lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
+#include "/lib/res_params.glsl"							   
 #include "/lib/stars.glsl"
 #include "lib/volumetricClouds.glsl"
 #include "/lib/waterBump.glsl"
@@ -238,7 +239,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	//pre-rotate direction
 	float n = 0.;
 
-	occlusion = 1.0;
+	occlusion = 0.0;
 
 	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
@@ -249,7 +250,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 			vec2 sampleOffset = sp*rd;
 			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight));
 			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
-				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+				vec3 t0 = toScreenSpace(vec3(offset/RENDER_SCALE*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
 
 				vec3 vec = t0.xyz - fragpos;
 				float dsquared = dot(vec,vec);
@@ -265,11 +266,12 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-		occlusion = clamp(1.0-occlusion/n*2.0,0.,1.0);
+		occlusion = clamp(1.0-occlusion/n*2.0,0.0,1.0);
 		//occlusion = mult;
 
 }
 void main() {
+	vec2 texcoord = gl_FragCoord.xy*texelSize;												 
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
@@ -280,7 +282,7 @@ void main() {
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
-	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
@@ -294,7 +296,7 @@ void main() {
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
@@ -362,6 +364,7 @@ void main() {
 			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 		#endif
 		}
+		gl_FragData[0].rgb = ambientLight*albedo*ao;
 		gl_FragData[0].rgb = ambientLight*albedo*ao;
 		
 		

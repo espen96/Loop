@@ -123,7 +123,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 			vec2 sampleOffset = sp*rd;
 			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio));
 			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
-				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+				vec3 t0 = toScreenSpace(vec3(offset/RENDER_SCALE*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
 
 				vec3 vec = t0.xyz - fragpos;
 				float dsquared = dot(vec,vec);

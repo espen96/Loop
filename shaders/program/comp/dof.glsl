@@ -503,8 +503,11 @@ void main() {
 #ifndef TOASTER
   float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;
 	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
+#ifdef end
+  VL_abs = clamp((1.0-VL_abs)*E_BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
+#else  
   VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
-
+#endif
 	col = (mix(col,bloom,VL_abs)+bloom*lightScat)*exposure.rgb;
 
 

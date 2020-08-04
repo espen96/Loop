@@ -1,6 +1,6 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
-#include "/lib/settings.glsl"
+#define TAA
 varying vec2 texcoord;
 
 flat varying vec3 WsunVec;
@@ -24,7 +24,7 @@ uniform vec3 sunPosition;
 uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
-
+#include "/lib/res_params.glsl"
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,
 							vec2(5.0,1.)/8.,

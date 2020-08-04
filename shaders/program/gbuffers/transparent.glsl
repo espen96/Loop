@@ -21,6 +21,7 @@ void main() {
 	vec4 albedo = vec4(0.0);
 	#ifdef spidereye
 	 albedo = texture2D(texture, texcoord);
+	 albedo.rgb =srgbToLinear(albedo.rgb);
 	#else 
 	  albedo.rgb = srgbToLinear(gl_FragData[0].rgb);
 	#endif
@@ -130,9 +131,11 @@ void main() {
 
 #ifdef spidereye	
 	
-
-	albedo.rgb *= 0.33;
-	gl_FragData[0] = albedo;
+	float alblum = luma(albedo.rgb);
+	if (alblum <=0) albedo.a =0;
+	albedo.rgb *= albedo.a;
+	gl_FragData[0].rgb = albedo.rgb;
+	gl_FragData[0].a = albedo.a;
 	
 #endif
 

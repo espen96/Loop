@@ -461,13 +461,14 @@ void main() {
 		float roughness = mat_data.x;
 		float F0 = mat_data.y;
 		float f0 = (F0*(1.0-gl_FragData[0].a));
+		vec3 sky = skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
 
 
 		float fresnel = pow(clamp(1.0 + dot(normal, normalize(fragpos.xyz)), 0.0, 1.0), 5.0);
 		fresnel = mix(f0,1.0,fresnel);
 
 	
-		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel);
+		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel, sky);
 		vec3 reflected = ssptr.rgb*fresnel;
 
 
@@ -475,7 +476,7 @@ void main() {
 
 		
 
-if (!entity) albedo.rgb += reflected.rgb;
+
 
 
 
@@ -657,6 +658,7 @@ mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.
 		}
 		else {
 			#ifndef SSPT
+			if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;

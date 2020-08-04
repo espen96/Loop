@@ -132,7 +132,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	}
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
-	spos += stepv*noise;	
+	spos += stepv;	
 	
  for(int i = 0; i < iterations; i++){
 		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
@@ -171,13 +171,13 @@ vec3 TangentToWorld2(vec3 N, vec3 H)
     return vec3((T * H.x) + (B * H.y) + (N * H.z));
 }
 
-vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float fresnel){
-	int nrays = 1;
+vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float fresnel, vec3 sky){
+	int nrays = 4;
 	vec3 intRadiance = vec3(0.0);
 	for (int i = 0; i < nrays; i++){
 
 	
-	if (roughness>=0.75) break;
+		if (roughness>=0.75) break;
 
 	
 
@@ -187,11 +187,11 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 		vec3 rayDir = normalize(cosineHemisphereSample2(ij));
 		rayDir = TangentToWorld2(normal*fresnel,rayDir);
 		vec3 offset = rayDir-normal;
-		if (offset.x>=0.6) break;
+	//	if (offset.x>=0.2) break;
 
-		vec3 reflectedVector = reflect(normalize(fragpos), normalize(mix(normal,rayDir,(roughness))));
+		vec3 reflectedVector = reflect(normalize(fragpos), normalize(mix(normal,rayDir,(clamp(roughness,0,1)))));
 		
-		vec3 rayHit = sspr(reflectedVector, fragpos, blueNoise(),fresnel);
+		vec3 rayHit = sspr(reflectedVector, fragpos, R2_dither(),fresnel);
 
 		if (rayHit.z < 1.){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -200,15 +200,14 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 			
 			
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-
-
-
 			intRadiance = texture2D(colortex5,previousPosition.xy).rgb;
-				
+
+			
+
 		
 		} 
-//	else { intRadiance += clamp(sky,0,10);}
+
 
 	}
-	return clamp(intRadiance/nrays,0,f0);
+	return clamp(intRadiance/nrays,0,10)*(1-roughness)*f0;
 }

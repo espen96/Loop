@@ -233,7 +233,7 @@ void main() {
 
 /* DRAWBUFFERS:3 */
 
-#ifdef SSPT
+#ifdef SSPT 
 	vec3 color = TAA_sspt();
 	gl_FragData[0].rgb = color;
 #else

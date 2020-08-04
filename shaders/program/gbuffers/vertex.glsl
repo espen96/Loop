@@ -41,11 +41,7 @@ varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 #endif
 varying vec2 texcoord;
-#ifdef MC_NORMAL_MAP
-
-attribute vec4 at_tangent;
-#endif
-   
+attribute vec4 at_tangent;   
 
 uniform float frameTimeCounter;
 const float PI48 = 150.796447372*WAVY_SPEED;

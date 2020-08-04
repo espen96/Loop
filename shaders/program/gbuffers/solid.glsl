@@ -297,7 +297,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 	#ifdef entities
 	normal = normalMat.xyz;
 
-	data0 = texture2D(texture, lmtexcoord.xy)*color;
+	data0.rgb = texture2D(texture, lmtexcoord.xy).rgb*color.rgb;
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;

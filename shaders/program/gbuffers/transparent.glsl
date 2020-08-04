@@ -138,7 +138,13 @@ void main() {
 	gl_FragData[0].a = albedo.a;
 	
 #endif
+#ifdef thand	
+	
 
+		gl_FragData[0].rgb = diffuseLight*albedo.rgb*8./1500.;
+
+	
+#endif
 
 	gl_FragData[1].r = 1;	
 	

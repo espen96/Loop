@@ -209,7 +209,7 @@ vec3 toShadowSpaceProjected(vec3 p3){
 }
 
 #define nether
-//#include "/lib/sspt.glsl"
+#include "/lib/sspt.glsl"
 
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
@@ -324,6 +324,7 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
+		vec3 normal2 = decode(dataUnpacked0.yw);
 
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
@@ -367,8 +368,9 @@ void main() {
 		
 		
 #else	
-				if (emissive || entity || hand)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z);
-				if (emissive || hand)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*alblum*3;
+				if (emissive || entity || hand)  {ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B) + custom_lightmap.z)/2;
+				if (hand)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*alblum;
+				if (emissive)  ambientLight = (ambientLight * custom_lightmap.x + custom_lightmap.y + custom_lightmap.z)*alblum*3;
 
 
 
@@ -381,8 +383,8 @@ void main() {
 
 			
 
-			
-		  	ambientLight = netherGI(normal, blueNoise(gl_FragCoord.xy), fragpos, (fogColor*0.1+ambientLight)* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B));}
+		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, (fogColor*0.11+ambientLight/2) * (custom_lightmap.x+fogColor)/2, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*((vec3(N_TORCH_R,N_TORCH_G,N_TORCH_B)/10)+(fogColor/5)));				
+		  	}
 			
 			
 		//combine all light sources

@@ -173,32 +173,7 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 }
 
 
-vec3 netherGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
-	int nrays = RAYS;
-	vec3 intRadiance = vec3(0.0);
-	float occlusion = 0.0;
-	for (int i = 0; i < nrays; i++){
-		int seed = (frameCounter%10000)*nrays+i;
-		vec2 ij = fract(R2_samples(seed) + noise.rg);
-		vec3 rayDir = normalize(cosineHemisphereSample(ij));
-		rayDir = TangentToWorld(normal,rayDir);
-		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
-		if (rayHit.z < 1.){
-			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
-			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
-			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
-			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-				intRadiance += texture2D(colortex5,previousPosition.xy).rgb*10;
-			occlusion += 1.0;
-			if (translucent)
-				intRadiance += ambient*0.25;
-		}
-		else {
-			intRadiance += ambient;
-		}
-	}
-	return intRadiance/nrays + (1.0-occlusion/nrays)*torch;
-}
+
 
 
 vec3 endGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){

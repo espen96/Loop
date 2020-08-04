@@ -151,9 +151,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float muS = 1.0*mu;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
-		for (int i=0;i<VL_SAMPLES;i++) {
-			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
-			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES)) * log(expFactor) / float(VL_SAMPLES)/(expFactor-1.0);
+		for (int i=0;i<N_VL_SAMPLES;i++) {
+			float d = (pow(expFactor, float(i+dither)/float(N_VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
+			float dd = pow(expFactor, float(i+dither)/float(N_VL_SAMPLES)) * log(expFactor) / float(N_VL_SAMPLES)/(expFactor-1.0);
 			progress = start.xyz + d*dV;
 			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 			//project into biased shadowmap space

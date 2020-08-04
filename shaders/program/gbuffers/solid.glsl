@@ -31,21 +31,26 @@ vec2 tempOffset=offsets[framemod8];
 	vec3 mat_data = vec3(0.0);
 	vec4 reflected = vec4(0.0);
 	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
-		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
 vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
 float ao = 1.0;
+#ifdef MC_NORMAL_MAP
+		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
+		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
+								  tangent.y, tangent2.y, normal.y,
+						     	  tangent.z, tangent2.z, normal.z);
+#endif
 
-
-
+//////////////////////////////PBR//////////////////////////////
 #ifdef PBR		
-float iswater = normalMat.w;		
-float NdotL = lightSign*dot(normal,sunVec);
-float NdotU = dot(upVec,normal);
+	float iswater = normalMat.w;		
+	float NdotL = lightSign*dot(normal,sunVec);
+	float NdotU = dot(upVec,normal);
 
-float diffuseSun = clamp(NdotL,0.0f,1.0f);	
-float shading = 1.0;
+	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
+	float shading = 1.0;
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
@@ -88,33 +93,13 @@ float shading = 1.0;
 
 		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
 		ao = clamp(linao.z,0,1);
-		#endif
-
-
-		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
-		
-		
-		vec4 color = color;	
-
-		     color.rgb *= ao;	
-
-	
-	
-	
-	
-#ifdef MC_NORMAL_MAP
-		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
-		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
-								  tangent.y, tangent2.y, normal.y,
-						     	  tangent.z, tangent2.z, normal.z);
 #endif
 
 
-	
-	
 
+		vec4 color = color;	
 
-
+		  color.rgb *= ao;	
 
 
 #ifdef PBR
@@ -193,21 +178,10 @@ float shading = 1.0;
 	normal = applyBump(tbnMatrix,normal2);
 #endif	
 
-
-
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
-	
-	
-
-	
-	
 	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgba;
-
-
-
-		bool is_metal = false;
-
-		mat_data = labpbr(specularity, is_metal);
+	bool is_metal = false;
+	mat_data = labpbr(specularity, is_metal);
 
 
 
@@ -256,15 +230,12 @@ float shading = 1.0;
 		}
 
 		
-//  vec4 data0 = texture2D(texture, lmtexcoord.xy)*color;
-    vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
-    data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
-//	vec4 data0 = texture2D(texture, lmtexcoord.xy);
-		 data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 
-//	data0.a = float(data0.a > noise);
-	data0.a = float(data0.a > 0.5);
-  if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
+    vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
+		data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
+		data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+		data0.a = float(data0.a > 0.5);
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
 	else data0.a = 0.0;
 
 
@@ -277,30 +248,20 @@ float shading = 1.0;
 	
 	#ifdef entities
 	normal = normalMat.xyz;
-
 	data0 = texture2D(texture, lmtexcoord.xy)*color;
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
 	#endif	
-//	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal),0.,1.0);	
 	vec4 data1 = clamp(encode(normal),0.,1.0);
-
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-	#ifndef entity
-		gl_FragData[1].rgb = specularity.rgb;
-		gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
-		gl_FragData[2].rgb = vec3(0,mat_data.z,0);
-
-	#endif
 	#else
 
 
 	
 
 	
-//	vec4 data0 = texture2D(texture, lmtexcoord.xy);
-	vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
+
+vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   data0.rgb*=color.rgb;
   data0.rgb = toLinear(data0.rgb);
   float avgBlockLum = dot(toLinear(texture2D(texture, lmtexcoord.xy,128).rgb),vec3(0.333));
@@ -313,9 +274,9 @@ float shading = 1.0;
   #endif
 
 
-data0.a = float(data0.a > 0.5);
+	data0.a = float(data0.a > 0.5);
 		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
-	else data0.a = 0.0;
+		else data0.a = 0.0;
 	
 	
 	#ifdef MC_NORMAL_MAP
@@ -344,13 +305,24 @@ data0.a = float(data0.a > 0.5);
 	
 	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
 
-		gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-		gl_FragData[1].rgb = specularity.rgb;
-		gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
-		gl_FragData[2].rgb = vec3(0,mat_data.z,0);
 
-	#endif	
+
+
+#endif	
 	
+	
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));		
+		
+		
+#ifndef entity
+	gl_FragData[1].rgb = specularity.rgb;
+	gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+
+#endif	
+	
+	
+
 	
 	
 	
@@ -365,10 +337,7 @@ gl_FragData[3].rgb = vec3(0.0);
 #endif	
 
 #ifndef block
-
-	gl_FragData[2].r = 1;	
-
-
+gl_FragData[2].r = 1;	
 #endif
 	
 

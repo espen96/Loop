@@ -8,10 +8,10 @@
 
 
 
-#define SSPT_FLICKER_REDUCTION 0.5
-#define SSPT_BLEND_FACTOR 0.75
-#define SSPT_ANTI_GHOSTING 0.75
-#define SSPT_MOTION_REJECTION 0.5
+#define SSPT_FLICKER_REDUCTION 1.0
+#define SSPT_BLEND_FACTOR 0.2
+
+
 
 const int noiseTextureResolution = 32;
 
@@ -59,7 +59,28 @@ uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 #include "/lib/res_params.glsl"
 #include "/lib/projections.glsl"
+
 vec2 texcoord = gl_FragCoord.xy*texelSize;	
+
+float interleaved_gradientNoise(){
+	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+tempOffsets*2);
+}
+float triangularize(float dither)
+{
+    float center = dither*2.0-1.0;
+    dither = center*inversesqrt(abs(center));
+    return clamp(dither-fsign(center),0.0,1.0);
+}
+vec3 fp10Dither(vec3 color,float dither){
+	const vec3 mantissaBits = vec3(6.,6.,5.);
+	vec3 exponent = floor(log2(color));
+	return color + dither*exp2(-mantissaBits)*exp2(exponent);
+}
+
+
+
+
+
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
@@ -157,11 +178,57 @@ vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float shar
 
 }
 
+vec3 clip_aabb(vec3 q,vec3 aabb_min, vec3 aabb_max)
+	{
+		vec3 p_clip = 0.5 * (aabb_max + aabb_min);
+		vec3 e_clip = 0.5 * (aabb_max - aabb_min) + 0.00000001;
+
+		vec3 v_clip = q - vec3(p_clip);
+		vec3 v_unit = v_clip.xyz / e_clip;
+		vec3 a_unit = abs(v_unit);
+		float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
+
+		if (ma_unit > 1.0)
+			return vec3(p_clip) + v_clip / ma_unit;
+		else
+			return q;
+	}												   
 
 vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
     return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
+vec3 tonemap(vec3 col){
+	return pow(col/(1+luma(col)),vec3(1/2.232));
+}
+vec3 invTonemap(vec3 col){
+	col = pow(col,vec3(2.232));
+	return col/(1-luma(col));
+}
+vec3 RGB_YCoCg(vec3 c)
+	{
+		// Y = R/4 + G/2 + B/4
+		// Co = R/2 - B/2
+		// Cg = -R/4 + G/2 - B/4
+		return vec3(
+			 c.x/4.0 + c.y/2.0 + c.z/4.0,
+			 c.x/2.0 - c.z/2.0,
+			-c.x/4.0 + c.y/2.0 - c.z/4.0
+		);
+	}
+
+	// https://software.intel.com/en-us/node/503873
+	vec3 YCoCg_RGB(vec3 c)
+	{
+		// R = Y + Co - Cg
+		// G = Y + Cg
+		// B = Y - Co - Cg
+		return max(vec3(
+			c.x + c.y - c.z,
+			c.x + c.z,
+			c.x - c.y - c.z
+		), 0.0);
+	}					   
 
 vec3 TAA_sspt(){
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
@@ -177,10 +244,7 @@ vec3 TAA_sspt(){
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 	previousPosition.xy = texcoord + velocity;
 
-	//to reduce error propagation caused by interpolation during history resampling, we will introduce back some aliasing in motion
-	vec2 d = 0.5-abs(fract(previousPosition.xy*vec2(viewWidth,viewHeight)-texcoord*vec2(viewWidth,viewHeight))-0.5);
-	float mixFactor = dot(d,d);
-	float rej = mixFactor*SSPT_MOTION_REJECTION;
+
 	//reject history if off-screen and early exit
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return texture2D(colortex3, texcoord).rgb;
 
@@ -195,7 +259,7 @@ vec3 TAA_sspt(){
 	vec3 albedoCurrent7 = texture2D(colortex3, texcoord + vec2(-texelSize.x,0.0)).rgb;
 	vec3 albedoCurrent8 = texture2D(colortex3, texcoord + vec2(texelSize.x,0.0)).rgb;
 	
-	float tester = abs(velocity.x+velocity.y)*20;	
+	float vel = abs(velocity.x+velocity.y)*20;	
 	
 	
 
@@ -209,16 +273,15 @@ vec3 TAA_sspt(){
 
 
 
-	//increases blending factor if history is far away from aabb, reduces ghosting at the cost of some flickering
-	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
-
 	//reduces blending factor if current texel is far from history, reduces flickering
-	float lumDiff2 = distance(albedoPrev,albedoCurrent0)/luma(albedoPrev);
+	float lumDiff2 = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
 	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*SSPT_FLICKER_REDUCTION;
 
-	//Blend current pixel with clamped history
-	vec3 supersampled =  mix(finalcAcc,albedoCurrent0,clamp(SSPT_BLEND_FACTOR*lumDiff2+rej+isclamped*SSPT_ANTI_GHOSTING+0.01,0.,1.));
-
+	//Increases blending factor when far from AABB and in motion, reduces ghosting
+	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
+	float movementRejection = isclamped * clamp(length(velocity/texelSize),0.0,1.0)*0.5;
+	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
+	vec3 supersampled =   invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(SSPT_BLEND_FACTOR*lumDiff2 + movementRejection,0.,1.)));
 
 
 
@@ -235,7 +298,7 @@ void main() {
 
 #ifdef SSPT 
 	vec3 color = TAA_sspt();
-	gl_FragData[0].rgb = color;
+	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(interleaved_gradientNoise())),6.11*1e-5,65000.0);
 #else
 	vec3 color2 = texture2D(colortex3,texcoord).rgb;
 	gl_FragData[0].rgb = color2;

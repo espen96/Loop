@@ -235,7 +235,7 @@ float ao = 1.0;
 		data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 		data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 		data0.a = float(data0.a > 0.5);
-	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.49999;
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 	else data0.a = 0.0;
 
 

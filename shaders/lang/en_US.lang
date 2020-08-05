@@ -75,6 +75,8 @@ option.Exposure_Speed=Exposure speed
 
 option.Manual_exposure_value= Manual exposure value
 option.BLOOM_STRENGTH=Bloom strength
+option.MOTION_BLUR=Motion blur
+option.MOTION_BLUR_STRENGTH=Motion blur strength
 
 
 #TONEMAP

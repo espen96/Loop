@@ -263,7 +263,7 @@ float blueNoise(){
 
 
 vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+  return texelFetch2D(colortex6, ivec2(coord*blueNoise())%512, 0);
 }
 
 

@@ -50,19 +50,6 @@ void main() {
 	TAA_Offset = vec2(0.0);
 	#endif
 
-	vec3 sc = texelFetch2D(colortex4,ivec2(6,37),0).rgb;
-	ambientUp = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
-	ambientDown = texelFetch2D(colortex4,ivec2(1,37),0).rgb;
-	ambientLeft = texelFetch2D(colortex4,ivec2(2,37),0).rgb;
-	ambientRight = texelFetch2D(colortex4,ivec2(3,37),0).rgb;
-	ambientB = texelFetch2D(colortex4,ivec2(4,37),0).rgb;
-	ambientF = texelFetch2D(colortex4,ivec2(5,37),0).rgb;
-
-	lightCol.a = float(sunElevation > 1e-5)*2-1.;
-	lightCol.rgb = sc;
-
-	WsunVec = lightCol.a*normalize(mat3(gbufferModelViewInverse) *sunPosition);
-	zMults = vec3((far * near)*2.0,far+near,far-near);
 
 
 }

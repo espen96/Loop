@@ -91,7 +91,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	vec3 clipPosition = toClipSpace3(position);
 	
 
-	
+
 	
 	float stepSize = 15;
 	int maxSteps = 15;	
@@ -127,18 +127,32 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	float currZ = linZ(spos.z);
 
 	if( sp < currZ) {
+
+       
 		float dist = abs(sp-currZ)/currZ;
 		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 	}
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
-	spos += stepv;	
+	spos += stepv *noise;	
 	
  for(int i = 0; i < iterations; i++){
 		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
 		float currZ = linZ(spos.z);
 		if( sp < currZ) {
-			float dist = abs(sp-currZ)/currZ;
+			float dist = abs(sp-currZ)/currZ;			
+
+			
+			
+		vec4 viewPosPrev = gbufferProjectionInverse * vec4(position * 2.0 - 1.0, 1.0);
+		viewPosPrev /= viewPosPrev.w;
+		viewPosPrev = gbufferModelViewInverse * viewPosPrev;
+		vec4 previousPosition = viewPosPrev + vec4(cameraPosition - previousCameraPosition, 0.0);
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		spos.xy = previousPosition.xy / previousPosition.w * 0.5 + 0.5;
+	
+	
 			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;
@@ -193,7 +207,7 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 		
 		vec3 rayHit = sspr(reflectedVector, fragpos, R2_dither(),fresnel);
 
-		if (rayHit.z < 1.){
+		if (rayHit.z < 1.0 - 1e-5){
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;

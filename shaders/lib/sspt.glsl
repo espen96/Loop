@@ -54,7 +54,7 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 	}
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
-	spos += stepv*noise;	
+	spos += stepv*noise*noise;	
 	
  for(int i = 0; i < iterations; i++){
 		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
@@ -136,17 +136,18 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 		int seed = (frameCounter%10000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
-			 rayDir = TangentToWorld(normal,rayDir);	
+			 rayDir = TangentToWorld(normal,rayDir);
+vec2 texcoord = gl_FragCoord.xy*texelSize;	
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
 		
 	//	vec3 rayHit = RT(mix(mat3(gbufferModelView)*rayDir,reflectedVector,0.5), fragpos, fract(seed/1.6180339887 + noise.b));
 
 	
-		if (rayHit.z < 1.){
+		if (rayHit.z < 1.0-1e-8){
+		
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
-			
 			
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 

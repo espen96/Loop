@@ -130,7 +130,7 @@ void main() {
 //	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),1.0);	
 	
 	
-    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
+//    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);
 	#ifdef WAVY_PLANTS
 		if ((mc_Entity.x == 10001 && istopv) && abs(position.z) < 64.0) {
@@ -157,8 +157,8 @@ void main() {
 #ifdef hand	
  	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);		
 #endif	
-	gl_Position = ftransform();
-//	gl_Position = toClipSpace3(position);
+//	gl_Position = ftransform();
+	gl_Position = toClipSpace3(position);
 	#ifdef SEPARATE_AO
 	lmtexcoord.z *= sqrt(color.a);
 	lmtexcoord.w *= color.a;
@@ -207,7 +207,7 @@ void main() {
 	
 #endif	
 	
-		#ifdef TAA_UPSCALING
+	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;
 	#endif
 	#ifdef TAA

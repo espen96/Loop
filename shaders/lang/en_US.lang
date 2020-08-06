@@ -85,6 +85,7 @@ option.USE_ACES_COLORSPACE_APPROXIMATION=Use ACES approximation
 #DOF
 
 option.DOF=Depth of field
+option.AUTOFOCUS=Autofocus
 option.HQ_DOF=High quality
 option.PAINTERY=Paint brush
 option.focal=Focal length
@@ -92,7 +93,7 @@ option.aperture=Aperture
 option.HEXAGONAL_BOKEH=Hexagonal bokeh
 option.MANUAL_FOCUS=Manual focus
 option.FAR_BLUR_ONLY=Far blur only
-
+option.EXCLUDE_HAND=Exclude hand
 #PURKINJE
 
 option.Purkinje_strength=Strength
@@ -168,6 +169,7 @@ option.Dirt_Absorb_B = Dirt absorbtion Blue
 option.Water_Absorb_R = Water absorption Red
 option.Water_Absorb_G = Water absorption Green
 option.Water_Absorb_B = Water absorption Blue
+option.water_blend = Biome color blend
 
 #OVERWORLD
 

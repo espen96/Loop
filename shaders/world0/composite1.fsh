@@ -533,7 +533,7 @@ vec3 filtered = vec3(Min_Shadow_Filter_Radius,1.0,0.0);
 #ifndef TOASTER				
 				float SSS = max(exp(-(filtered.x-1.412)*2.4), 0.7*exp(-(filtered.x-1.412)*0.6));
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
-					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
+					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise*20,0.0);
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
 					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;

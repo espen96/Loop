@@ -7,6 +7,7 @@ varying vec3 viewVector;
 varying float dist;
 
 
+#include "/lib/settings.glsl"
 #include "/lib/res_params.glsl"
 
 
@@ -230,11 +231,14 @@ void main() {
 		gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);																				   
 	vec3 albedo = toLinear(gl_FragData[0].rgb);
 	if (iswater > 0.4) {
-		albedo = vec3(0.42,0.6,0.7);
+	vec3 albedo1 = toLinear(color.rgb)-0.65;
+	vec3 albedo2 = vec3(0.42,0.6,0.7);
+	albedo = mix(albedo1,albedo2,water_blend);
 		gl_FragData[0] = vec4(0.42,0.6,0.7,0.7);
 	}
 	if (iswater > 0.9) {
-		gl_FragData[0] = vec4(0.0);
+		gl_FragData[0].rgb = vec3(0.1);
+		gl_FragData[0].a = (0.1);
 	}
 
 

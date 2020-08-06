@@ -303,7 +303,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 	else data0.a = 0.0;
 	#endif
 	
-	vec4 data1 = clamp(noise/256.+encode(normal),0.,1.0);
+	vec4 data1 = clamp(noise/256.0+encode(normal),0.,1.0);
 
 
 

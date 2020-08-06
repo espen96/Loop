@@ -440,12 +440,15 @@ void main() {
 		/*--------------------------------*/
 		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 		#ifdef AUTOFOCUS
-//			float focus = ld(centerDepthSmooth)*far;
-			float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
+			float focus = ld(centerDepthSmooth)*far;
+//			float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
 		#else
 			float focus = MANUAL_FOCUS;
 		#endif
 		float pcoc = min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+		#ifdef EXCLUDE_HAND
+					pcoc *= float(z > 0.56);
+		#endif			
 		#ifdef FAR_BLUR_ONLY
 			pcoc *= float(z > focus);
 		#endif

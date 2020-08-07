@@ -7,7 +7,7 @@ const float PI_3 = 1.0471975512;
 uniform float ratio, time;
 uniform float screenBrightness;
 uniform float centerDepthSmooth;
-
+uniform mat4 gbufferProjection;
 
 #include "/lib/res_params.glsl"							   
 #ifdef DOF
@@ -451,7 +451,7 @@ void main() {
 			#if DOF_MODE == 2
 				focus = MANUAL_FOCUS * screenBrightness;
 			#endif
-			float pcoc = min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+			float pcoc = min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
 			#if EXCLUDE_MODE == 2
 						pcoc *= float(z > 0.56);
 			#endif			

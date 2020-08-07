@@ -85,15 +85,25 @@ option.USE_ACES_COLORSPACE_APPROXIMATION=Use ACES approximation
 #DOF
 
 option.DOF=Depth of field
-option.AUTOFOCUS=Autofocus
-option.HQ_DOF=High quality
-option.PAINTERY=Paint brush
+option.DOF_MODE=Focus mode
+option.DOF_MODE.comment=Focus mode of the camera. 'Auto' focuses on whatever the player is looking at. 'Manual' allows the player to set the distance the camera tries to focus at with Shader setting "Manual focus distance". 'Manual+' allows to use Brightness value as multiplier to "Manual focus distance".
+value.DOF_MODE.0=Auto
+value.DOF_MODE.1=Manual
+value.DOF_MODE.2=Manual+
+option.BOKEH_MODE=Bokeh mode
+option.BOKEH_MODE.comment=Switches which Bokeh will show on DOF (probably needs better explanation)
+value.BOKEH_MODE.0=Standard
+value.BOKEH_MODE.1=Hexagonal
+value.BOKEH_MODE.2=High Quality
+value.BOKEH_MODE.3=Paint/Brush
 option.focal=Focal length
 option.aperture=Aperture
-option.HEXAGONAL_BOKEH=Hexagonal bokeh
-option.MANUAL_FOCUS=Manual focus
-option.FAR_BLUR_ONLY=Far blur only
-option.EXCLUDE_HAND=Exclude hand
+option.MANUAL_FOCUS=Manual focus distance
+suffix.MANUAL_FOCUS= m
+option.EXCLUDE_MODE=Blur Mode
+value.EXCLUDE_MODE.0=Far and Near, with Hand
+value.EXCLUDE_MODE.1=Far, without Near and Hand
+value.EXCLUDE_MODE.2=Far and Near, without Hand
 #PURKINJE
 
 option.Purkinje_strength=Strength

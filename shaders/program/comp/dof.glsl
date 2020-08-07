@@ -5,8 +5,9 @@
 //////////////////////////////FRAGMENT//////////////////////////////		
 const float PI_3 = 1.0471975512;
 uniform float ratio, time;
+uniform float screenBrightness;
 uniform float centerDepthSmooth;
-
+uniform mat4 gbufferProjection;
 
 #include "/lib/res_params.glsl"							   
 #ifdef DOF
@@ -437,61 +438,64 @@ void main() {
 
 		
 	#ifdef DOF
+			/*--------------------------------*/
+			float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+			float focus;
+			#if DOF_MODE == 0
+				focus = ld(centerDepthSmooth)*far;
+//				float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
+			#endif
+			#if DOF_MODE == 1
+				focus = MANUAL_FOCUS;
+			#endif
+			#if DOF_MODE == 2
+				focus = MANUAL_FOCUS * screenBrightness;
+			#endif
+			float pcoc = min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+			#if EXCLUDE_MODE == 2
+						pcoc *= float(z > 0.56);
+			#endif			
+			#if EXCLUDE_MODE == 1
+				pcoc *= float(z > focus);
+			#endif
+			float noise = blueNoise()*6.28318530718;
+			mat2 noiseM = mat2( cos( noise ), -sin( noise ),
+	    	                   sin( noise ), cos( noise )
+	    	                     );
+			vec3 bcolor = vec3(0.);
+			float nb = 0.0;
+			vec2 bcoord = vec2(0.0);
 		/*--------------------------------*/
-		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
-		#ifdef AUTOFOCUS
-			float focus = ld(centerDepthSmooth)*far;
-//			float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
-		#else
-			float focus = MANUAL_FOCUS;
-		#endif
-		float pcoc = min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
-		#ifdef EXCLUDE_HAND
-					pcoc *= float(z > 0.56);
-		#endif			
-		#ifdef FAR_BLUR_ONLY
-			pcoc *= float(z > focus);
-		#endif
-		float noise = blueNoise()*6.28318530718;
-		mat2 noiseM = mat2( cos( noise ), -sin( noise ),
-	                       sin( noise ), cos( noise )
-	                         );
-		vec3 bcolor = vec3(0.);
-		float nb = 0.0;
-		vec2 bcoord = vec2(0.0);
-		/*--------------------------------*/
-		#ifndef HQ_DOF
-		bcolor = col;
-		#ifdef HEXAGONAL_BOKEH
-			for ( int i = 0; i < 60; i++) {
-				bcolor += texture2D(colortex5, texcoord.xy + hex_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
-			}
-			col = bcolor/61.0;
-		#endif	
-		#ifdef PAINTERY
-
-			for (int i = 0; i < 6; ++i) {
-				bcolor = texture2D(colortex5, texcoord.xy + paint_offsets[i]*pcoc*vec2(v / aspectRatio, v)).rgb;
-				vec3 t = max(sign(bcolor - col), 0.0);
+			#if BOKEH_MODE == 0 // Standard Bokeh
+				bcolor = col;
+				for ( int i = 0; i < 60; i++) {
+					bcolor += texture2D(colortex5, texcoord.xy + offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+				}
+				col = bcolor/61.0;
+			#endif
+			#if BOKEH_MODE == 1 // Hexagonal Bokeh
+				bcolor = col;
+				for ( int i = 0; i < 60; i++) {
+					bcolor += texture2D(colortex5, texcoord.xy + hex_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+				}
+				col = bcolor/61.0;
+			#endif	
+			#if BOKEH_MODE == 2 // HQ Bokeh
+				for ( int i = 0; i < 209; i++) {
+					bcolor += texture2D(colortex5, texcoord.xy + noiseM*shadow_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+				}
+				col = bcolor/209.0;
+			#endif
+			#if BOKEH_MODE == 3 // Paint/Brush Bokeh
+				bcolor = col;
+				for (int i = 0; i < 6; ++i) {
+					bcolor = texture2D(colortex5, texcoord.xy + paint_offsets[i]*pcoc*vec2(v / aspectRatio, v)).rgb;
+					vec3 t = max(sign(bcolor - col), 0.0);
+				}
 				col += (bcolor - col) * t;
-			}
-
-		#else
-			for ( int i = 0; i < 60; i++) {
-				bcolor += texture2D(colortex5, texcoord.xy + offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
-			}
+			#endif
 		/*--------------------------------*/
-	col = bcolor/61.0;
-		#endif
-		#endif
-		#ifdef HQ_DOF
-			for ( int i = 0; i < 209; i++) {
-				bcolor += texture2D(colortex5, texcoord.xy + noiseM*shadow_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
-			}
-			col = bcolor/209.0;
-		#endif
-
-#endif
+	#endif
 
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 

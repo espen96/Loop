@@ -13,5 +13,7 @@
   #define UPSCALING_SHARPNENING 2.0 - RENDER_SCALE_X - RENDER_SCALE_Y
 #else
   #define RENDER_SCALE vec2(1.0, 1.0)
+  #define RENDER_SCALE_X 1
+  #define RENDER_SCALE_Y 1
   #define UPSCALING_SHARPNENING 0.0
 #endif

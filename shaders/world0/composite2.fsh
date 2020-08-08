@@ -5,7 +5,7 @@
 
 
 #include "/lib/settings.glsl"
-#ifndef TOASTER
+
 #extension GL_EXT_gpu_shader4 : enable
 
 flat varying vec4 lightCol;
@@ -114,6 +114,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 	vec3 dVWorld = (wpos-gbufferModelViewInverse[3].xyz);
 
 	float maxLength = min(length(dVWorld),far)/length(dVWorld);
+	#ifdef TOASTER
+	      maxLength = min(length(dVWorld),far*0.712)/length(dVWorld);
+	#endif
 	dV *= maxLength;
 	dVWorld *= maxLength;
 
@@ -167,6 +170,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			}
 			//Water droplets(fog)
 			float density = densityVol*ATMOSPHERIC_DENSITY*mu*500.;
+			#ifdef TOASTER
+				  density = densityVol*ATMOSPHERIC_DENSITY*mu*1000.;
+			#endif
 			//Just air
 			vec2 airCoef = exp2(-max(progressW.y-SEA_LEVEL,0.0)/vec2(8.0e3, 1.2e3)*vec2(6.,7.0))*6.0;
 
@@ -279,15 +285,3 @@ void main() {
 		#endif
 		}	
 	}
-#else
-
-
-/* DRAWBUFFERS:0 */
-
-
-
-void main() {
-
-}
-#endif
-

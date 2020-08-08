@@ -166,11 +166,19 @@ void main() {
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
-				
+
+
+
+		
 		bool entity = abs(water.r) >0.9;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
+		
+
 		if (!hand){
+		
+		
+#ifndef TOASTER				
 			float NdotL = clamp(dot(normal,WsunVec),0.0,1.0);
 			if (translucent) {
 				NdotL = 0.9;
@@ -229,6 +237,8 @@ void main() {
 				gl_FragData[0].g = ao;
 			#endif
 			
+			
+			#endif
 
 			gl_FragData[0].b = spec.g;
 			gl_FragData[0].a = spec.b;

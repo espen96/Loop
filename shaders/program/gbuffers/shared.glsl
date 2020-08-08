@@ -26,8 +26,8 @@ uniform sampler2D normals;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 
-vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0;
-vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0;
+vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_X;
+vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_Y;
 
 uniform sampler2DShadow shadow;
 uniform ivec2 eyeBrightnessSmooth;

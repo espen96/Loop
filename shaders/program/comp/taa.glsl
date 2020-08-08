@@ -295,10 +295,17 @@ vec3 TAA_hq(){
 
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
-	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
+//	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
+	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
 	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
-	vec3 cMax = vec3(albedoCurrent0);
-	vec3 cMin = vec3(albedoCurrent0);
+	
+	
+//	vec3 cMax = vec3(albedoCurrent0);
+//	vec3 cMin = vec3(albedoCurrent0);
+	
+	vec3 cMax = vec3(0.0);
+	vec3 cMin = vec3(1e30);	
+	
 	for (int i = -1; i < 2; i++){
 		for (int j = -1; j < 2; j++){
 			vec3 current = texelFetch2D(colortex3, centerTC + ivec2(i, j), 0).rgb;
@@ -338,9 +345,18 @@ vec3 TAA_hq(){
 	float lumDiff2 = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
 	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*FLICKER_REDUCTION;
 
+	
+	
+	
+
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
-	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
-	float movementRejection = isclamped * clamp(length(velocity/texelSize),0.0,1.0)*0.5;
+//	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
+//	float movementRejection = isclamped * clamp(length(velocity/texelSize),0.0,1.0)*0.5;
+	
+	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
+	float movementRejection = isclamped*0.5 + isclamped*clamp(length(velocity/texelSize),0.0,1.0);	
+	
+	
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
 	vec3 supersampled =   invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR*lumDiff2 + movementRejection,0.,1.)));
 	#endif

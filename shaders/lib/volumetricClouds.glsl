@@ -2,6 +2,10 @@
 
 float cloud_height = 1500.;
 float maxHeight = 3200.;
+
+
+#ifndef TOASTER
+
 #ifdef HQ_CLOUDS
 int maxIT_clouds = 40;
 int maxIT = 80;
@@ -18,6 +22,33 @@ const int cloudShadowLoD = -1;
 const int cloudLoD = 0;
 const int cloudShadowLoD = -1;
 #endif
+
+#else
+
+
+
+#ifdef HQ_CLOUDS
+int maxIT_clouds = 25;
+int maxIT = 50;
+#else
+int maxIT_clouds = 9;
+int maxIT = 27;
+#endif
+
+float cdensity = 0.015;
+#ifdef HQ_CLOUDS
+const int cloudLoD = 1;
+const int cloudShadowLoD = -1;
+#else
+const int cloudLoD = -1;
+const int cloudShadowLoD = -1;
+#endif
+
+
+
+#endif
+
+
 
 //3D noise from 2d texture
 float densityAtPos(in vec3 pos)

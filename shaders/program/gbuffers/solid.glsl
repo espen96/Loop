@@ -1,6 +1,13 @@
 
 #include "/program/gbuffers/shared.glsl"
 
+
+
+
+
+
+
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -9,6 +16,8 @@
 
 /* DRAWBUFFERS:1372 */
 	void main() {
+	
+  if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y){	
  // Level of detail choice by default is log2(abs(dFdx(p)) + abs(dFdy(p)))
   float LoDbias = -1.0; 
 
@@ -311,7 +320,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 #endif	
 	
 	
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));		
+
 		
 		
 #ifndef entity
@@ -339,7 +348,10 @@ gl_FragData[3].rgb = vec3(0.0);
 #ifndef block
 gl_FragData[2].r = 1;	
 #endif
-	
+gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));			
 
 
+  }
+  else
+  gl_FragData[0] = vec4(0.0,0.0,0.0,1.0);
 }

@@ -507,33 +507,34 @@ void main() {
 #endif	
 
 
-#ifndef TOASTER
-  float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;
+
 	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
-#ifdef end
-  VL_abs = clamp((1.0-VL_abs)*E_BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
-#else  
-  VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
-#endif
+	
+	float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;	
+
+
+
+	#ifdef end
+	VL_abs = clamp((1.0-VL_abs)*E_BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
+	#else  
+	VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.5*(1.0-purkinje),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
+	#endif
+
+	#ifndef TOASTER
 	col = (mix(col,bloom,VL_abs)+bloom*lightScat)*exposure.rgb;
 
-
-
+	#else
+	col = (col+bloom*lightScat)*exposure.rgb;
+	#endif	
+	
 	//Purkinje Effect
     float lum = dot(col,vec3(0.15,0.3,0.55));
 	float lum2 = dot(col,vec3(0.85,0.7,0.45))/2;
 	float rodLum = pow(lum2*60.,1.5);
 	float rodCurve = mix(1.0, rodLum/(2.5+rodLum), purkinje);
 	col = mix(lum*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+1.5e-3, col, rodCurve);
-#else
-	col = (col+bloom*lightScat)*exposure.rgb;	
-	float lum = dot(col,vec3(0.15,0.3,0.55));
-	float lum2 = dot(col,vec3(0.85,0.7,0.45))/2;	
-	
-	float rodLum = lum2*300.0;
-	float rodCurve = mix(1.0, rodLum/(2.5+rodLum), rodExposure/2.0*Purkinje_strength);
-	col = mix(lum*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+0.001, col, rodCurve);	
-#endif	
+
+
 	#ifndef USE_ACES_COLORSPACE_APPROXIMATION
   	col = LinearTosRGB(TONEMAP(col));
 	

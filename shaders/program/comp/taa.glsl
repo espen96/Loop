@@ -296,7 +296,7 @@ vec3 TAA_hq(){
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
 //	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
-	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
+	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
 	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
 	
 	

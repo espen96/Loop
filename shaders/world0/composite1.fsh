@@ -487,8 +487,8 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
-		vec2 sp1 = decodeVec2(texture2D(colortex7,texcoord).g);
-		vec2 sp2 = decodeVec2(texture2D(colortex7,texcoord).b);
+		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
+		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
 		vec3 tester = texture2D(colortex2,texcoord).rgb;
 		vec4 entityg = texture2D(colortex7,texcoord);
 		vec4 specular = vec4(sp1,sp2);
@@ -740,7 +740,7 @@ void main() {
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = custom_lightmap.yyy;
+		//	gl_FragData[0].rgb  = reflected.yyy;
 			#else
 			
 		  		

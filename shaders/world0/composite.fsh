@@ -126,8 +126,12 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
+		vec2 spec = texture2D(colortex3,texcoord).gb;
 
 		if (!hand){
+			gl_FragData[0].gb =spec;		
+		
+		
 			float NdotL = clamp(dot(normal,WsunVec),0.0,1.0);
 			if (translucent) {
 				NdotL = 0.9;
@@ -172,6 +176,7 @@ void main() {
 							avgBlockerDepth /= blockerCount;
 							float ssample = max(projectedShadowPosition.z - avgBlockerDepth,0.0)*1500.0;
 							gl_FragData[0].r = clamp(ssample, scales.x, scales.y)/(scales.y)*(mult-Min_Shadow_Filter_Radius)+Min_Shadow_Filter_Radius;
+
 						}
 					}
 				}

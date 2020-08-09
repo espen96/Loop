@@ -17,3 +17,9 @@ vec2 decodeVec2(float a){
     int bf = int(a*65535.);
     return vec2(bf-(256 *(bf/256)), bf>>8) / 255.;
 }
+
+float encodeVec2v2(vec2 a){
+    ivec2 bf = ivec2(a*255.);
+    return float( bf.x|(bf.y<<8) ) / 65535.;
+}
+

@@ -1,5 +1,6 @@
 
 #include "/lib/res_params.glsl"
+#include "/lib/encode.glsl"
 #define SPEC
 #extension GL_ARB_shader_texture_lod : enable
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
@@ -68,7 +69,7 @@ uniform vec3 previousCameraPosition;
 uniform int frameCounter;
 uniform int isEyeInWater;
 uniform vec2 texelSize;
-varying vec4 lmtexcoord;
+
 varying vec4 color;
 varying vec4 normalMat;
 uniform int framemod8;	

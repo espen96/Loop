@@ -68,7 +68,66 @@ vec3 RT(vec3 dir,vec3 position,float noise){
 	
     return vec3(1.1);
 }
-
+	const vec2 offsets[60] = vec2[60]  (  vec2( 0.0000, 0.2500 ),
+									vec2( -0.2165, 0.1250 ),
+									vec2( -0.2165, -0.1250 ),
+									vec2( -0.0000, -0.2500 ),
+									vec2( 0.2165, -0.1250 ),
+									vec2( 0.2165, 0.1250 ),
+									vec2( 0.0000, 0.5000 ),
+									vec2( -0.2500, 0.4330 ),
+									vec2( -0.4330, 0.2500 ),
+									vec2( -0.5000, 0.0000 ),
+									vec2( -0.4330, -0.2500 ),
+									vec2( -0.2500, -0.4330 ),
+									vec2( -0.0000, -0.5000 ),
+									vec2( 0.2500, -0.4330 ),
+									vec2( 0.4330, -0.2500 ),
+									vec2( 0.5000, -0.0000 ),
+									vec2( 0.4330, 0.2500 ),
+									vec2( 0.2500, 0.4330 ),
+									vec2( 0.0000, 0.7500 ),
+									vec2( -0.2565, 0.7048 ),
+									vec2( -0.4821, 0.5745 ),
+									vec2( -0.6495, 0.3750 ),
+									vec2( -0.7386, 0.1302 ),
+									vec2( -0.7386, -0.1302 ),
+									vec2( -0.6495, -0.3750 ),
+									vec2( -0.4821, -0.5745 ),
+									vec2( -0.2565, -0.7048 ),
+									vec2( -0.0000, -0.7500 ),
+									vec2( 0.2565, -0.7048 ),
+									vec2( 0.4821, -0.5745 ),
+									vec2( 0.6495, -0.3750 ),
+									vec2( 0.7386, -0.1302 ),
+									vec2( 0.7386, 0.1302 ),
+									vec2( 0.6495, 0.3750 ),
+									vec2( 0.4821, 0.5745 ),
+									vec2( 0.2565, 0.7048 ),
+									vec2( 0.0000, 1.0000 ),
+									vec2( -0.2588, 0.9659 ),
+									vec2( -0.5000, 0.8660 ),
+									vec2( -0.7071, 0.7071 ),
+									vec2( -0.8660, 0.5000 ),
+									vec2( -0.9659, 0.2588 ),
+									vec2( -1.0000, 0.0000 ),
+									vec2( -0.9659, -0.2588 ),
+									vec2( -0.8660, -0.5000 ),
+									vec2( -0.7071, -0.7071 ),
+									vec2( -0.5000, -0.8660 ),
+									vec2( -0.2588, -0.9659 ),
+									vec2( -0.0000, -1.0000 ),
+									vec2( 0.2588, -0.9659 ),
+									vec2( 0.5000, -0.8660 ),
+									vec2( 0.7071, -0.7071 ),
+									vec2( 0.8660, -0.5000 ),
+									vec2( 0.9659, -0.2588 ),
+									vec2( 1.0000, -0.0000 ),
+									vec2( 0.9659, 0.2588 ),
+									vec2( 0.8660, 0.5000 ),
+									vec2( 0.7071, 0.7071 ),
+									vec2( 0.5000, 0.8660 ),
+									vec2( 0.2588, 0.9659 ));
 
 
 vec3 cosineHemisphereSample(vec2 Xi)
@@ -137,28 +196,30 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 			 rayDir = TangentToWorld(normal,rayDir);
-vec2 texcoord = gl_FragCoord.xy*texelSize;	
+		vec2 texcoord = gl_FragCoord.xy*texelSize;	
 		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b));
 		
 	//	vec3 rayHit = RT(mix(mat3(gbufferModelView)*rayDir,reflectedVector,0.5), fragpos, fract(seed/1.6180339887 + noise.b));
-
+	
 	
 		if (rayHit.z < 1.0-1e-8){
-		
+
+				
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 			
-			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 
-			#ifdef RTAO
-				intRadiance += ambient*0.25;
+			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
 
-			#else
+			vec3 bcolor = intRadiance;
+				for ( int i = 0; i < 20; i++) {
+					bcolor += texture2D(colortex5, (previousPosition.xy) + (offsets[i]*0.01)).rgb;
+				}
+				intRadiance += bcolor/21.0;
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
-			#endif	
 
-			else
+			}else
 			
 				intRadiance += ambient;
 				occlusion += 1.0;
@@ -170,6 +231,11 @@ vec2 texcoord = gl_FragCoord.xy*texelSize;
 			intRadiance += ambient;
 		}
 	}
+	
+	
+	
+	
+	
 	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,10);
 }
 

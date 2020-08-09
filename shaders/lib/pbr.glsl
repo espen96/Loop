@@ -144,13 +144,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 
 			
 			
-		vec4 viewPosPrev = gbufferProjectionInverse * vec4(position * 2.0 - 1.0, 1.0);
-		viewPosPrev /= viewPosPrev.w;
-		viewPosPrev = gbufferModelViewInverse * viewPosPrev;
-		vec4 previousPosition = viewPosPrev + vec4(cameraPosition - previousCameraPosition, 0.0);
-		previousPosition = gbufferPreviousModelView * previousPosition;
-		previousPosition = gbufferPreviousProjection * previousPosition;
-		spos.xy = previousPosition.xy / previousPosition.w * 0.5 + 0.5;
+
 	
 	
 			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);

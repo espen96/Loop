@@ -401,9 +401,11 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
+		vec2 sp1 = decodeVec2(texture2D(colortex7,texcoord).g);
+		vec2 sp2 = decodeVec2(texture2D(colortex7,texcoord).b);
 		vec3 tester = texture2D(colortex2,texcoord).rgb;
 		vec4 entityg = texture2D(colortex7,texcoord);
-		vec4 specular = vec4(texture2D(colortex7,texcoord).b,texture2D(colortex3,texcoord).b,texture2D(colortex3,texcoord).a,0);
+		vec4 specular = vec4(sp1,sp2);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -579,11 +581,11 @@ void main() {
     #ifdef PBR
 	#ifdef EMISSIVES
 		if (!iswater){		
-		float emissive3 = float(entityg.g > 1.98 && entityg.g < 2.02) * 0.25;
-		float emissive2 = mix(entityg.g < 1.0 ? entityg.g : 0.0, 1.0, emissive3);
+		float emissive3 = float(specular.a > 1.98 && specular.a < 2.02) * 0.25;
+		float emissive2 = mix(specular.a < 1.0 ? specular.a : 0.0, 1.0, emissive3);
 		
 		custom_lightmap.y += clamp(emissive2,0.0,1.0)*2;	}
-		emissive = abs(entityg.g) >0.01;
+		emissive = abs(specular.a) >0.01;
 		
 	#endif
 	#else

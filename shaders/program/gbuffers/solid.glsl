@@ -320,13 +320,15 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 #endif	
 	
 	
-
+vec2 spec1 =specularity.rg;
+vec2 spec2 = vec2(specularity.b,mat_data.z);
 		
 		
 #ifndef entity
-	gl_FragData[1].rgb = specularity.rgb;
+
 	gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
-	gl_FragData[2].rgb = vec3(0,mat_data.z,0);
+
+	gl_FragData[2].gb = vec2(encodeVec2v2(spec1),encodeVec2v2(spec2));
 
 #endif	
 	

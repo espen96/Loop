@@ -240,13 +240,7 @@ void main() {
 			
 			#endif
 
-			gl_FragData[0].b = spec.g;
-			gl_FragData[0].a = spec.b;
-			
-			gl_FragData[1].r = water.r;			
-			gl_FragData[1].g = water.g;
-			gl_FragData[1].b = spec.r;			
-			gl_FragData[1].a = water.a;
+
 
 			
 			

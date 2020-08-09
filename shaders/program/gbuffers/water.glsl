@@ -382,7 +382,7 @@ void main() {
 		else
 		gl_FragData[0].rgb = color*0.1;
 
-		gl_FragData[1] = vec4(albedo,iswater);
+		gl_FragData[1].a = (iswater);
 
 }
 }

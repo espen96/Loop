@@ -376,10 +376,10 @@ uniform float far;
 #include "/lib/color_dither.glsl"
 #include "/lib/encode.glsl"
 
-		vec4 data = texture2D(colortex1,texcoord);
+		vec4 data = texture2D(colortex1,texcoord*RENDER_SCALE);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-
+		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 
@@ -439,11 +439,13 @@ void main() {
 		
 	#ifdef DOF
 			/*--------------------------------*/
-			float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+			float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;		
+
 			float focus;
 			#if DOF_MODE == 0
-				focus = ld(centerDepthSmooth)*far;
-//				float focus = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r)*far;
+//				focus = ld(centerDepthSmooth)*far;
+				focus = (texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r);
+				focus = ld(hand ? focus - 0.45 : focus)*far;
 			#endif
 			#if DOF_MODE == 1
 				focus = MANUAL_FOCUS;
@@ -451,13 +453,31 @@ void main() {
 			#if DOF_MODE == 2
 				focus = MANUAL_FOCUS * screenBrightness;
 			#endif
-			float pcoc = min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+
+
+			
+		vec2 bcolor2 = vec2(0.0);
+				for ( int i = 0; i < 20; i++) {
+				if (focus >=(1.0)){
+				bcolor2 += min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0+(offsets[i]*0.016).x);}
+				else{				bcolor2 += min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);}
+	//			bcolor2 += (offsets[i]*0.2);
+
+				}
+				float pcoc = bcolor2.x/20.0;
+			
+//			float pcoc = min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
 			#if EXCLUDE_MODE == 2
 						pcoc *= float(z > 0.56);
 			#endif			
 			#if EXCLUDE_MODE == 1
 				pcoc *= float(z > focus);
 			#endif
+	
+			
+			
+		
+			
 			float noise = blueNoise()*6.28318530718;
 			mat2 noiseM = mat2( cos( noise ), -sin( noise ),
 	    	                   sin( noise ), cos( noise )
@@ -547,6 +567,7 @@ void main() {
 	#endif
 
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
+//	gl_FragData[0].rgb = vec3(pcoc)*100;
 	
 
 

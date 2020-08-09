@@ -484,7 +484,7 @@ void main() {
 		p3 += gbufferModelViewInverse[3].xyz;
 
 		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		bool iswater = texture2D(colortex3,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
 		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);

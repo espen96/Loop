@@ -180,7 +180,11 @@ vec3 fp10Dither(vec3 color,float dither){
 }
 
 
-
+float interleaved_gradientNoise2(){
+	vec2 coord = gl_FragCoord.xy;
+	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y));
+	return noise;
+}
 
 
 
@@ -254,7 +258,19 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
     return vec2(cos_v, sin_v)*sqrt(alpha);
 }
 
+vec2 tapLocation2(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
+{
+    float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
+    float angle = alpha * (nbRot * 6.28) + spinAngle*6.28;
 
+    float ssR = alpha;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*ssR;
+}
 
 
 float blueNoise(){
@@ -346,7 +362,77 @@ vec2( -0.0000,  0.3750 ),
 vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal)
+{
+	ivec2 pos = ivec2(gl_FragCoord.xy);
+	const float tan70 = tan(70.*3.14/180.);
+	float mulfov2 = gbufferProjection[1][1]/tan70;
+
+	const float PI = 3.14159265;
+	const float samplingRadius = 0.712;
+	float angle_thresh = 0.05;
+
+
+
+
+	float rd = mulfov2*0.05;
+	//pre-rotate direction
+	float n = 0.;
+
+	occlusion = 0.0;
+
+	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
+	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
+
+	vec2 v = fract(vec2(dither,interleaved_gradientNoise2()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
+	for (int j = 0; j < SSAO_SAMPLES+2 ;j++) {
+			vec2 sp = tapLocation2(j,v.x,SSAO_SAMPLES+2,2.,v.y);
+			vec2 sampleOffset = sp*rd;
+			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight));
+			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
+				vec3 t0 = toScreenSpace(vec3(offset/RENDER_SCALE*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+
+				vec3 vec = t0.xyz - fragpos;
+				float dsquared = dot(vec,vec);
+				if (dsquared > 1e-5){
+					if (dsquared < fragpos.z*fragpos.z*0.05*0.05*mulfov2*2.*1.412){
+						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
+						occlusion += NdotV;
+					}
+					n += 1.0;
+				}
+			}
+		}
+
+
+
+		occlusion = clamp(1.0-occlusion/n*2.0,0.0,1.0);
+		//occlusion = mult;
+
+}
+
+
+
+
+
 void main() {
+
+
+
+
 	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
 
 
@@ -448,8 +534,13 @@ void main() {
 		float NdotL = dot(normal,WsunVec);
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		float shading = 1.0;		
-		
-		
+		float ao = 1.0;
+		if (!hand)
+		{
+		#ifdef SSAO
+			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+		#endif
+		}
 //////////////////////////////PBR//////////////////////////////		
 
 
@@ -497,6 +588,7 @@ void main() {
 		#ifndef TOASTER
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
+			filtered.y = ao;
 		}
 		#endif
 		//custom shading model for translucent objects

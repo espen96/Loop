@@ -32,7 +32,7 @@ void main() {
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 		float NdotL = lightCol.a*dot(normal,sunVec);	
 
-	
+	vec4 final = vec4(0.0);		
 
 
 	#ifdef textured
@@ -89,7 +89,7 @@ void main() {
 		
 		gl_FragData[0].rgb = diffuseLight*albedo.rgb*8./1500.*0.1;
 		
-		
+
 #ifdef beaconbeam
 
 		diffuseLight = torch_lightmap*vec3(20.,30.,50.)*2./10. ;

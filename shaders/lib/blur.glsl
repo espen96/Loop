@@ -2,21 +2,7 @@ float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-		
-		vec4 entityg = texture2D(colortex7,texcoord);
-		vec4 data = texture2D(colortex1,texcoord);
-		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
-		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
-		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
-		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.y) >0.999;
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-		vec3 filtered = texture2D(colortex3,texcoord).rgb;
-		vec3 test = texture2D(colortex6,texcoord).rgb;
 		
 		
 vec3 toClipSpace3Prev(vec3 viewSpacePosition) {

@@ -26,7 +26,6 @@ uniform sampler2D colortex2;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
-uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
 uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth

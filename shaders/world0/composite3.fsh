@@ -14,7 +14,6 @@ varying vec2 texcoord;
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D colortex1;
-uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;

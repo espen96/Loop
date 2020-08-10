@@ -14,7 +14,7 @@
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 
-/* DRAWBUFFERS:1372 */
+/* DRAWBUFFERS:132 */
 	void main() {
 	
   if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y){	
@@ -326,7 +326,7 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 		
 #ifndef entity
 
-	gl_FragData[3] = clamp(vec4(reflected.rgb,0),0.0,10.0);
+	gl_FragData[2] = clamp(vec4(reflected.rgb,0),0.0,10.0);
 	gl_FragData[1].a = 0;
 	gl_FragData[1].gb = vec2(encodeVec2v2(spec1),encodeVec2v2(spec2));
 
@@ -340,11 +340,11 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 	
 	
 #ifdef entity 	
-gl_FragData[3].rgb = vec3(0.0);
+gl_FragData[2].rgb = vec3(0.0);
 #endif	
 
 #ifdef basic 	
-gl_FragData[3].rgb = vec3(0.0);
+gl_FragData[2].rgb = vec3(0.0);
 #endif	
 
 #ifndef block

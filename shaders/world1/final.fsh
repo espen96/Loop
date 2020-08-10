@@ -4,7 +4,7 @@
 #include "/lib/settings.glsl"
 varying vec2 texcoord;
 
-uniform sampler2D colortex7;
+uniform sampler2D colortex2;
 uniform vec2 texelSize;
 uniform float viewWidth;
 uniform float viewHeight;
@@ -66,20 +66,20 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 
 void main() {
   #ifdef BICUBIC_UPSCALING
-    vec3 col = SampleTextureCatmullRom(colortex7,texcoord,1.0/texelSize).rgb;
+    vec3 col = SampleTextureCatmullRom(colortex2,texcoord,1.0/texelSize).rgb;
   #else
-    vec3 col = texture2D(colortex7,texcoord).rgb;
+    vec3 col = texture2D(colortex2,texcoord).rgb;
   #endif
 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
-    vec3 albedoCurrent1 = texture2D(colortex7, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent2 = texture2D(colortex7, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent3 = texture2D(colortex7, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-    vec3 albedoCurrent4 = texture2D(colortex7, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-    vec3 albedoCurrent5 = texture2D(colortex7, texcoord + vec2(0.0,texelSize.y)).rgb;
-    vec3 albedoCurrent6 = texture2D(colortex7, texcoord + vec2(0.0,-texelSize.y)).rgb;
-    vec3 albedoCurrent7 = texture2D(colortex7, texcoord + vec2(-texelSize.x,0.0)).rgb;
-    vec3 albedoCurrent8 = texture2D(colortex7, texcoord + vec2(texelSize.x,0.0)).rgb;
+    vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+    vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+    vec3 albedoCurrent3 = texture2D(colortex2, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+    vec3 albedoCurrent4 = texture2D(colortex2, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+    vec3 albedoCurrent5 = texture2D(colortex2, texcoord + vec2(0.0,texelSize.y)).rgb;
+    vec3 albedoCurrent6 = texture2D(colortex2, texcoord + vec2(0.0,-texelSize.y)).rgb;
+    vec3 albedoCurrent7 = texture2D(colortex2, texcoord + vec2(-texelSize.x,0.0)).rgb;
+    vec3 albedoCurrent8 = texture2D(colortex2, texcoord + vec2(texelSize.x,0.0)).rgb;
 
     vec3 m1 = (col + albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4 + albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8)/9.0;
     vec3 std = abs(col - m1) + abs(albedoCurrent1 - m1) + abs(albedoCurrent2 - m1) +

@@ -91,7 +91,7 @@ void main() {
 
   vec4 transparencies = texture2D(colortex2,texcoord);
   vec4 trpData = texture2D(colortex3,texcoord);
-  bool iswater = trpData.a > 0.99;
+  bool iswater = trpData.a > 0.9;
   vec2 refractedCoord = texcoord;
 
   if (iswater){

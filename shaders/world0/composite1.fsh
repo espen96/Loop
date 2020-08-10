@@ -434,7 +434,7 @@ void main() {
 
 
 	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
-
+	float masks = texture2D(colortex3,texcoord).a;
 
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -464,9 +464,10 @@ void main() {
 		color = color*cloud.a+cloud.rgb;
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+
+		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
 		if (iswater){
+		gl_FragData[0].a = masks;
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
@@ -483,14 +484,14 @@ void main() {
 	else {
 		p3 += gbufferModelViewInverse[3].xyz;
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+
+		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
 
 		vec4 data = texture2D(colortex1,texcoord);
+
 		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
 		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
 		vec3 tester = texture2D(colortex2,texcoord).rgb;
-		vec4 entityg = texture2D(colortex7,texcoord);
 		vec4 specular = vec4(sp1,sp2);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -529,7 +530,7 @@ void main() {
 		
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(entityg.r) >0.9;
+		bool entity = (masks) <=0.10 && (masks) >=0.09;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
 		float diffuseSun = clamp(NdotL,0.,1.0);
@@ -723,6 +724,7 @@ void main() {
 
 			//combine all light sources
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + filtered.y*ambientLight)*albedo;
+
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
 			vec3 ambientColVol =  ambientUp*8./150./3.*0.84*2.0/pi / 240.0 * eyeBrightnessSmooth.y;
@@ -740,7 +742,7 @@ void main() {
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = reflected.yyy;
+		//	gl_FragData[0].rgb  = vec3(1.);
 			#else
 			
 		  		
@@ -777,7 +779,7 @@ void main() {
 			
 
 
-	
+gl_FragData[0].a = masks;	
 	
 	
 /* DRAWBUFFERS:3 */

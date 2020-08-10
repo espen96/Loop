@@ -26,7 +26,6 @@ flat varying vec3 ambientDown;
 uniform sampler2D shadow;
 uniform sampler2D colortex1;
 
-uniform sampler2D colortex7;
 uniform sampler2D noisetex;
 uniform vec3 sunVec;
 uniform float far;
@@ -116,10 +115,13 @@ void main() {
 
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.0, 0.0, 0.0);
 	float z = texture2D(depthtex1,texcoord).x;
-	vec2 tempOffset=TAA_Offset;
+	vec2 tempOffset=TAA_Offset;	
+	float masks = texture2D(colortex3,texcoord).a;
+	gl_FragData[0].a = masks;
 	if (z < 1.0){
 
 		vec4 data = texture2D(colortex1,texcoord);
+	
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
@@ -184,4 +186,7 @@ void main() {
 		}
 
 }
+
+
+
 }

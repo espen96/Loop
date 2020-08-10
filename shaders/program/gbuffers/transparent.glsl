@@ -137,7 +137,7 @@ void main() {
 	
 #endif
 
-	gl_FragData[1].r = 1;	
+	gl_FragData[1].r = 0.1;	
 	
 	
 }

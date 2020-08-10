@@ -241,7 +241,9 @@ void main() {
 	#ifndef VOLUMETRIC_FOG
 	gl_FragData[0] = texture2D(texture,texcoord.xy)*color;
 	#endif					   
-
+	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
+	float masks = texture2D(colortex3,texcoord).a;
+	gl_FragData[0].a = masks;	
 	if (isEyeInWater == 0){
 
 	#ifdef VOLUMETRIC_FOG									  

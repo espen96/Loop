@@ -219,7 +219,7 @@ vec2(  0.3536, -0.3536 ),
 vec2( -0.0000,  0.3750 ),
 vec2( -0.1768, -0.1768 ),
 vec2( 0.1250,  0.0000 ));															   
-/* DRAWBUFFERS:27 */
+/* DRAWBUFFERS:23 */
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 	vec2 tempOffset=offsets[framemod8];

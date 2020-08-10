@@ -92,18 +92,22 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 	
 	
 void main() {
-  vec2 texcoord = gl_FragCoord.xy*texelSize;											
-  /* DRAWBUFFERS:73 */
+	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
+	float masks = texture2D(colortex3,texcoord).a;
+	gl_FragData[1].a = masks;												
+  /* DRAWBUFFERS:23 */
+  
+
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
 
-  vec3 emc = texture2D(colortex7,texcoord).rgb;
+
 
   vec4 transparencies = texture2D(colortex2,texcoord);
-  vec4 trpData = texture2D(colortex7,texcoord);
-  bool iswater = trpData.a > 0.99;
+  vec4 trpData = texture2D(colortex3,texcoord);
+  bool iswater = trpData.a > 0.9;
   vec2 refractedCoord = texcoord;
 
   if (iswater){
@@ -113,7 +117,7 @@ void main() {
     float displ = norm/(length(fragpos)/far)/80.;
     refractedCoord += displ;
 
-    if (texture2D(colortex7,refractedCoord).a < 0.99)
+    if (texture2D(colortex3,refractedCoord).a < 0.9)
       refractedCoord = texcoord;
 
   }
@@ -147,6 +151,7 @@ void main() {
   color += vl.rgb;
   gl_FragData[0].r = vl.a;
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
+  gl_FragData[1].a = masks;
 
 }
 

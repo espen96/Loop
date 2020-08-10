@@ -354,6 +354,7 @@ flat varying vec4 exposure;
 flat varying float rodExposure;
 varying vec2 texcoord;
 uniform sampler2D colortex1;
+uniform sampler2D colortex2;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
 uniform sampler2D colortex3;
@@ -426,14 +427,14 @@ vec3 closestToCamera3x3()
 	return dmin;
 }
 void main() {
-  /* DRAWBUFFERS:7 */
+  /* DRAWBUFFERS:2 */
     
   float v = 1.004f;
   vec2 d = vec2(v / ratio, v);
   
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
 
-	vec3 emc = texture2D(colortex7,texcoord).rgb;
+
 	vec3 col = texture2D(colortex5,texcoord).rgb;
 
 		
@@ -530,7 +531,7 @@ void main() {
 
 	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
 	
-	float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;	
+	float VL_abs = texture2D(colortex2,texcoord*RENDER_SCALE).r;	
 
 
 

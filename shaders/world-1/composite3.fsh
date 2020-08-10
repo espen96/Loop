@@ -6,9 +6,9 @@
 
 
 
+varying vec2 texcoord;					  
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
-uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
@@ -23,6 +23,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec2 texelSize;
 uniform vec3 cameraPosition;
+uniform sampler2D gdepthtex;
 #include "/lib/waterBump.glsl"
 #include "/lib/res_params.glsl"
 
@@ -73,10 +74,13 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 
   return vl/sum;
 }
-
+	vec2 newtc = texcoord.xy;
+	float GetDepthLinear(in vec2 coord) { //Function that retrieves the scene depth. 0 - 1, higher values meaning farther away
+		return 1.0f * near * far / (far + near - (1.91f * texture2D(gdepthtex, coord).x - 1.0f) * (far - near));
+	}
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  /* DRAWBUFFERS:73 */
+  /* DRAWBUFFERS:23 */
   
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
@@ -86,7 +90,7 @@ void main() {
 
 
   vec4 transparencies = texture2D(colortex2,texcoord);
-  vec4 trpData = texture2D(colortex7,texcoord);
+  vec4 trpData = texture2D(colortex3,texcoord);
   bool iswater = trpData.a > 0.99;
   vec2 refractedCoord = texcoord;
 
@@ -97,7 +101,7 @@ void main() {
     float displ = norm/(length(fragpos)/far)/35.;
     refractedCoord += displ;
 
-    if (texture2D(colortex7,refractedCoord).a < 0.99)
+    if (texture2D(colortex3,refractedCoord).a < 0.99)
       refractedCoord = texcoord;
 
   }
@@ -116,7 +120,14 @@ void main() {
     color.rgb *= exp(-length(fragpos)*totEpsilon);
     //vl.a *= dot(exp(-length(fragpos)*totEpsilon),vec3(0.2,0.7,0.1))*0.5+0.5;
   }
+  
+	if(isEyeInWater == 2) {
+		float depth = texture2D(depthtex0, newtc).r;
+        color *= vl.a;
+		vec3 fogColor2 = pow(vec3(255, 87, 0) / 255.0, vec3(2.5));
 
+		color = mix(color, fogColor2, min(GetDepthLinear(texcoord.st) * 590.0 / far, 1.0));
+	}
   color += vl.rgb;
   gl_FragData[0] = vec4(vl.a, 0.0, 0.0, 0.0);
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);

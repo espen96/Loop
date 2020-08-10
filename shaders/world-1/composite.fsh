@@ -20,10 +20,10 @@ uniform vec3 fogColor;
 uniform float fogDensity; 
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
+uniform sampler2D colortex2;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
-uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
 uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
@@ -275,6 +275,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 }
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;		
+	float masks = texture2D(colortex3,texcoord).a;
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
@@ -294,8 +295,8 @@ void main() {
 		vec3 color = (fogColor/50);
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		vec4 trpData = texture2D(colortex2,texcoord);
+		bool iswater = texture2D(colortex2,texcoord).a > 0.99;
 		if (iswater){
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
@@ -311,15 +312,15 @@ void main() {
 	else {
 		p3 += gbufferModelViewInverse[3].xyz;
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		vec4 trpData = texture2D(colortex3,texcoord);
+		bool iswater = texture2D(colortex3,texcoord).a > 0.99;
 
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 skc = texture2D(colortex4,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-		vec4 entityg = texture2D(colortex7,texcoord);
-		bool entity = abs(entityg.r) >0.9;		
+
+		bool entity = (masks) <=0.10 && (masks) >=0.09;
 		vec4 spc = texture2D(colortex3,texcoord);		
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 

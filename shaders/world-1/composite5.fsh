@@ -14,7 +14,6 @@ uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
-uniform sampler2D colortex7;
 uniform sampler2D colortex6;//Skybox
 uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
@@ -100,7 +99,7 @@ float blueNoise(){
 }
 
 
-#include "/lib/blur.glsl"
+
 
 
 
@@ -143,27 +142,12 @@ float Depth = texture2D(depthtex0, coord).x;
 
 vec3 blur = texture2D(colortex3, coord).xyz;
 
-#ifndef RT_FILTER
-
-blur1 = filtered.rgb;
-
-#else
 
 
 
 
 
-	if (Depth < 1.0){
-	Depth = ld(Depth);
-    
-
-
-	blur = ssaoVL_blur(coord,vec2(0.0,1.0),Depth*far);
-
-
-}
-
-#endif		    
+		    
 		    gl_FragData[0].rgb = filtered.rgb;	
 		
 		   #ifdef SSPT

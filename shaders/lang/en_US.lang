@@ -51,11 +51,11 @@ option.TONEMAP = Tone mapping
 Option.Credits=Credits 
 value.Credits.0=Edit by Espen
 value.Credits.1=Original by Chocapic13
+option.TOASTER= Turbo Button
 
 #Settings
 
 
-option.TOASTER=Potato mode (WIP)
 
 #TAA
 option.FLICKER_REDUCTION=Flicker reduction

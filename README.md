@@ -17,7 +17,7 @@ A.K.A Loop, the shader you are seeing right now.
 Base Shaderpack of Loop was **Chocapic13 V8.1 Ultra BETA** from the [shaderLABS Discord Server](https://discord.gg/RpzWN9S). 
 
 ## **License**
-License, as stated by Chocapic13.
+License, as stated by Chocapic13:
 
 ### **Sharing a modified version of my shaders:**
 

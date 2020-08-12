@@ -461,6 +461,7 @@ void main() {
 		}
 		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
 		color = color*cloud.a+cloud.rgb;
+
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 
@@ -530,6 +531,7 @@ void main() {
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = (masks) <=0.10 && (masks) >=0.09;
+		bool lightning = (masks) <=0.20 && (masks) >=0.19;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotL = dot(normal,WsunVec);
 		float diffuseSun = clamp(NdotL,0.,1.0);
@@ -739,9 +741,11 @@ void main() {
 			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
+			if (lightning) ambientLight *= vec3(2.0);
+			
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = vec3(1.);
+		//	gl_FragData[0].rgb  = vec3(masks);
 			#else
 			
 		  		

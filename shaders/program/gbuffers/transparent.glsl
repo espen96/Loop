@@ -115,7 +115,7 @@ void main() {
 
 #ifdef glint	
 
-		gl_FragData[0].rgb = col*color.a;
+		gl_FragData[0].rgb = col*color.a*0.05;
 		gl_FragData[0].a = 0.2;	
 
 #endif

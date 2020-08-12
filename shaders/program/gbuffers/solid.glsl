@@ -259,8 +259,15 @@ float ao = 1.0;
 	normal = normalMat.xyz;
 	data0 = texture2D(texture, lmtexcoord.xy)*color;
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+	
+	
+	
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
+	
+
+	
+	
 	#endif	
 	vec4 data1 = clamp(encode(normal),0.,1.0);
 	#else
@@ -287,7 +294,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 		else data0.a = 0.0;
 	
-	
+	float lightningBolt = float(entityId == 58);	
 	#ifdef MC_NORMAL_MAP
 	vec3 normal2 = vec3(texture2D(normals, lmtexcoord.xy).rgb)*2.0-1.;
 		
@@ -308,12 +315,18 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 
 	data0.rgb = texture2D(texture, lmtexcoord.xy).rgb*color.rgb;
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+
+
+
+	
+	
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
-	#endif
+	
+
+#endif
 	
 	vec4 data1 = clamp(noise/256.0+encode(normal),0.,1.0);
-
 
 
 
@@ -337,7 +350,7 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 	
 	
 	
-	
+		
 	
 #ifdef entity 	
 gl_FragData[2].rgb = vec3(0.0);
@@ -350,6 +363,11 @@ gl_FragData[2].rgb = vec3(0.0);
 #ifndef block
 gl_FragData[1].a = 0.1;	
 #endif
+
+if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
+if (lightningBolt > 0.5) data1 = vec4(1.0);	
+if (lightningBolt > 0.5) gl_FragData[1].a = 0.2;	
+
 gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));			
 
 

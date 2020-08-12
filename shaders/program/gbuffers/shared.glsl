@@ -23,7 +23,7 @@ varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
 #endif
-
+uniform int entityId;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 

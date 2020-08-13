@@ -27,6 +27,7 @@ uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex6;//Skybox
+uniform sampler2D colortex7;
 uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
@@ -35,6 +36,10 @@ uniform sampler2D texture;
 uniform sampler2D normals;
 
 uniform sampler2DShadow shadow;
+
+uniform sampler2DShadow shadowtex1;
+uniform sampler2D shadowcolor0;
+
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
@@ -632,6 +637,22 @@ void main() {
 				#else					
 						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;		
 				#endif		
+				
+				/// -CAUSTICS
+				
+				
+		//	float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+		//	shadowColBase = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*offsetS))).rgb;				
+		//	caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul2*offsetS))).rgb-(filtered.x*0.1)-shading;				
+
+		//	caustic = mix(texture2D(colortex7,texcoord).rgb,  clamp(caustic,0,255)*50,0.75);
+
+
+		//	shadowCol = shadowColBase+caustic;
+		//	shadowCol *= shadow1;
+				
+				
+				
 				}
 			}
 			if (shading > 0.005){

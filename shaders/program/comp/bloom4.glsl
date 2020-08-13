@@ -1,4 +1,8 @@
-#version 120
+
+
+//////////////////////////////FRAGMENT//////////////////////////////		
+#ifdef fsh	
+//////////////////////////////FRAGMENT//////////////////////////////		
 //Merge and upsample the blurs into a 1/4 res bloom buffer
 
 uniform sampler2D colortex3;
@@ -83,7 +87,11 @@ void main() {
 /* DRAWBUFFERS:3 */
 vec2 resScale = vec2(1920.,1080.)/max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 vec2 texcoord = ((gl_FragCoord.xy)*2.+0.5)*texelSize;
-vec3 bloom = texture2D_bicubic(colortex3,texcoord/2.0).rgb;	//1/4 res
+vec3 bloom = vec3(0.0);
+
+
+
+bloom += texture2D_bicubic(colortex3,texcoord/2.0).rgb;	//1/4 res
 
 bloom += texture2D_bicubic(colortex6,texcoord/4.).rgb; //1/8 res
 
@@ -92,12 +100,46 @@ bloom += texture2D_bicubic(colortex6,texcoord/8.+vec2(0.25*resScale.x+2.5*texelS
 bloom += texture2D_bicubic(colortex6,texcoord/16.+vec2(0.375*resScale.x+4.5*texelSize.x,.0)).rgb; //1/32 res
 
 bloom += texture2D_bicubic(colortex6,texcoord/32.+vec2(0.4375*resScale.x+6.5*texelSize.x,.0)).rgb*1.0; //1/64 res
+
 bloom += texture2D_bicubic(colortex6,texcoord/64.+vec2(0.46875*resScale.x+8.5*texelSize.x,.0)).rgb*1.0; //1/128 res
+
 bloom += texture2D_bicubic(colortex6,texcoord/128.+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb*1.0; //1/256 res
 
-//bloom = texture2D_bicubic(colortex6,texcoord).rgb*6.; //1/8 res
 
 gl_FragData[0].rgb = bloom*2.;
 
 gl_FragData[0].rgb = clamp(gl_FragData[0].rgb,0.0,65000.);
 }
+
+
+
+
+
+
+
+#endif
+//////////////////////////////VERTEX//////////////////////////////		
+#ifdef vsh	
+//////////////////////////////VERTEX//////////////////////////////	
+
+uniform float viewWidth;
+uniform float viewHeight;
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+
+void main() {
+	//Improves performances and makes sure bloom radius stays the same at high resolution (>1080p)
+	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
+	gl_Position = ftransform();
+	//*0.51 to avoid errors when sampling outside since clearing is disabled
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51/clampedRes*vec2(1920.0,1080.)*2.0-1.0;
+}
+	
+
+	
+	
+	
+#endif

@@ -295,8 +295,11 @@ vec3 TAA_hq(){
 
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
+	#ifndef TOASTER
 	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
-//	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
+	#else
+	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
+	#endif
 	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
 	
 	
@@ -373,7 +376,7 @@ vec3 TAA_hq(){
 
 void main() {
 
-/* DRAWBUFFERS:5 */
+/* DRAWBUFFERS:53 */
 gl_FragData[0].a = 1.0;
 	#ifdef TAA
 	vec3 color = TAA_hq();
@@ -382,29 +385,9 @@ gl_FragData[0].a = 1.0;
 	#ifndef TAA
 	vec3 color = clamp(fp10Dither(texture2D(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);
 	gl_FragData[0].rgb = color;
+
 	#endif
-
- 
-
-	  
-
-
-																	
-		   
-																   
-
- 
-					  
-							 
-							   
-							
-						 
-						 
-			 
-
-											  
-							
-								 
+	gl_FragData[1] = vec4(0.0);					 
 													  
 }
 

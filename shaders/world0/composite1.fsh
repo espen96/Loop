@@ -665,7 +665,7 @@ vec3 caustic = vec3(0.0);
 
 
 				
-						caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*(offsetD-diffthresh*weight)))).rgb;	
+						caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*(offsetD-diffthresh*weight)))).rgb*clamp(lightCol.rgb*0.0003,0,255);	
 
 
 

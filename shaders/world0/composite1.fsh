@@ -790,7 +790,7 @@ vec3 caustic = vec3(0.0);
 			#ifdef SPEC_SCREENSPACE_REFLECTIONS
 			if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
 			#endif
-			ambientLight = ambientLight * filtered.y* custom_lightmap.x+(shadowCol*(custom_lightmap.x*100)) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+			ambientLight = ambientLight * filtered.y* custom_lightmap.x*(1+shadowCol*(custom_lightmap.x*100)) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			if (lightning) ambientLight *= vec3(2.0);

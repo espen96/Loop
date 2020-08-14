@@ -212,11 +212,7 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
 
-			vec3 bcolor = intRadiance;
-				for ( int i = 0; i < 20; i++) {
-					bcolor += texture2D(colortex5, (previousPosition.xy) + (offsets[i]*0.01)).rgb;
-				}
-				intRadiance += bcolor/21.0;
+
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
 
 			}else

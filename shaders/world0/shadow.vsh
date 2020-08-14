@@ -33,7 +33,7 @@ uniform vec3 shadowLightVec;
 uniform float shadowMaxProj;
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
-
+varying vec4 color;
 const float PI48 = 150.796447372*WAVY_SPEED;
 float pi2wt = PI48*frameTimeCounter;
 
@@ -88,7 +88,7 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),1.0);
 }
 void main() {
-
+	color = gl_Color;
 	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
   //Check if the vertice is going to cast shadows
   #ifdef SHADOW_FRUSTRUM_CULLING

@@ -261,7 +261,19 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 
     return vec2(cos_v, sin_v)*sqrt(alpha);
 }
+vec2 tapLocation3(int sampleNumber,int nb, float nbRot,float jitter,float distort)
+{
 
+    float alpha = (sampleNumber+jitter)/nb+distort*10;
+    float angle = jitter*6.28 + alpha * 84.0 * 6.28;
+
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*(alpha);
+}
 vec2 tapLocation2(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
     float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
@@ -587,7 +599,9 @@ void main() {
 
 
 
-
+vec3 shadowColBase = vec3(0.0);
+vec3 shadowCol = vec3(0.0);
+vec3 caustic = vec3(0.0);
 
 
 		
@@ -625,7 +639,11 @@ void main() {
 				shading = 0.0;
 				float SSS = max(exp(-(filtered.x-1.412)*5.0), 0.25*exp(-(filtered.x-1.412)*0.6));
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
+				
+				
+				
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
+					vec2 offsetD = tapLocation3(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,filtered.x);
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
 					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
@@ -640,17 +658,29 @@ void main() {
 				
 				/// -CAUSTICS
 				
+					if(!hand){
 				
-		//	float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-		//	shadowColBase = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*offsetS))).rgb;				
-		//	caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul2*offsetS))).rgb-(filtered.x*0.1)-shading;				
-
-		//	caustic = mix(texture2D(colortex7,texcoord).rgb,  clamp(caustic,0,255)*50,0.75);
+						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+						shadowColBase = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*offsetS))).rgb;			
 
 
-		//	shadowCol = shadowColBase+caustic;
-		//	shadowCol *= shadow1;
 				
+						caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*(offsetD-diffthresh*weight)))).rgb;	
+
+
+
+			
+						caustic *= texture2D(shadowcolor0,vec2(projectedShadowPosition.st - vec2(rdMul*20*offsetS))).rgb;				
+						caustic /= filtered.x;				
+
+			
+			
+						caustic = clamp(caustic,0,255)*40;
+
+						shadowCol = shadowColBase+caustic;
+						shadowCol *= shadow1;
+
+					}
 				
 				
 				}
@@ -754,19 +784,20 @@ void main() {
 				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
 
 		}
-		else {
+		else {			
+			shadowCol *= (1-shading);
 			#ifndef SSPT
 			#ifdef SPEC_SCREENSPACE_REFLECTIONS
 			if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
 			#endif
-			ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+			ambientLight = ambientLight * filtered.y* custom_lightmap.x+(shadowCol*(custom_lightmap.x*100)) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 			
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 			if (lightning) ambientLight *= vec3(2.0);
 			
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = vec3(masks);
+		//	gl_FragData[0].rgb  = shadowCol;
 			#else
 			
 		  		
@@ -782,7 +813,7 @@ void main() {
 		else{	
 				
 		  
-		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x+shadowCol, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
 		  
 }

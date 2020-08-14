@@ -22,7 +22,7 @@
   float LoDbias = -1.0; 
 
 
-
+float lightningBolt = float(entityId == 58);	
 
 #if MC_VERSION >= 11500 && defined TEMPORARY_FIX
 #undef MC_NORMAL_MAP
@@ -294,7 +294,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 		else data0.a = 0.0;
 	
-	float lightningBolt = float(entityId == 58);	
+
 	#ifdef MC_NORMAL_MAP
 	vec3 normal2 = vec3(texture2D(normals, lmtexcoord.xy).rgb)*2.0-1.;
 		

@@ -119,7 +119,8 @@ option.MAX_RAYLENGTH=Max raylength
 option.RAYS=SSPT rays
 option.CONTRAST_ADAPTATIVE_SHARPENING=Contrast adaptive shapen
 option.SHARPENING=Strength
-
+value.SSPT_MODE.0=Just AO (RTAO)
+value.SSPT_MODE.1=Full GI (SSPT)
 
 #SHADOWS
 

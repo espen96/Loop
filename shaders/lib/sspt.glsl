@@ -212,9 +212,9 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
 
-
+			#if SSPT_MODE == 1 // SSPT
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
-
+			#endif
 			}else
 			
 				intRadiance += ambient;

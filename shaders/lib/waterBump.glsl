@@ -36,3 +36,25 @@ vec3 getWaveHeight(vec2 posxz, float iswater){
 
 		return wave;
 }
+float glassRefraction(vec2 posxz, float waveM, float waveZ, float iswater,bool isglass) {
+  vec2 pos = posxz*4.0;
+  float moving = clamp(iswater*2.-1.0,0.0,1.0);
+	vec2 movement = vec2(-0.02*frameTimeCounter*moving);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	for (int i = 0; i < 4; i++){
+		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+		pos = rotationMatrix * pos;
+		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
+		if(isglass) caustic = (dot((posxz*-2)/1.74/1.74 * exp2(0.8*i) + vec2(0.5),vec2(0.5)))*0.0001;
+		weightSum += exp2(-i);
+	}
+	return caustic * weightSum / 300.;
+}
+
+
+
+
+//caustic += sin(dot((pos)/1.74/1.74 * exp2(0.8*i) + vec2(0.5),vec2(0.5)))*0.15;

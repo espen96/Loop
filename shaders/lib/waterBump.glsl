@@ -48,7 +48,7 @@ float glassRefraction(vec2 posxz, float waveM, float waveZ, float iswater,bool i
 		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
 		pos = rotationMatrix * pos;
 		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
-		if(isglass) caustic = (dot((posxz*-2)/1.74/1.74 * exp2(0.8*i) + vec2(0.5),vec2(0.5)))*0.0001;
+		if(isglass) caustic = (dot((posxz*-2)/1.74/1.74 * exp2(0.8*i) + vec2(0.5),vec2(0.5)))*0.001;
 		weightSum += exp2(-i);
 	}
 	return caustic * weightSum / 300.;

@@ -201,7 +201,7 @@ float ao = 1.0;
 
 		float emissive = 0.0;
 		float F0 = mat_data.y;
-		float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a))*F0;
+		float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a));
 		vec3 reflectedVector = reflect(normalize(fragpos), normal);
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
@@ -213,7 +213,7 @@ float ao = 1.0;
 		vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
 		vec4 sky_c = skyCloudsFromTex(wrefl,gaux1)*(1.0-isEyeInWater);
 		if(is_metal){sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/3.0;}
-		else{sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/15.0;}
+		else{sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/10.0;}
 
 
 
@@ -223,7 +223,7 @@ float ao = 1.0;
 		reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
 
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* luma(texelFetch2D(gaux1,ivec2(6,6),0).rgb)*8.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
+			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* luma(texelFetch2D(gaux1,ivec2(F0*255),0).rgb)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
 
 
 		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);

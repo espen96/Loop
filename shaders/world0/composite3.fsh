@@ -131,7 +131,7 @@ void main() {
     float norm = glassRefraction(np3.xz*1.71, 4.0, 0.25, 1.0,isglass);
     float displ = norm/(length(fragpos)/far)/80.;
     if(!isglass)refractedCoord += displ;
-    if(isglass)refractedCoord += vec2(0.0,displ);
+    if(isglass)refractedCoord += vec2(0.0,-displ);
 
     if (texture2D(colortex3,refractedCoord).a < 0.9 && !isglass)
      refractedCoord = texcoord;	

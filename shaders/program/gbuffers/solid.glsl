@@ -59,7 +59,7 @@ float ao = 1.0;
 	float NdotU = dot(upVec,normal);
 
 	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
-	float shading = 1.0;
+	float shading = 0.0;
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
@@ -92,11 +92,10 @@ float ao = 1.0;
 
 
 
-				direct *= shading;
+
 			}
 
 		}	
-		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 		shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));		
 		
 
@@ -237,6 +236,8 @@ float ao = 1.0;
 		} else {
 			reflected.rgb += sp ;
 		}
+		
+		reflected *= shading;
 
 		
 

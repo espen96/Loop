@@ -106,11 +106,31 @@ void main() {
   bool hand = abs(frDepth) <0.01;
 
   vec4 trpData = texture2D(colortex3,texcoord);
+vec3 mask2 =vec3(0,0,0);
+  
 
   
-  bool iswater = trpData.a > 0.9;
-  bool isglass = (trpData.a > 0.2);
   
+
+
+  
+  
+  
+
+if(trpData.a > 0.2 && trpData.a <0.9) mask2=vec3(0,0,1);
+if(trpData.a >0.9 && trpData.a<1.1) mask2=vec3(0,0,1);
+
+if(trpData.a >0.90 && trpData.a<0.902) mask2=vec3(1,0,0);
+if(trpData.a >0.901 && trpData.a<0.99) mask2=vec3(0,0,1);
+  bool isglass = (mask2.b > 0);
+
+bool  iswater = (mask2.r  > 0); 
+
+//if(trpData.a >0.901) trpData.a = 0.1;
+
+  
+//  isglass = (trpData.a > 1);
+
   
 
 
@@ -130,22 +150,31 @@ void main() {
   	vec3 np3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition;
     float norm = glassRefraction(np3.xz*1.71, 4.0, 0.25, 1.0,isglass);
     float displ = norm/(length(fragpos)/far)/80.;
-    if(!isglass)refractedCoord += displ;
-    if(isglass)refractedCoord += vec2(0.0,-displ);
+    if(mask2.r>0)refractedCoord += displ;
+    if(mask2.g>0 || mask2.b >0)refractedCoord += vec2(0.0,-displ);
 
-    if (texture2D(colortex3,refractedCoord).a < 0.9 && !isglass)
-     refractedCoord = texcoord;	
+
+    if (texture2D(colortex3,refractedCoord).a >0.90 && texture2D(colortex3,refractedCoord).a<0.902) mask2 = vec3(0,1,0);	
+    if (mask2.g< 1 &&!isglass) refractedCoord = texcoord;	
+
 	
 	
 
 
   }
   
+    refractedCoord2 = refractedCoord;
+  
+	vec4 transparencies = texture2D(colortex2,refractedCoord);  
 
-  
-  vec4 transparencies = texture2D(colortex2,refractedCoord);  
-  
+	  
+	  
+	  
+	  
+	  
+	  
   vec3 color = texture2D(colortex3,refractedCoord).rgb;
+  
 
 //  if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
     color = color*(1.0-transparencies.a)+transparencies.rgb*10.;
@@ -175,7 +204,8 @@ void main() {
   color += vl.rgb;
   gl_FragData[0].r = vl.a;
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
- //if(hand) gl_FragData[1].rgb = vec3(1);
+// gl_FragData[1].rgb = vec3(trpData.a);
+//   gl_FragData[1].rgb += vec3(mask2);
 
 }
 

@@ -42,7 +42,7 @@ void main() {
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	gl_Position = ftransform();
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51*2.0-1.0;
-		#ifdef TAA_UPSCALING
+	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif
 	vec3 sc = texelFetch2D(colortex4,ivec2(6,37),0).rgb;

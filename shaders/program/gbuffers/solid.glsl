@@ -8,6 +8,7 @@
 
 
 
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -58,8 +59,11 @@ float ao = 1.0;
 	float NdotL = lightSign*dot(normal,sunVec);
 	float NdotU = dot(upVec,normal);
 
+	float daytime = dot(normalize(sunPosition),upPosition);
+	
+	
 	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
-	float shading = 0.0;
+	float shading = 1.0;
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
@@ -90,14 +94,16 @@ float ao = 1.0;
 					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
 					}
 
-
+direct *= shading;
 
 
 			}
 
 		}	
-		shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));		
 		
+		direct *= diffuseSun*lmtexcoord.w;
+		shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));		
+		vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
 
 		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
 		ao = clamp(linao.z,0,1);
@@ -200,7 +206,6 @@ float ao = 1.0;
 
 		float emissive = 0.0;
 		float F0 = mat_data.y;
-		float f0 = (iswater > 0.1?  0.02 : 0.05*(1.0-gl_FragData[0].a));
 		vec3 reflectedVector = reflect(normalize(fragpos), normal);
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
@@ -221,8 +226,8 @@ float ao = 1.0;
 		vec4 reflection = vec4(0.0);
 		     reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
-
-			float sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* luma(texelFetch2D(gaux1,ivec2(F0*255),0).rgb)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
+			float spec = (F0/255)*SPEC_MULTIPLIER;
+			vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
 
 
 		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);
@@ -351,7 +356,7 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 	
 	
 	
-		
+	
 	
 #ifdef entity 	
 gl_FragData[2].rgb = vec3(0.0);
@@ -375,4 +380,5 @@ gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),en
   }
   else
   gl_FragData[0] = vec4(0.0,0.0,0.0,1.0);
+
 }

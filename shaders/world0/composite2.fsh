@@ -238,12 +238,15 @@ void main() {
 /* DRAWBUFFERS:0 */
 
 
+		   
+	vec2 texcoord = gl_FragCoord.xy*texelSize;							
+
+
 	#ifndef VOLUMETRIC_FOG
-	gl_FragData[0] = texture2D(texture,texcoord.xy)*color;
-	#endif					   
-	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
-	float masks = texture2D(colortex3,texcoord).a;
-	gl_FragData[0].a = masks;	
+	gl_FragData[0] = color;
+	#endif			
+
+	
 	if (isEyeInWater == 0){
 
 	#ifdef VOLUMETRIC_FOG									  

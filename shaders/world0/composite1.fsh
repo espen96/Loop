@@ -19,27 +19,29 @@ flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
 
-
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex2;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
 uniform sampler2D colortex3;
+uniform sampler2D colortex7;
 uniform sampler2D colortex5;
 uniform sampler2D colortex6;//Skybox
-uniform sampler2D colortex7;
 uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
 uniform sampler2D texture;
 uniform sampler2D normals;
-
 uniform sampler2DShadow shadow;
 
 uniform sampler2DShadow shadowtex1;
-uniform sampler2D shadowcolor0;
 
+						   
+
+uniform sampler2D shadowcolor1;
+uniform sampler2D shadowcolor0;
+uniform sampler2D shadowcolor;
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
@@ -74,7 +76,7 @@ uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
 
 
-
+#ifdef LIGHTMAP_FILTER
 
 const vec2 poissonDisk[64] = vec2[64](
 vec2(-0.613392, 0.617481),
@@ -142,6 +144,8 @@ vec2(0.063326, 0.142369),
  vec2(-0.545396, 0.538133),
  vec2(-0.178564, -0.596057)
 );
+
+#endif
 
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
@@ -232,16 +236,25 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 
 			if (dist < 0.01 ) return 0.0;
-
-
-
 	}
 
 	}
     return 1.0;
 }
 
+vec2 tapLocation4(float sampleNumber, float spinAngle,float nb,float nbRot)
+{
+    float alpha = float(sampleNumber + spinAngle/6.28) /nb;
+    float angle = alpha * (nbRot * 6.28) + spinAngle;
 
+    float ssR = alpha*alpha;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*ssR;
+}
 
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
@@ -260,19 +273,6 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 	cos_v = cos(angle);
 
     return vec2(cos_v, sin_v)*sqrt(alpha);
-}
-vec2 tapLocation3(int sampleNumber,int nb, float nbRot,float jitter,float distort)
-{
-
-    float alpha = (sampleNumber+jitter)/nb+distort*10;
-    float angle = jitter*6.28 + alpha * 84.0 * 6.28;
-
-    float sin_v, cos_v;
-
-	sin_v = sin(angle);
-	cos_v = cos(angle);
-
-    return vec2(cos_v, sin_v)*(alpha);
 }
 vec2 tapLocation2(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
@@ -366,28 +366,6 @@ float waterCaustics(vec3 wPos){
 	}
 	return caustic * weightSum;
 }
-vec2 decodeVec1(float a){
-    const vec2 constant1 = 65535. / vec2( 256., 65536.);
-    const float constant2 = 256. / 255.;
-    return fract( a * constant1 ) * constant2 ;
-}
-const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
-vec2( -0.6250, -0.0000 ),
-vec2(  0.3536, -0.3536 ),
-vec2( -0.0000,  0.3750 ),
-vec2( -0.1768, -0.1768 ),
-vec2( 0.1250,  0.0000 ));
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -400,9 +378,6 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	const float PI = 3.14159265;
 	const float samplingRadius = 0.712;
 	float angle_thresh = 0.05;
-
-
-
 
 	float rd = mulfov2*0.05;
 	//pre-rotate direction
@@ -444,6 +419,8 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
+
+#include "/lib/blur.glsl"
 void main() {
 
 
@@ -508,7 +485,9 @@ void main() {
 
 		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
 		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
-		vec3 tester = texture2D(colortex2,texcoord).rgb;
+		vec3 tester = texture2D(colortex7,texcoord).rgb;
+		vec3 snormal = texture2D(colortex7,texcoord).rgb*2-1;
+		
 		vec4 specular = vec4(sp1,sp2);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -517,7 +496,7 @@ void main() {
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		vec3 normal2 = decode(dataUnpacked0.yw);
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
-
+		float dither64 = noise;
 		
 
 #ifdef LIGHTMAP_FILTER
@@ -546,6 +525,7 @@ void main() {
 		
 		
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
+		bool glass = texture2D(colortex2,texcoord).a >=0.01;													  
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = (masks) <=0.10 && (masks) >=0.09;
 		bool lightning = (masks) <=0.20 && (masks) >=0.19;
@@ -554,12 +534,15 @@ void main() {
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		float shading = 1.0;		
 		float ao = 1.0;
+		
+		#ifndef SSPT
 		if (!hand)
 		{
 		#ifdef SSAO
 			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 		#endif
 		}
+		#endif
 //////////////////////////////PBR//////////////////////////////		
 
 
@@ -597,12 +580,12 @@ void main() {
 
 
 
-
-
+float weight = 0.0;
+vec3 indirectLight = vec3(0.0);
 vec3 shadowColBase = vec3(0.0);
 vec3 shadowCol = vec3(0.0);
 vec3 caustic = vec3(0.0);
-
+float shadow1 = 0.0;
 
 		
 		vec3 filtered = vec3(1.412,1.0,0.0);
@@ -617,7 +600,13 @@ vec3 caustic = vec3(0.0);
 			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*3.14150*1.6, diffuseSun, 0.3);
 		}
 
-		//compute shadows only if not backfacing the sun
+		//compute shadows only if not backfacing the sun			
+		
+		
+		
+		
+		
+	
 		if (diffuseSun > 0.001) {
 
 			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -626,8 +615,18 @@ vec3 caustic = vec3(0.0);
 			//apply distortion
 			float distortFactor = calcDistort(projectedShadowPosition.xy);
 			projectedShadowPosition.xy *= distortFactor;
+			vec3 projectedShadowPosition2 = projectedShadowPosition;
+			
+			
+			
+	
+			
+			
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
+			
+			
+			
 				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
@@ -639,52 +638,25 @@ vec3 caustic = vec3(0.0);
 				shading = 0.0;
 				float SSS = max(exp(-(filtered.x-1.412)*5.0), 0.25*exp(-(filtered.x-1.412)*0.6));
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
-				
-				
-				
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
-					vec2 offsetD = tapLocation3(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,filtered.x);
-
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
 					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-				#ifndef TOASTER	
+					#ifndef TOASTER	
 					if (translucent)
 						shading += mix(SSS,1.0,isShadow)/SHADOW_FILTER_SAMPLE_COUNT;
 					else
 						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
-				#else					
+					#else					
 						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;		
-				#endif		
-				
-				/// -CAUSTICS
-				
-					if(!hand){
-				
-						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-						shadowColBase = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*offsetS))).rgb;			
+					#endif		
 
-
-				
-						caustic = texture2D(shadowcolor0,vec2(projectedShadowPosition.st + vec2(rdMul*(offsetD-diffthresh*weight)))).rgb*clamp(lightCol.rgb*0.0003,0,255);	
-
-
-
-			
-						caustic *= texture2D(shadowcolor0,vec2(projectedShadowPosition.st - vec2(rdMul*20*offsetS))).rgb;				
-						caustic /= filtered.x;				
-
-			
-			
-						caustic = clamp(caustic,0,255)*40;
-
-						shadowCol = shadowColBase+caustic;
-						shadowCol *= shadow1;
-
-					}
-				
-				
 				}
 			}
+			
+
+			
+			
+
 			if (shading > 0.005){
 				#ifdef SCREENSPACE_CONTACT_SHADOWS
 					vec3 vec = lightCol.a*sunVec;
@@ -705,8 +677,15 @@ vec3 caustic = vec3(0.0);
 			#ifdef CAVE_LIGHT_LEAK_FIX
 				shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
 			#endif
+			
+	
+			
+			
 		}
-
+if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
+		
+		
+		
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*clamp(ambientCoefs.y,0.,1.);
@@ -784,20 +763,29 @@ vec3 caustic = vec3(0.0);
 				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
 
 		}
-		else {			
-			shadowCol *= (1-shading);
-			#ifndef SSPT
+		else {				
+		
+		
+		if (lightning) ambientLight *= vec3(2.0);	
+
+		
 			#ifdef SPEC_SCREENSPACE_REFLECTIONS
-			if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
+				if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
 			#endif
-			ambientLight = ambientLight * filtered.y* custom_lightmap.x*(1+shadowCol*(custom_lightmap.x*100)) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+			
+			
+			#ifndef SSPT
+
+			  //ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+
+			   ambientLight = ambientLight * filtered.y* custom_lightmap.x  + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z +(shadowCol*lightmap.y) *vec3(0.9,1.0,1.5)*filtered.y;
 			
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-			if (lightning) ambientLight *= vec3(2.0);
+
 			
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
-		//	gl_FragData[0].rgb  = shadowCol;
+
 			#else
 			
 		  		
@@ -805,34 +793,29 @@ vec3 caustic = vec3(0.0);
 				if (entity|| emissive || hand){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
 
-
-
-
-
 		}
-		else{	
+			else{	
 				
 		  
-		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x+shadowCol, translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x , translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
 		
-		  
+		 
 }
 			
-
 			//combine all light sources
 
 			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
 
-		    //gl_FragData[0].rgb = data2.yyy;
 		    
 			#endif
+	
+		//	gl_FragData[0].rgb  = (shadowCol*lightmap.y);		
+		//	gl_FragData[0].rgb  = mat3(shadowModelView) * toWorldSpaceNoMAD(gbufferModelViewInverse, snormal);			
+			
 		}
 		
-
-	}
+}
 	
-			
-
 
 gl_FragData[0].a = masks;	
 	

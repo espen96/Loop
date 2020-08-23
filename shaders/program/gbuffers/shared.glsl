@@ -50,6 +50,7 @@ uniform vec4 lightCol;
 uniform vec3 sunVec;
 uniform float frameTimeCounter;
 uniform float lightSign;
+uniform float sunAngle;
 uniform float near;
 uniform float far;
 uniform float moonIntensity;
@@ -57,6 +58,8 @@ uniform float sunIntensity;
 uniform vec3 sunColor;
 uniform vec3 nsunColor;
 uniform vec3 upVec;
+uniform vec3 upPosition;
+uniform vec3 sunPosition;
 uniform float sunElevation;
 uniform float fogAmount;
 

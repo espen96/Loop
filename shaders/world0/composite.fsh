@@ -25,7 +25,9 @@ flat varying vec3 ambientF;
 flat varying vec3 ambientDown;							  
 uniform sampler2D shadow;
 uniform sampler2D colortex1;
-
+uniform sampler2D colortex7;
+uniform sampler2D shadowcolor0;
+uniform sampler2D shadowcolor1;
 uniform sampler2D noisetex;
 uniform vec3 sunVec;
 uniform float far;
@@ -107,10 +109,13 @@ float invLinZ (float lindepth){
 }
 
 
-
+float ld(float dist) {
+    return (2.0 * near) / (far + near - dist * (far - near));
+}
+#include "/lib/blur.glsl"
 
 void main() {
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:37 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.0, 0.0, 0.0);
@@ -184,9 +189,12 @@ void main() {
 				}
 			#endif
 		}
-
+vec3 blur = texture2D(colortex7, texcoord).xyz;
+if (z < 1.0){
+	z = ld(z);
+	blur = ssaoVL_blur(texcoord,vec2(1.0,0.0),z*far);
 }
-
-
-
+gl_FragData[1].rgb  = blur;
+}
+			
 }

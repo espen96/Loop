@@ -382,7 +382,8 @@ void main() {
 		else
 		gl_FragData[0].rgb = color*0.1;
 
-		if (iswater < 0.4) iswater = 0.3;
+		if (iswater < 0.9) iswater = 0.3;
+		if (iswater > 0.9) iswater = 0.901;
 		gl_FragData[1].a = (iswater);
 
 }

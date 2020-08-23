@@ -1,4 +1,4 @@
-                         #ifndef USE_LUMINANCE_AS_HEIGHTMAP
+#ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
 #undef PBR
 #endif
@@ -28,7 +28,11 @@ varying vec3 tangent;
 #endif
 #ifdef water
 
-#define SHADOW_MAP_BIAS 0.8		
+
+
+
+
+
 
 varying vec3 binormal;
 
@@ -67,32 +71,79 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
 
-vec2 calcWave(in vec3 pos) {
 
-    float magnitude = abs(sin(dot(vec4(frameTimeCounter, pos),vec4(1.0,0.005,0.005,0.005)))*0.5+0.72)*0.013;
-	vec2 ret = (sin(pi2wt*vec2(0.0063,0.0015)*4. - pos.xz + pos.y*0.05)+0.1)*magnitude;
 
-    return ret;
-}
 
-vec3 calcMovePlants(in vec3 pos) {
-    vec2 move1 = calcWave(pos );
-	float move1y = -length(move1);
-   return vec3(move1.x,move1y,move1.y)*5.*WAVY_STRENGTH;
-}
 
-vec3 calcWaveLeaves(in vec3 pos, in float fm, in float mm, in float ma, in float f0, in float f1, in float f2, in float f3, in float f4, in float f5) {
+uniform float rainStrength;
+	
+	vec3 calcWave(in vec3 pos, in float fm, in float mm, in float ma, in float f0, in float f1, in float f2, in float f3, in float f4, in float f5) {
+		vec3 ret;
 
-    float magnitude = abs(sin(dot(vec4(frameTimeCounter, pos),vec4(1.0,0.005,0.005,0.005)))*0.5+0.72)*0.013;
-	vec3 ret = (sin(pi2wt*vec3(0.0063,0.0224,0.0015)*1.5 - pos))*magnitude;
 
-    return ret;
-}
+		float magnitude = sin(pi2wt*fm + pos.x*0.5 + pos.z*0.5 + pos.y*0.5) * mm + ma;
+		
 
-vec3 calcMoveLeaves(in vec3 pos, in float f0, in float f1, in float f2, in float f3, in float f4, in float f5, in vec3 amp1, in vec3 amp2) {
-    vec3 move1 = calcWaveLeaves(pos      , 0.0054, 0.0400, 0.0400, 0.0127, 0.0089, 0.0114, 0.0063, 0.0224, 0.0015) * amp1;
-    return move1*5.*WAVY_STRENGTH;
-}
+		float d0 = sin(pi2wt*f0);
+		float d1 = sin(pi2wt*f1);
+		float d2 = sin(pi2wt*f2);
+
+		ret.x = sin(pi2wt*f3 + d0 + d1 - pos.x + pos.z + pos.y) * magnitude;
+		ret.z = sin(pi2wt*f4 + d1 + d2 + pos.x - pos.z + pos.y) * magnitude;
+		ret.y = sin(pi2wt*f5 + d2 + d0 + pos.z + pos.y - pos.y) * magnitude;
+
+		return ret;
+	}
+
+
+
+float pow2(float x){return x*x;}
+float pow15(float x){return pow2(pow2(pow2(x)*x)*x)*x;}
+
+
+	vec3 doVertexDisplacement(vec3 viewpos, vec3 worldpos, vec4 lmcoord){
+	
+		float istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t ? 1.0 : 0.0;
+		
+		float underCover = lmcoord.t;
+			  underCover = clamp(pow15(underCover) * 2.0,0.0,1.0);
+		
+
+			float wavyMult = 1.0 + rainStrength*2;
+			
+			    vec3 move1 = calcWave(worldpos.xyz      , 0.003, 0.04, 0.04, 0.005, 0.009, 0.01, 0.006, 0.01, 0.01) * vec3(0.8,0.0,0.8);
+				vec3 move2 = calcWave(worldpos.xyz+move1, 0.035, 0.04, 0.04, 0.004, 0.007, 0.005, 0.004, 0.006, 0.001) * vec3(0.8,0.0,0.48);
+
+
+				float strength = 1 * WAVY_STRENGTH;
+
+				move1 *= strength;
+				move2 *= strength;
+			
+			
+			
+				vec3 waving =  move1+move2;
+				     waving *= underCover * wavyMult;
+			
+			
+				if ( mc_Entity.x == 10010 )
+					{
+						viewpos.xyz += waving * 0.1;
+					}
+
+
+
+				if ( mc_Entity.x == 10009 || mc_Entity.x == 10008  && istopv > 0.9 || mc_Entity.x == 10001 && istopv > 0.9|| mc_Entity.x == 10003  )
+					{
+						viewpos.xyz += waving;
+					}
+
+			return viewpos;
+	}
+
+
+
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -132,19 +183,33 @@ void main() {
 	
 //    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);
-	#ifdef WAVY_PLANTS
-		if ((mc_Entity.x == 10001 && istopv) && abs(position.z) < 64.0) {
-    vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-		worldpos.xyz += calcMovePlants(worldpos.xyz)*lmtexcoord.w - cameraPosition;
-    position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
-		}
+	
+	
 
-		if (mc_Entity.x == 10003 && abs(position.z) < 64.0) {
+	
+	
+	
+	#ifdef WAVY_PLANTS
+	
+	
+	
+	
+	
+
     vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-		worldpos.xyz += calcMoveLeaves(worldpos.xyz, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*lmtexcoord.w  - cameraPosition;
-    position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
-		}
+		
+		
+			vec4 lmcoord2 = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+			position = doVertexDisplacement(position, worldpos, lmcoord2);
+		
+		
 	#endif
+	
+	
+	
+	
+	
+	
 	if (mc_Entity.x == 10005){
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.8;

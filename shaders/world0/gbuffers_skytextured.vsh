@@ -1,5 +1,9 @@
 #version 120
+
+
+#include "/lib/settings.glsl"
 #include "/lib/res_params.glsl"
+
 
 /*
 !! DO NOT REMOVE !!

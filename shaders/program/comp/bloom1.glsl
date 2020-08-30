@@ -4,7 +4,7 @@
 #ifdef fsh	
 //////////////////////////////FRAGMENT//////////////////////////////	
 //downsample 1st pass (half res) for bloom
-
+#include "/lib/res_params.glsl"
 uniform sampler2D colortex3;
 uniform vec2 texelSize;
 uniform float viewWidth;
@@ -19,7 +19,7 @@ void main() {
 
 /* DRAWBUFFERS:6 */
 vec2 resScale = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))/vec2(1920.,1080.);
-vec2 quarterResTC = gl_FragCoord.xy*2.*texelSize;
+vec2 quarterResTC = gl_FragCoord.xy*texelSize*2.;
 
 		//0.5
 		gl_FragData[0] = texture2D(colortex3,quarterResTC-1.0*vec2(texelSize.x,texelSize.y))/4.*0.5;
@@ -62,6 +62,7 @@ vec2 quarterResTC = gl_FragCoord.xy*2.*texelSize;
 //////////////////////////////VERTEX//////////////////////////////	
 uniform float viewWidth;
 uniform float viewHeight;
+#include "/lib/res_params.glsl"
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -73,7 +74,7 @@ void main() {
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 	gl_Position = ftransform();
 	//*0.51 to avoid errors when sampling outside since clearing is disabled
-	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.26/clampedRes*vec2(1920.0,1080.)*2-1.0;
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.26*BLOOM_QUALITY/clampedRes*vec2(1920.0,1080.)*2-1.0;
 }
 
 	

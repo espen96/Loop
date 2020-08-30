@@ -45,33 +45,36 @@ vec3 toScreenSpace(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
+  coord = coord;
   vec4 vl = vec4(0.0);
   float sum = 0.0;
   mat3x3 weights;
-  ivec2 posD = ivec2(coord/2.0)*2;
-  ivec2 posVl = ivec2(coord/2.0);
+  const ivec2 scaling = ivec2(1.0/VL_RENDER_RESOLUTION);
+  ivec2 posD = ivec2(coord*VL_RENDER_RESOLUTION)*scaling;
+  ivec2 posVl = ivec2(coord*VL_RENDER_RESOLUTION);
   float dz = zMults.x;
-  ivec2 pos = (ivec2(gl_FragCoord.xy) % 2 )*2;
+  ivec2 pos = (ivec2(gl_FragCoord.xy+frameCounter) % 2 )*2;
+	//pos = ivec2(1,-1);
 
-  ivec2 tcDepth =  posD + ivec2(-4,-4) + pos*2;
+  ivec2 tcDepth =  posD + ivec2(-2,-2) * scaling + pos * scaling;
   float dsample = ld(texelFetch2D(depth,tcDepth,0).r);
   float w = abs(dsample-frDepth) < dz ? 1.0 : 1e-5;
   vl += texelFetch2D(tex,posVl+ivec2(-2)+pos,0)*w;
   sum += w;
 
-	tcDepth =  posD + ivec2(-4,0) + pos*2;
+	tcDepth =  posD + ivec2(-2,0) * scaling + pos * scaling;
   dsample = ld(texelFetch2D(depth,tcDepth,0).r);
   w = abs(dsample-frDepth) < dz ? 1.0 : 1e-5;
   vl += texelFetch2D(tex,posVl+ivec2(-2,0)+pos,0)*w;
   sum += w;
 
-	tcDepth =  posD + ivec2(0) + pos*2;
+	tcDepth =  posD + ivec2(0) + pos * scaling;
   dsample = ld(texelFetch2D(depth,tcDepth,0).r);
   w = abs(dsample-frDepth) < dz ? 1.0 : 1e-5;
   vl += texelFetch2D(tex,posVl+ivec2(0)+pos,0)*w;
   sum += w;
 
-	tcDepth =  posD + ivec2(0,-4) + pos*2;
+	tcDepth =  posD + ivec2(0,-2) * scaling + pos * scaling;
   dsample = ld(texelFetch2D(depth,tcDepth,0).r);
   w = abs(dsample-frDepth) < dz ? 1.0 : 1e-5;
   vl += texelFetch2D(tex,posVl+ivec2(0,-2)+pos,0)*w;
@@ -166,7 +169,7 @@ bool  iswater = (mask2.r  > 0);
     refractedCoord2 = refractedCoord;
   
 	vec4 transparencies = texture2D(colortex2,refractedCoord);  
-
+if(hand)transparencies = texture2D(colortex2,texcoord);  
 	  
 	  
 	  

@@ -296,7 +296,7 @@ vec3 TAA_hq(){
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
 	#ifndef TOASTER
-	vec3 albedoCurrent0 = max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
+	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC,vec4(texelSize, 1.0/texelSize), 0.75), 0.0);
 	#else
 	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
 	#endif
@@ -336,7 +336,7 @@ vec3 TAA_hq(){
 
 
 	#ifndef NO_CLIP
-	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.82).xyz;
+	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz;
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);
 
 
@@ -357,7 +357,7 @@ vec3 TAA_hq(){
 //	float movementRejection = isclamped * clamp(length(velocity/texelSize),0.0,1.0)*0.5;
 	
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
-	float movementRejection = isclamped*0.5 + isclamped*clamp(length(velocity/texelSize),0.0,1.0);	
+	float movementRejection = isclamped*0.5 + isclamped*clamp(length(velocity/texelSize),0.0,1.0)*1.5;
 	
 	
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering

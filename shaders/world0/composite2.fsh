@@ -250,13 +250,16 @@ void main() {
 	if (isEyeInWater == 0){
 
 	#ifdef VOLUMETRIC_FOG									  
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
+		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
 		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
 		gl_FragData[0] = clamp(vec4(vl[0],absorbance),0.000001,65000.);
+		vec4 trpData = texture2D(colortex3,texcoord);
+		vec3 mask2 =vec3(0,0,0);
+		if(trpData.a > 0.2 && trpData.a <0.9) mask2=vec3(0,0,1);
 	#endif  
 	}
 	
@@ -275,7 +278,7 @@ void main() {
 		vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 		vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
+		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();

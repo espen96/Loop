@@ -80,16 +80,73 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
     return result;
 }
 
+	vec3 doChromaticAberration(vec2 coord) {
 
+		const float offsetMultiplier	= 0.002;
 
+		float dist = pow(distance(coord.st, vec2(0.5)), 2.5);
 
+		vec3 color = vec3(0.0);
+
+		color.r = texture2D(colortex2, coord.st + vec2(offsetMultiplier * dist, 0.0)).r;
+		color.g = texture2D(colortex2, coord.st).g;
+		color.b = texture2D(colortex2, coord.st - vec2(offsetMultiplier * dist, 0.0)).b;
+
+		return color;
+
+	}
+
+	vec3 vignette(vec3 color) {
+
+		float vignetteStrength	= 1.0;
+		float vignetteSharpness	= 3.0;
+
+		float dist = 1.0 - pow(distance(texcoord.st, vec2(0.5)), vignetteSharpness) * vignetteStrength;
+
+		return color * dist;
+
+	}
+
+	
+	
+	float rand(vec2 coord) {
+	  return fract(sin(dot(coord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+	}
+
+	vec3 filmgrain(vec3 color) {
+
+		const float noiseAmount = 0.03;
+
+		vec2 coord = texcoord + frameTimeCounter * 0.01;
+
+		vec3 noise = vec3(0.0);
+				 noise.r = rand(coord + 0.1);
+				 noise.g = rand(coord);
+				 noise.b = rand(coord - 0.1);
+
+		return color * (1.0 - noiseAmount + noise * noiseAmount) + noise * noiseAmount;
+
+	}	
+	
+	
+	
 void main() {
   #ifdef BICUBIC_UPSCALING
     vec3 col = SampleTextureCatmullRom(colortex2,texcoord,1.0/texelSize).rgb;
   #else
     vec3 col = texture2D(colortex2,texcoord).rgb;
   #endif
-
+  #ifdef CHROMATIC  
+	     col = doChromaticAberration(texcoord); 
+  #endif
+  #ifdef GRAIN  
+		col = filmgrain(col);
+  #endif
+  #ifdef VIGNETTE
+		 col = vignette(col);
+  #endif
+ 	 
+		 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
     vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
     vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;

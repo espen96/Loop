@@ -36,12 +36,12 @@ uniform sampler2D normals;
 uniform sampler2DShadow shadow;
 
 uniform sampler2DShadow shadowtex1;
+uniform sampler2DShadow shadowtex0;
 
 						   
 
 uniform sampler2D shadowcolor1;
-uniform sampler2D shadowcolor0;
-uniform sampler2D shadowcolor;
+uniform sampler2DShadow shadowcolor0;
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
@@ -209,7 +209,7 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
 float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
     const float quality = 16.;
-    vec3 clipPosition = toClipSpace3(position)*vec3(RENDER_SCALE,1.0);
+    vec3 clipPosition = toClipSpace3(position);
 	//prevents the ray from going behind the camera
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
        (-near -position.z) / dir.z : far*sqrt(3.);
@@ -219,9 +219,9 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
 
 
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0);
+    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
 
-	vec3 spos = clipPosition+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
 
 
 
@@ -236,6 +236,9 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 
 			if (dist < 0.01 ) return 0.0;
+
+
+
 	}
 
 	}
@@ -486,8 +489,8 @@ void main() {
 		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
 		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
 		vec3 tester = texture2D(colortex7,texcoord).rgb;
-		vec3 snormal = texture2D(colortex7,texcoord).rgb*2-1;
-		
+		vec3 rsm = texture2D(colortex7,texcoord).rgb;
+
 		vec4 specular = vec4(sp1,sp2);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -496,7 +499,7 @@ void main() {
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		vec3 normal2 = decode(dataUnpacked0.yw);
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
-		float dither64 = noise;
+	
 		
 
 #ifdef LIGHTMAP_FILTER
@@ -584,8 +587,10 @@ float weight = 0.0;
 vec3 indirectLight = vec3(0.0);
 vec3 shadowColBase = vec3(0.0);
 vec3 shadowCol = vec3(0.0);
+vec3 rsmfinal = vec3(0.0);
 vec3 caustic = vec3(0.0);
 float shadow1 = 0.0;
+float shadow0 = 0.0;
 
 		
 		vec3 filtered = vec3(1.412,1.0,0.0);
@@ -639,6 +644,8 @@ float shadow1 = 0.0;
 				float SSS = max(exp(-(filtered.x-1.412)*5.0), 0.25*exp(-(filtered.x-1.412)*0.6));
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
+					//	 offsetS = vec2(0.01);
+
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
 					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 					#ifndef TOASTER	
@@ -650,8 +657,36 @@ float shadow1 = 0.0;
 						shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;		
 					#endif		
 
+
+				
+					if(!entity){
+				
+
+						shadowColBase = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).rgb;
+						shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+						shadow0 = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;					
+
+						
+						if (shadow0 < 0.01){
+
+
+
+			
+	
+					//		shadowCol = mix(vec3(shadow0), shadowColBase, clamp(shadow1 - shadow0,0,1));
+						
+					//	shading += shadow1*0.025;				
+			
+				
+							}
+			
+						}
+
+					}
+				
+				
 				}
-			}
+			
 			
 
 			
@@ -671,7 +706,7 @@ float shadow1 = 0.0;
 				#ifdef CLOUDS_SHADOWS
 					vec3 pos = p3 + cameraPosition + gbufferModelViewInverse[3].xyz;
 					vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(2500.0-cameraPosition.y);
-					shading *= mix(1.0,exp(-20.*cloudVolLQ(cloudPos)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
+					shading *= mix(1.0,exp(-20.*getCloudDensity(cloudPos, -1)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
 				#endif
 			}
 			#ifdef CAVE_LIGHT_LEAK_FIX
@@ -682,7 +717,7 @@ float shadow1 = 0.0;
 			
 			
 		}
-if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
+			if(!hand) rsmfinal += rsm;
 		
 		
 		
@@ -700,7 +735,7 @@ if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
 		custom_lightmap.y *= filtered.y*0.9+0.1;
 
 		
-		float alblum = clamp(luma(albedo),0.37,0.40); 
+		float alblum = clamp(luma(albedo),0.30,0.40); 
 		
     #ifdef PBR
 	#ifdef EMISSIVES
@@ -714,7 +749,7 @@ if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
 	#endif
 	#else
 
-		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0))*20;
+		if (emissive || (hand && heldBlockLightValue > 0.1)) custom_lightmap.y =  float (pow(clamp(alblum-0.35,0.0,1.0)/0.1*0.65+0.35,2.0))*10;
 
 	#endif
 	
@@ -765,7 +800,7 @@ if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
 		}
 		else {				
 		
-		
+		shadowCol *= (1-shading);		
 		if (lightning) ambientLight *= vec3(2.0);	
 
 		
@@ -776,41 +811,40 @@ if(!hand &&!entity) shadowCol = ssaoVL_blur(texcoord,vec2(0.0,1.0),ld(z)*far);
 			
 			#ifndef SSPT
 
-			  //ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-
-			   ambientLight = ambientLight * filtered.y* custom_lightmap.x  + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z +(shadowCol*lightmap.y) *vec3(0.9,1.0,1.5)*filtered.y;
+			   ambientLight = ambientLight * filtered.y* custom_lightmap.x *(1+shadowCol*(custom_lightmap.x*100))   + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z +((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y) *filtered.y;
 			
 			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
 
 			
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
+
 
 			#else
 			
-		  		
+		  	if(!hand && !emissive){ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x , translucent, custom_lightmap.z +((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));		  		
 			
-				if (entity|| emissive || hand){ ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
+
 
 		}
 			else{	
 				
-		  
-		  	ambientLight = rtGI(normal,normal2, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x , translucent, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B));
+				ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
+				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
+
+
 		
 		 
 }
-			
+			#endif			
 			//combine all light sources
 
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
-
+		//	gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
+			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
 		    
-			#endif
+
 	
-		//	gl_FragData[0].rgb  = (shadowCol*lightmap.y);		
-		//	gl_FragData[0].rgb  = mat3(shadowModelView) * toWorldSpaceNoMAD(gbufferModelViewInverse, snormal);			
+		//	gl_FragData[0].rgb  = (((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y));		
+		//	gl_FragData[0].rgb  = vec3(shading);			
 			
 		}
 		

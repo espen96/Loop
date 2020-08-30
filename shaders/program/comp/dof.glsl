@@ -351,12 +351,13 @@ vec2(-0.596356f , -0.7976127f),
 vec2(-0.8877738f , 0.4569088f));
 #endif
 flat varying vec4 exposure;
-flat varying float rodExposure;
+flat varying vec2 rodExposureDepth;
 varying vec2 texcoord;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
+uniform sampler2D colortex6;
 uniform sampler2D colortex3;
 
 uniform sampler2D depthtex0;
@@ -441,12 +442,11 @@ void main() {
 	#ifdef DOF
 			/*--------------------------------*/
 			float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;		
-
+	
 			float focus;
 			#if DOF_MODE == 0
-//				focus = ld(centerDepthSmooth)*far;
-				focus = (texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r);
-				focus = ld(hand ? focus - 0.45 : focus)*far;
+				focus = rodExposureDepth.y*far;
+				z = (hand ? z + focus : z);
 			#endif
 			#if DOF_MODE == 1
 				focus = MANUAL_FOCUS;
@@ -460,7 +460,7 @@ void main() {
 		vec2 bcolor2 = vec2(0.0);
 				for ( int i = 0; i < 20; i++) {
 				if (focus >=(1.0)){
-				bcolor2 += min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0+(offsets[i]*0.016).x);}
+				bcolor2 += min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0+(offsets[i]*0.016).x);}  // magic for fixing near blur (needs logic)
 				else{				bcolor2 += min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);}
 	//			bcolor2 += (offsets[i]*0.2);
 
@@ -468,6 +468,9 @@ void main() {
 				float pcoc = bcolor2.x/20.0;
 			
 //			float pcoc = min(abs(((aperture * (focal * gbufferProjection[1][1]))/100) * ((focal * gbufferProjection[1][1])/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+
+
+
 			#if EXCLUDE_MODE == 2
 						pcoc *= float(z > 0.56);
 			#endif			
@@ -520,7 +523,7 @@ void main() {
 
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 
-	vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5).rgb/2./7.0;
+	vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5*BLOOM_QUALITY).rgb/2./7.0;
 #ifdef SSPT
 	float lightScat = clamp((BLOOM_STRENGTH/5)*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
 #else	
@@ -529,7 +532,7 @@ void main() {
 
 
 
-	float purkinje = rodExposure/(1.0+rodExposure)*Purkinje_strength;
+	float purkinje = rodExposureDepth.x/(1.0+rodExposureDepth.x)*Purkinje_strength;
 	
 	float VL_abs = texture2D(colortex2,texcoord*RENDER_SCALE).r;	
 
@@ -551,7 +554,7 @@ void main() {
 	//Purkinje Effect
     float lum = dot(col,vec3(0.15,0.3,0.55));
 	float lum2 = dot(col,vec3(0.85,0.7,0.45))/2;
-	float rodLum = pow(lum2*60.,1.5);
+	float rodLum = lum2*400.0;
 	float rodCurve = mix(1.0, rodLum/(2.5+rodLum), purkinje);
 	col = mix(lum*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+1.5e-3, col, rodCurve);
 
@@ -568,7 +571,7 @@ void main() {
 	#endif
 
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
-//	gl_FragData[0].rgb = vec3(pcoc)*100;
+//	gl_FragData[0].rgb = vec3(focus)*100;
 	
 
 
@@ -588,7 +591,7 @@ void main() {
 
 varying vec2 texcoord;
 flat varying vec4 exposure;
-flat varying float rodExposure;
+flat varying vec2 rodExposureDepth;
 uniform sampler2D colortex4;
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -602,7 +605,8 @@ void main() {
 	gl_Position = ftransform();
 	texcoord = gl_MultiTexCoord0.xy;
 	exposure=vec4(texelFetch2D(colortex4,ivec2(10,37),0).r*vec3(FinalR,FinalG,FinalB),texelFetch2D(colortex4,ivec2(10,37),0).r);
-	rodExposure = texelFetch2D(colortex4,ivec2(14,37),0).r;
+	rodExposureDepth = texelFetch2D(colortex4,ivec2(14,37),0).rg;
+	rodExposureDepth.y = sqrt(rodExposureDepth.y/65000.0);
 }
 	
 

@@ -11,10 +11,10 @@ Read the terms of modification and sharing before changing something below pleas
 #include "/lib/settings.glsl"
 
 #ifdef GI
-//#undef SHADOW_FRUSTRUM_CULLING
+#undef SHADOW_FRUSTRUM_CULLING
 #endif
 
-
+varying vec2 lightmaps;
 
 const float PI = 3.1415927;
 varying vec2 texcoord;
@@ -135,6 +135,9 @@ vec3 calcMoveLeaves(in vec3 pos, in float f0, in float f1, in float f2, in float
     return move1*5.*WAVY_STRENGTH/255.;
 }	
 
+
+
+
 bool intersectCone(float coneHalfAngle, vec3 coneTip , vec3 coneAxis, vec3 rayOrig, vec3 rayDir, float maxZ)
 {
   vec3 co = rayOrig - coneTip;
@@ -150,13 +153,14 @@ bool intersectCone(float coneHalfAngle, vec3 coneTip , vec3 coneAxis, vec3 rayOr
    
 
   if (det < 0.) return false;    // No intersection with either forward cone and backward cone
-  #ifndef GI
   det = sqrt(det);
   float t2 = (-b + det) / (2. * a);
   if (t2 <= 0.0 || t2 >= maxZ) return false;  //Idk why it works
-  #endif
   return true;
 }
+
+
+
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
@@ -189,7 +193,7 @@ void main() {
 	#endif
   
 		iswater = 0.0;
-	
+		lightmaps = gl_MultiTexCoord1.xy * (1.0 / 255.0);
 	if (mc_Entity.x == 8.0)
 	iswater = 1.0;
   

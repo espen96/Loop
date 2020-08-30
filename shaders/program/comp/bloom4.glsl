@@ -4,7 +4,7 @@
 #ifdef fsh	
 //////////////////////////////FRAGMENT//////////////////////////////		
 //Merge and upsample the blurs into a 1/4 res bloom buffer
-
+#include "/lib/res_params.glsl"
 uniform sampler2D colortex3;
 uniform sampler2D colortex6;
 
@@ -85,7 +85,7 @@ vec4 texture2D_bicubic(sampler2D tex, vec2 uv)
 
 void main() {
 /* DRAWBUFFERS:3 */
-vec2 resScale = vec2(1920.,1080.)/max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
+vec2 resScale = vec2(1920.,1080.)/(max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))/BLOOM_QUALITY);
 vec2 texcoord = ((gl_FragCoord.xy)*2.+0.5)*texelSize;
 vec3 bloom = vec3(0.0);
 
@@ -121,7 +121,7 @@ gl_FragData[0].rgb = clamp(gl_FragData[0].rgb,0.0,65000.);
 //////////////////////////////VERTEX//////////////////////////////		
 #ifdef vsh	
 //////////////////////////////VERTEX//////////////////////////////	
-
+#include "/lib/res_params.glsl"
 uniform float viewWidth;
 uniform float viewHeight;
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -135,7 +135,7 @@ void main() {
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 	gl_Position = ftransform();
 	//*0.51 to avoid errors when sampling outside since clearing is disabled
-	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51/clampedRes*vec2(1920.0,1080.)*2.0-1.0;
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51*BLOOM_QUALITY/clampedRes*vec2(1920.0,1080.)*2.0-1.0;
 }
 	
 

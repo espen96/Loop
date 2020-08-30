@@ -26,10 +26,13 @@ uniform sampler2D normals;
 uniform int entityId;
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
-
+#ifdef TAA_UPSCALING
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_X;
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_Y;
-
+#else
+vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0;
+vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0;
+#endif
 uniform sampler2DShadow shadow;
 uniform ivec2 eyeBrightnessSmooth;
 uniform sampler2D gaux2;

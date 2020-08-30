@@ -7,12 +7,12 @@ uniform sampler2D colortex5;
 uniform vec2 texelSize;
 uniform float viewWidth;
 uniform float viewHeight;
-
+#include "/lib/res_params.glsl"
 void main() {
 
 /* DRAWBUFFERS:3 */
 vec2 resScale = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))/vec2(1920.,1080.);
-vec2 quarterResTC = gl_FragCoord.xy*2.*resScale*texelSize;
+vec2 quarterResTC = gl_FragCoord.xy*texelSize*2.*resScale/BLOOM_QUALITY;
 
 		//0.5
 		gl_FragData[0] = texture2D(colortex5,quarterResTC-1.0*vec2(texelSize.x,texelSize.y))/4.*0.5;
@@ -49,7 +49,7 @@ vec2 quarterResTC = gl_FragCoord.xy*2.*resScale*texelSize;
 //////////////////////////////VERTEX//////////////////////////////	
 
 
-
+#include "/lib/res_params.glsl"
 uniform float viewWidth;
 uniform float viewHeight;
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -63,7 +63,7 @@ void main() {
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 	gl_Position = ftransform();
 	//*0.51 to avoid errors when sampling outside since clearing is disabled
-	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51/clampedRes*vec2(1920.0,1080.)*2.0-1.0;
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.51*BLOOM_QUALITY/clampedRes*vec2(1920.0,1080.)*2.0-1.0;
 }
 
 

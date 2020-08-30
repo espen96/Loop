@@ -28,7 +28,9 @@ flat varying float avgL2;
 
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
-
+uniform sampler2D depthtex0;
+uniform float near;
+uniform float far;
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
 uniform vec2 texelSize;
@@ -40,9 +42,9 @@ uniform float eyeAltitude;
 uniform int frameCounter;
 uniform int worldTime;
 vec3 sunVec = normalize(mat3(gbufferModelViewInverse) *sunPosition);
+flat varying float centerDepth;
 
-
-
+#include "/lib/res_params.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
@@ -68,6 +70,11 @@ vec2 R2_samples(int n){
 float tanh(float x){
 	return (exp(x) - exp(-x))/(exp(x) + exp(-x));
 }
+
+float ld(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
+}
+
 void main() {
 
 	gl_Position = ftransform()*0.5+0.5;
@@ -90,8 +97,8 @@ void main() {
 			vec3 pos = normalize(rodSample(ij));
 
 
-			vec3 samplee = 2.0*skyFromTex(pos,colortex4).rgb/maxIT/150.;
-			avgSky += samplee/2.0;
+			vec3 samplee = 1.72*skyFromTex(pos,colortex4).rgb/maxIT/150.;
+			avgSky += samplee/1.72;
 			ambientUp += samplee*(pos.y+abs(pos.x)/7.+abs(pos.z)/7.);
 			ambientLeft += samplee*(clamp(-pos.x,0.0,1.0)+clamp(pos.y/7.,0.0,1.0)+abs(pos.z)/7.);
 			ambientRight += samplee*(clamp(pos.x,0.0,1.0)+clamp(pos.y/7.,0.0,1.0)+abs(pos.z)/7.);
@@ -179,7 +186,7 @@ void main() {
 	vec2 clampedRes = max(1.0/texelSize,vec2(1920.0,1080.));
 	float avgExp = 0.0;
 	float avgB = 0.0;
-	vec2 resScale = vec2(1920.,1080.)/clampedRes;
+	vec2 resScale = vec2(1920.,1080.)/clampedRes*BLOOM_QUALITY;
 	const int maxITexp = 50;
 	float w = 0.0;
 	for (int i = 0; i < maxITexp; i++){
@@ -206,6 +213,13 @@ void main() {
 
 	exposure=targetExposure*EXPOSURE_MULTIPLIER;
 
+	
+	
+	float currCenterDepth = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r);
+	centerDepth = mix(sqrt(texelFetch2D(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
+	centerDepth = centerDepth * centerDepth * 65000.0;	
+	
+	
 
 	rodExposure = targetrodExposure;
 

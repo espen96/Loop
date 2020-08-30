@@ -115,7 +115,7 @@ float ld(float dist) {
 #include "/lib/blur.glsl"
 
 void main() {
-/* DRAWBUFFERS:37 */
+/* DRAWBUFFERS:3 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.0, 0.0, 0.0);
@@ -189,12 +189,8 @@ void main() {
 				}
 			#endif
 		}
-vec3 blur = texture2D(colortex7, texcoord).xyz;
-if (z < 1.0){
-	z = ld(z);
-	blur = ssaoVL_blur(texcoord,vec2(1.0,0.0),z*far);
-}
-gl_FragData[1].rgb  = blur;
+
+
 }
 			
 }

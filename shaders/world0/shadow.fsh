@@ -53,7 +53,9 @@ float caustics = waterCaustics(worldpos);
   if(blockEntityId == 1) discard;
     vec4 albedo = texture2D(tex, texcoord.xy)*color;
          albedo.rgb =  mix(albedo.rgb, mix(vec3(0.42,0.6,0.7),albedo.rgb,water_blend)*(1+(caustics*0.075)), iswater);
-
+	//	 	if (albedo.a == 0.0) discard;
+	//	 albedo.rgb = mix(vec3(1.0), albedo.rgb, pow(albedo.a, (1.0 - albedo.a) * 0.5) * 1.05);
+	//	 albedo.rgb *= 1.0 - pow(albedo.a, 64.0);
 
 	gl_FragData[0] = albedo;
 	#ifdef SHADOW_DISABLE_ALPHA_MIPMAPS

@@ -21,7 +21,7 @@ flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
 uniform sampler2DShadow shadow;
-
+uniform float blindness; 
 
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
@@ -162,14 +162,14 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			//project into biased shadowmap space
 			float distortFactor = calcDistort(progress.xy);
 			vec3 pos = vec3(progress.xy*distortFactor, progress.z);
-			float densityVol = cloudVol(progressW);
+			float densityVol = cloudVol(progressW)+(100*blindness);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
 				sh =  shadow2D( shadow, pos).x;
 			}
 			//Water droplets(fog)
-			float density = densityVol*ATMOSPHERIC_DENSITY*mu*500.;
+			float density = densityVol*ATMOSPHERIC_DENSITY*mu*500.0;
 			#ifdef TOASTER
 				  density = densityVol*ATMOSPHERIC_DENSITY*mu*1000.;
 			#endif
@@ -243,7 +243,7 @@ void main() {
 
 
 	#ifndef VOLUMETRIC_FOG
-	gl_FragData[0] = color;
+	gl_FragData[0] = color*1-blindness;
 	#endif			
 
 	
@@ -255,7 +255,7 @@ void main() {
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
-		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
+		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07))-blindness;
 		gl_FragData[0] = clamp(vec4(vl[0],absorbance),0.000001,65000.);
 		vec4 trpData = texture2D(colortex3,texcoord);
 		vec3 mask2 =vec3(0,0,0);

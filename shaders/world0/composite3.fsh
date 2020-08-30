@@ -9,7 +9,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 
-
+uniform float blindness; 
 varying vec2 texcoord;
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;

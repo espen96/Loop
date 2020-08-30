@@ -63,7 +63,7 @@ float ao = 1.0;
 	
 	
 	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
-	float shading = 1.0;
+	float shading = 0.0;
 		//compute shadows only if not backface
 		if (diffuseSun > 0.001) {
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;

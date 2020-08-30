@@ -34,6 +34,8 @@ uniform sampler2D noisetex;//depth
 uniform sampler2D texture;
 uniform sampler2D normals;
 uniform sampler2DShadow shadow;
+uniform vec3 fogColor;
+
 
 uniform sampler2DShadow shadowtex1;
 uniform sampler2DShadow shadowtex0;
@@ -457,8 +459,10 @@ void main() {
 			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
 		}
 		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+
 		color = color*cloud.a+cloud.rgb;
 
+		
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 
@@ -844,7 +848,7 @@ float shadow0 = 0.0;
 
 	
 		//	gl_FragData[0].rgb  = (((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y));		
-		//	gl_FragData[0].rgb  = vec3(shading);			
+		//	gl_FragData[0].rgb  = (vec3(fogColor)*2-0.9);			
 			
 		}
 		

@@ -27,7 +27,9 @@ uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D texture;
+uniform vec3 fogColor; 
 
+uniform float fogDensity;
 uniform vec3 sunVec;
 uniform float far;
 uniform int frameCounter;
@@ -162,7 +164,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			//project into biased shadowmap space
 			float distortFactor = calcDistort(progress.xy);
 			vec3 pos = vec3(progress.xy*distortFactor, progress.z);
-			float densityVol = cloudVol(progressW)+(100*blindness);
+			float densityVol = cloudVol(progressW)+(100*blindness)+(100*fogDensity);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
@@ -180,6 +182,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			vec3 rL = rC*airCoef.x;
 			vec3 m = (airCoef.y+density)*mC;
 			vec3 vL0 = sunColor*sh*(rayL*rL+m*mie) + skyCol0*(rL+m);
+		//	     vL0 += (fogColor*2-0.85)/50;
+
+				 
 			vL += (vL0 - vL0 * exp(-(rL+m)*dd*dL)) / ((rL+m)+0.00000001)*absorbance;
 			absorbance *= clamp(exp(-(rL+m)*dd*dL),0.0,1.0);
 		}
@@ -289,7 +294,7 @@ void main() {
 															 
 		
 		waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), noise, totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/pi, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
-		gl_FragData[0] = clamp(vec4(vl,1.0),0.000001,65000.);
+		gl_FragData[0] = clamp(vec4(vl,1.0),0.000001,65000.)*1-(blindness*0.95);
 		#endif
 		}	
 	}

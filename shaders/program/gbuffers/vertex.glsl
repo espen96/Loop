@@ -5,11 +5,12 @@
 #endif
 
 
-#include "/lib/res_params.glsl"
+
 #ifdef PBR
 #define MC_NORMAL_MAP
 #endif
-
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
 /*
 !! DO NOT REMOVE !!
 This code is from Chocapic13' shaders
@@ -30,9 +31,8 @@ varying vec3 tangent;
 
 
 
+#include "/lib/res_params.glsl"
 
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
 
 
 varying vec3 binormal;
@@ -149,13 +149,13 @@ float pow15(float x){return pow2(pow2(pow2(x)*x)*x)*x;}
 
 void main() {
 	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-	#ifdef PBR
+//	#ifdef PBR
 	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
 	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
-	#endif
+//	#endif
 	
 	
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;

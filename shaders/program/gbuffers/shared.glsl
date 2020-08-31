@@ -13,7 +13,8 @@
 #define MC_NORMAL_MAP
 #endif
 
-
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
 
 const float mincoord = 1.0/4096.0;
 const float maxcoord = 1.0-mincoord;
@@ -24,8 +25,7 @@ uniform float wetness;
 uniform sampler2D normals;
 #endif
 uniform int entityId;
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
+
 #ifdef TAA_UPSCALING
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_X;
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_Y;

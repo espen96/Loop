@@ -31,7 +31,8 @@ varying vec3 tangent;
 
 
 
-
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
 
 
 varying vec3 binormal;
@@ -40,10 +41,6 @@ varying float dist;
 varying vec3 viewVector;
 #endif
 
-#ifdef PBR
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
-#endif
 varying vec2 texcoord;
 attribute vec4 at_tangent;   
 

@@ -4,7 +4,7 @@
 #endif
 #endif
 
-
+#include "/lib/res_params.glsl"
 
 #ifdef PBR
 #define MC_NORMAL_MAP
@@ -31,7 +31,7 @@ varying vec3 tangent;
 
 
 
-#include "/lib/res_params.glsl"
+
 
 
 

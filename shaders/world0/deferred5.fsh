@@ -22,6 +22,7 @@ uniform sampler2D noisetex;//depth
 uniform sampler2D shadow;
 uniform sampler2D shadowcolor1;
 uniform sampler2D shadowcolor0;
+uniform sampler2D shadowtex1;
 
 
 
@@ -87,7 +88,7 @@ vec3 shadowCol = vec3(0.0);
 
 
 #ifdef GI
-	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
+	vec2 texcoord = gl_FragCoord.xy*texelSize/RSM_SCALE;							 
 	float z = texture2D(depthtex1,texcoord).x;
 	if (z <=1.0) {
 		float masks = texture2D(colortex3,texcoord).a;

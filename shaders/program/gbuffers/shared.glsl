@@ -27,8 +27,8 @@ uniform sampler2D normals;
 uniform int entityId;
 
 #ifdef TAA_UPSCALING
-vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_X;
-vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0/RENDER_SCALE_Y;
+vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*0.5/RENDER_SCALE_X;
+vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*0.5/RENDER_SCALE_Y;
 #else
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0;
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0;

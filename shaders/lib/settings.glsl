@@ -1,8 +1,10 @@
 /*
 //   #include "/lib/settings.glsl"
 */
-
+#define BOKEH_MODE 0 // [0 1 2 3]
 //#define TOASTER
+
+#define RSM_SCALE 1.0
 
 #define Credits 1 //[0 1]
 #define Performance_Impact_Key 0 //Shows which colors mean what[0 1 2 3 4 5]

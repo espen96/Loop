@@ -179,7 +179,7 @@ void main() {
 	
 	
 //    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);
+	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 ? 0.0:1.0);
 	
 	
 

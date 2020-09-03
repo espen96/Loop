@@ -18,6 +18,13 @@
 /* DRAWBUFFERS:132 */
 	void main() {
 	
+#if MC_VERSION >= 11500 && defined TEMPORARY_FIX
+#undef MC_NORMAL_MAP
+#undef PBR
+#endif
+
+	
+	
   if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y){	
  // Level of detail choice by default is log2(abs(dFdx(p)) + abs(dFdy(p)))
   float LoDbias = -1.0; 
@@ -25,10 +32,7 @@
 
 float lightningBolt = float(entityId == 58);	
 
-#if MC_VERSION >= 11500 && defined TEMPORARY_FIX
-#undef MC_NORMAL_MAP
-#undef PBR
-#endif
+
 
 
 
@@ -168,7 +172,7 @@ direct *= shading;
 #endif	
 	
 	
-	
+	#ifdef  MC_NORMAL_MAP
 	
 	vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
 	float normalCheck = normal2.x + normal2.y;
@@ -186,18 +190,14 @@ direct *= shading;
 	
 
 	normal = applyBump(tbnMatrix,normal2);
+	#endif
 	
-
+	
+#ifdef PBR
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgba;
 	bool is_metal = false;
 	mat_data = labpbr(specularity, is_metal);
-
-
-
-
- 
-
 		float roughness = mat_data.x;
 
 		float emissive = 0.0;
@@ -206,19 +206,9 @@ direct *= shading;
 		float normalDotEye = dot(normal, normalize(fragpos));
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
 		fresnel = mix(F0,1.0,fresnel);
-
-
-
-
 		vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
 		vec4 sky_c = skyCloudsFromTex(wrefl,gaux1)*(1.0-isEyeInWater);
 		     sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/3.0;
-
-
-
-
-
-
 		vec4 reflection = vec4(0.0);
 		     reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
@@ -239,13 +229,13 @@ direct *= shading;
 		}
 		
 		reflected *= shading;
+#endif
+	
 
-		
+    vec4 data0 = vec4(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy).rgb,texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a);
 
-    vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
-		data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
-		data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
-//		data0.a = float(data0.a > 0.5);
+	     data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+
 
 #ifdef hand 	
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
@@ -271,10 +261,6 @@ direct *= shading;
 	
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
-	
-
-	
-	
 	#endif	
 	vec4 data1 = clamp(encode(normal),0.,1.0);
 	#else
@@ -286,10 +272,9 @@ direct *= shading;
 
 vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   data0.rgb*=color.rgb;
-  data0.rgb = toLinear(data0.rgb);
-  float avgBlockLum = dot(toLinear(texture2D(texture, lmtexcoord.xy,128).rgb),vec3(0.333));
-  data0.rgb = pow(clamp(mix(data0.rgb*1.7,data0.rgb*0.8,avgBlockLum),0.0,1.0),vec3(1.0/2.2333));
-//   data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0); 
+  float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+  data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+
 
 
   #ifdef DISABLE_ALPHA_MIPMAPS
@@ -297,7 +282,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   #endif
 
 
-//	data0.a = float(data0.a > 0.5);
+
 #ifdef hand 	
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 #else

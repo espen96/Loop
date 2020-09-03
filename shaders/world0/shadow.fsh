@@ -6,12 +6,11 @@
 varying vec2 texcoord;
 varying vec4 color;
 uniform sampler2D tex;
-varying vec4 lmcoord;
 uniform int entityId;   
 uniform int blockEntityId;
 uniform sampler2D noisetex;
 varying vec3 normal;
-varying float iswater;
+//varying float iswater;
 uniform float frameTimeCounter;
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -29,7 +28,7 @@ void main() {
 
   if(blockEntityId == 1) discard;
     vec4 albedo = texture2D(tex, texcoord.xy)*color;
-         albedo.rgb =  mix(albedo.rgb, mix(vec3(0.42,0.6,0.7),albedo.rgb,water_blend), iswater);
+    //    albedo.rgb =  mix(albedo.rgb, mix(vec3(0.42,0.6,0.7),albedo.rgb,water_blend), iswater);
 	//	 	if (albedo.a == 0.0) discard;
 	//	 albedo.rgb = mix(vec3(1.0), albedo.rgb, pow(albedo.a, (1.0 - albedo.a) * 0.5) * 1.05);
 	//	 albedo.rgb *= 1.0 - pow(albedo.a, 64.0);

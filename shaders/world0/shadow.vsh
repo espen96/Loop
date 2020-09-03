@@ -65,7 +65,7 @@ uniform float rainStrength;
 
 float pow2(float x){return x*x;}
 float pow15(float x){return pow2(pow2(pow2(x)*x)*x)*x;}
-
+#ifdef WAVY_PLANTS
 
 	vec3 doVertexDisplacement(vec3 viewpos, vec3 worldpos, vec4 lmcoord){
 	
@@ -135,7 +135,7 @@ vec3 calcMoveLeaves(in vec3 pos, in float f0, in float f1, in float f2, in float
     return move1*5.*WAVY_STRENGTH/255.;
 }	
 
-
+#endif
 
 
 bool intersectCone(float coneHalfAngle, vec3 coneTip , vec3 coneAxis, vec3 rayOrig, vec3 rayDir, float maxZ)
@@ -192,10 +192,8 @@ void main() {
 		
 	#endif
   
-		iswater = 0.0;
-		lightmaps = gl_MultiTexCoord1.xy * (1.0 / 255.0);
-	if (mc_Entity.x == 8.0)
-	iswater = 1.0;
+//	iswater = 0.0;
+//	if (mc_Entity.x == 8.0)	iswater = 1.0;
   
 	gl_Position = BiasShadowProjection(toClipSpace3(position));
 	gl_Position.z /= 6.0;

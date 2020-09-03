@@ -70,7 +70,7 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
 
 
 
-
+	#ifdef WAVY_PLANTS
 
 uniform float rainStrength;
 	
@@ -138,7 +138,7 @@ float pow15(float x){return pow2(pow2(pow2(x)*x)*x)*x;}
 			return viewpos;
 	}
 
-
+#endif
 
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -187,26 +187,14 @@ void main() {
 	
 	
 	#ifdef WAVY_PLANTS
-	
-	
-	
-	
-	
 
     vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-		
-		
-			vec4 lmcoord2 = gl_TextureMatrix[1] * gl_MultiTexCoord1;
-			position = doVertexDisplacement(position, worldpos, lmcoord2);
+	vec4 lmcoord2 = gl_TextureMatrix[1] * gl_MultiTexCoord1;
+		 position = doVertexDisplacement(position, worldpos, lmcoord2);
 		
 		
 	#endif
-	
-	
-	
-	
-	
-	
+
 	if (mc_Entity.x == 10005){
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.9;
@@ -215,7 +203,6 @@ void main() {
 #ifdef hand	
  	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);		
 #endif	
-//	gl_Position = ftransform();
 	gl_Position = toClipSpace3(position);
 	#ifdef SEPARATE_AO
 	lmtexcoord.z *= sqrt(color.a);
@@ -231,10 +218,6 @@ void main() {
 	
 	
 #ifdef water
-//   position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
-//  gl_Position = toClipSpace3(position.xyz);
-
-
 	float mat = 0.0;
 	if(mc_Entity.x == 8.0 || mc_Entity.x == 9.0) {
     mat = 1.0;
@@ -245,14 +228,6 @@ void main() {
 	if(mc_Entity.x == 79.0) mat = 0.5;
 		if (mc_Entity.x == 10002) mat = 0.0001;
 	normalMat = vec4(normalize( gl_NormalMatrix*gl_Normal),mat);
-
-													  
-					 
-																											   
-	   
-
-
-
 
 	tangent = normalize( gl_NormalMatrix *at_tangent.rgb);
 	binormal = normalize(cross(tangent.rgb,normalMat.xyz)*at_tangent.w);

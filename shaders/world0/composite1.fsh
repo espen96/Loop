@@ -701,7 +701,7 @@ float shadow0 = 0.0;
 
 			#else
 			
-		  	if(!hand && !emissive){ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B), normalize(albedo+1e-5)*0.7);
+		  	if(!hand && !emissive){ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B)+((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y), normalize(albedo+1e-5)*0.7);
 		}
 			else{	
 				

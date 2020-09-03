@@ -5,7 +5,8 @@
 #endif
 
 #include "/lib/res_params.glsl"
-
+uniform int entityId;   
+uniform int blockEntityId;
 #ifdef PBR
 #define MC_NORMAL_MAP
 #endif
@@ -181,7 +182,8 @@ void main() {
 
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 ? 0.5:1.0);
 	normalMat.a = mc_Entity.x == 10006 ? 0.6 : normalMat.a;	
-	
+	normalMat.a = blockEntityId == 200 || blockEntityId == 100 ? 0.6 : normalMat.a;	
+
 
 	
 	

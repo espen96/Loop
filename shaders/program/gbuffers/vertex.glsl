@@ -149,13 +149,15 @@ float pow15(float x){return pow2(pow2(pow2(x)*x)*x)*x;}
 
 void main() {
 	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-//	#ifdef PBR
+	
+	
+	#ifdef PBR
 	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
 	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
-//	#endif
+	#endif
 	
 	
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
@@ -209,10 +211,6 @@ void main() {
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.9;
 	}
-	if (mc_Entity.x == 10007){
-		color.rgb = normalize(color.rgb)*sqrt(3.0);
-		normalMat.a = 0.9;
-	}
 	
 #ifdef hand	
  	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);		
@@ -236,6 +234,7 @@ void main() {
 //   position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
 //  gl_Position = toClipSpace3(position.xyz);
 
+
 	float mat = 0.0;
 	if(mc_Entity.x == 8.0 || mc_Entity.x == 9.0) {
     mat = 1.0;
@@ -254,6 +253,7 @@ void main() {
 
 
 
+
 	tangent = normalize( gl_NormalMatrix *at_tangent.rgb);
 	binormal = normalize(cross(tangent.rgb,normalMat.xyz)*at_tangent.w);
 
@@ -262,8 +262,9 @@ void main() {
 						     	  tangent.z, binormal.z, normalMat.z);
 
 		dist = length(gl_ModelViewMatrix * gl_Vertex);
+
 	viewVector = ( gl_ModelViewMatrix * gl_Vertex).xyz;
-	viewVector = normalize(tbnMatrix * viewVector);	
+	viewVector = normalize(tbnMatrix * viewVector);
 	
 #endif	
 	

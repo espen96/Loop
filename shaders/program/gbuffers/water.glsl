@@ -9,6 +9,8 @@ varying float dist;
 
 #include "/lib/settings.glsl"
 #include "/lib/res_params.glsl"
+#define USE_QUARTER_RES_DEPTH // Uses a quarter resolution depth buffer to raymarch screen space reflections, improves performance but may introduce artifacts
+#define saturate(x) clamp(x,0.0,1.0)															
 
 
 uniform sampler2D texture;
@@ -94,20 +96,27 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv*dither;
 	float minZ = clipPosition.z;
 	float maxZ = spos.z+stepv.z*0.5;
-	spos.xy+=offsets[framemod8]*texelSize*0.5;
-	//raymarch on a quarter res depth buffer for improved cache coherency
+	spos.xy+=offsets[framemod8]*texelSize*0.5*RENDER_SCALE;
+																	  
 
 
     for (int i = 0; i <= int(quality); i++) {
-
+			#ifdef USE_QUARTER_RES_DEPTH
+			// decode depth buffer
 			float sp = sqrt(texelFetch2D(gaux1,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 			sp = invLinZ(sp);
-
-            if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
-							return vec3(spos.xy/RENDER_SCALE,sp);
+          if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
+						return vec3(spos.xy/RENDER_SCALE,sp);
+	        }
+        spos += stepv;
+			#else
+			float sp = texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).r;
+          if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
+						return vec3(spos.xy/RENDER_SCALE,sp);
 
 	        }
         spos += stepv;
+			#endif
 		//small bias
 		minZ = maxZ-0.00004/ld(spos.z);
 		maxZ += stepv.z;
@@ -298,24 +307,24 @@ void main() {
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 
 				shading = 0.0;
-				float noise = R2_dither();
-				float rdMul = 3.0*distortFactor*d0*k/shadowMapResolution;
-				mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
-									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
-									);
-				for(int i = 0; i < 6; i++){
-					vec2 offsetS = noiseM*shadowOffsets[i];
+					float noise = blueNoise();
+					float rdMul = 4.0/shadowMapResolution;
+																						
+																		
+		   
+					for(int i = 0; i < 9; i++){
+						vec2 offsetS = tapLocation(i,9, 2.0,noise,0.0);
 
-					float weight = 1.0+(i+noise)*rdMul/6.0*shadowMapResolution;
-					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
-					}
+						float weight = 1.0+(i+noise)*rdMul/9.0*shadowMapResolution;
+						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/9.0;
+						}
 
 
 
-				direct *= shading;
+					direct *= shading;
+				}
+
 			}
-
-		}
 
 		direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 
@@ -336,15 +345,15 @@ void main() {
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
 		fresnel = mix(F0,1.0,fresnel);
 		if (iswater > 0.4){
-			fresnel = fresnel*0.87+0.04;	//faking additionnal roughness to the water
+	//		fresnel = fresnel*0.87+0.04;	//faking additionnal roughness to the water
 			roughness = 0.1;
 		}
 
 
 
-		vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
-		vec4 sky_c = skyCloudsFromTex(wrefl,gaux1)*(1.0-isEyeInWater);
-		sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240./240./150.*8./3.;
+			vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
+			vec3 sky_c = mix(skyCloudsFromTex(wrefl,gaux1).rgb,texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb*0.5,isEyeInWater);
+			sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240./240./150.*8./3.;
 
 
 

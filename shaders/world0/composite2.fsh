@@ -193,6 +193,24 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 
 }
+
+
+float waterCaustics(vec3 wPos, vec3 lightSource){
+	vec2 pos = (wPos.xz - lightSource.xz/lightSource.y*wPos.y)*4.0 ;
+	vec2 movement = vec2(-0.02*frameTimeCounter);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	for (int i = 0; i < 5; i++){
+		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
+		pos = rotationMatrix * pos;
+		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		weightSum += exp2(-0.8*i);
+	}
+	return caustic * weightSum;
+}
+
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEyeDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		int spCount = 16;
 
@@ -203,16 +221,20 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		//you can't see above this anyway
 		float maxZ = min(rayLength,32.0)/(1e-8+rayLength);
 		dV *= maxZ;
+		vec3 dVWorld = mat3(gbufferModelViewInverse) * (rayEnd - rayStart) * maxZ;
 		rayLength *= maxZ;
 		float dY = normalize(mat3(gbufferModelViewInverse) * rayEnd).y * rayLength;
 		vec3 absorbance = vec3(1.0);
 		vec3 vL = vec3(0.0);
 		float phase = phaseg(VdotL, Dirt_Mie_Phase);
 		float expFactor = 11.0;
+		vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
+		vec3 WsunVec = mat3(gbufferModelViewInverse) * sunVec;		
 		for (int i=0;i<spCount;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);		// exponential step position (0-1)
 			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);	//step length (derivative)
 			vec3 spPos = start.xyz + dV*d;
+			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 			//project into biased shadowmap space
 			float distortFactor = calcDistort(spPos.xy);
 			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
@@ -223,7 +245,8 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			}
 			vec3 ambientMul = exp(-max(estEyeDepth - dY * d,0.0) * waterCoefs * 1.1);
 			vec3 sunMul = exp(-max((estEyeDepth - dY * d) ,0.0)/abs(sunElevation) * waterCoefs);
-			vec3 light = (sh * lightSource * phase * sunMul + ambientMul*ambient )*scatterCoef;
+			float sunCaustics = mix(waterCaustics(progressW, WsunVec)*0.5+0.5,1.0,exp(-max((estEyeDepth - dY * d) ,0.0)/3.0));
+			vec3 light = (sh * sunCaustics * lightSource * phase * sunMul + (waterCaustics(progressW, vec3(0,1,0))*0.15+0.85)*ambientMul*ambient )*scatterCoef;
 			vL += (light - light * exp(-waterCoefs * dd * rayLength)) / waterCoefs *absorbance;
 			absorbance *= exp(-dd * rayLength * waterCoefs);
 		}
@@ -295,6 +318,7 @@ void main() {
 		
 		waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), noise, totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/pi, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
 		gl_FragData[0] = clamp(vec4(vl,1.0),0.000001,65000.)*1-(blindness*0.95);
+
 		#endif
 		}	
 	}

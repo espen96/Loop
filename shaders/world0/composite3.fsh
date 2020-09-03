@@ -152,7 +152,7 @@ bool  iswater = (mask2.r  > 0);
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
   	vec3 np3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition;
     float norm = glassRefraction(np3.xz*1.71, 4.0, 0.25, 1.0,isglass);
-    float displ = norm/(length(fragpos)/far)/80.;
+    float displ = norm/(length(fragpos)/far)/40.;
     if(mask2.r>0)refractedCoord += displ;
     if(mask2.g>0 || mask2.b >0)refractedCoord += vec2(0.0,-displ);
 

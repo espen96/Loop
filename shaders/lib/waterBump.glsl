@@ -13,7 +13,7 @@ float getWaterHeightmap(vec2 posxz, float waveM, float waveZ, float iswater) {
 		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
 		weightSum += exp2(-i);
 	}
-	return caustic * weightSum / 300.;
+	return caustic * weightSum / 300. * (1.0+isEyeInWater*4.);
 }
 vec3 getWaveHeight(vec2 posxz, float iswater){
 
@@ -51,7 +51,7 @@ float glassRefraction(vec2 posxz, float waveM, float waveZ, float iswater,bool i
 		if(isglass) caustic = exp2(-0.5*i);
 		weightSum += exp2(-i);
 	}
-	return caustic * weightSum / 300.;
+	return caustic * weightSum / 300. * (1.0+isEyeInWater*4.);
 }
 
 

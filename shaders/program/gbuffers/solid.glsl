@@ -54,6 +54,12 @@ float ao = 1.0;
 #endif
 
 //////////////////////////////PBR//////////////////////////////
+
+
+		vec4 color = color;	
+
+		  color.rgb *= ao;	
+
 #ifdef PBR		
 	float iswater = normalMat.w;		
 	float NdotL = lightSign*dot(normal,sunVec);
@@ -107,16 +113,7 @@ direct *= shading;
 
 		vec3 linao = LinearTosRGB(texture2D(normals, lmtexcoord.xy).zzz);
 		ao = clamp(linao.z,0,1);
-#endif
 
-
-
-		vec4 color = color;	
-
-		  color.rgb *= ao;	
-
-
-#ifdef PBR
 
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
@@ -187,10 +184,9 @@ direct *= shading;
 	
 	
 	
-#if MC_VERSION >= 11500 && defined TEMPORARY_FIX
-#else
+
 	normal = applyBump(tbnMatrix,normal2);
-#endif	
+	
 
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 	specularity = texture2DGradARB(specular, adjustedTexCoord, dcdx, dcdy).rgba;

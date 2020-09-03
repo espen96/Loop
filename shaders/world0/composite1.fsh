@@ -245,8 +245,26 @@ vec3 toShadowSpaceProjected(vec3 p3){
 
 
 #include "/lib/sspt.glsl"
-#include "/lib/pbr.glsl"
 
+#ifdef PBR
+#include "/lib/pbr.glsl"
+#endif
+
+float waterCaustics(vec3 wPos, vec3 lightSource){
+	vec2 pos = (wPos.xz - lightSource.xz/lightSource.y*wPos.y)*4.0 ;
+	vec2 movement = vec2(-0.02*frameTimeCounter);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	for (int i = 0; i < 5; i++){
+		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
+		pos = rotationMatrix * pos;
+		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		weightSum += exp2(-0.8*i);
+	}
+	return caustic * weightSum;
+}
 
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEndDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		inColor *= exp(-rayLength * waterCoefs);	//No need to take the integrated value
@@ -258,6 +276,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		//you can't see above this anyway
 		float maxZ = min(rayLength,32.0)/(1e-8+rayLength);
 		dV *= maxZ;
+		vec3 dVWorld = -mat3(gbufferModelViewInverse) * (rayEnd - rayStart) * maxZ;
 		rayLength *= maxZ;
 		estEndDepth *= maxZ;
 		estSunDepth *= maxZ;
@@ -265,10 +284,12 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		vec3 vL = vec3(0.0);
 		float phase = phaseg(VdotL, Dirt_Mie_Phase);
 		float expFactor = 11.0;
+		vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
 		for (int i=0;i<spCount;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);
 			vec3 spPos = start.xyz + dV*d;
+			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 			//project into biased shadowmap space
 			float distortFactor = calcDistort(spPos.xy);
 			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
@@ -286,24 +307,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		inColor += vL;
 }
 
-float waterCaustics(vec3 wPos){
-	vec2 pos = (wPos.xz + wPos.y)*4.0 ;
-	vec2 movement = vec2(-0.02*frameTimeCounter);
-	float caustic = 0.0;
-	float weightSum = 0.0;
-	float radiance =  2.39996;
-	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	for (int i = 0; i < 5; i++){
-		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
-		pos = rotationMatrix * pos;
-		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
-		weightSum += exp2(-0.8*i);
-	}
-	return caustic * weightSum;
-}
-
-
-
+#ifdef SSAO
 void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal)
 {
 	ivec2 pos = ivec2(gl_FragCoord.xy);
@@ -349,7 +353,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 		//occlusion = mult;
 
 }
-
+#endif
 
 
 
@@ -396,7 +400,7 @@ void main() {
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 
-		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
+		bool iswater = texture2D(colortex3,texcoord).a < 0.9;
 		if (iswater){
 		gl_FragData[0].a = masks;
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
@@ -423,15 +427,20 @@ void main() {
 		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
 		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
 		vec3 tester = texture2D(colortex7,texcoord).rgb;
+		
+		#ifdef GI
 		vec3 rsm = texture2D(colortex7,texcoord).rgb;
-
+		#endif
+		#ifdef PBR
 		vec4 specular = vec4(sp1,sp2);
+		#endif
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
 		vec3 normal2 = decode(dataUnpacked0.yw);
+		vec3 reflected = vec3(0.0);
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
 
 
@@ -457,10 +466,11 @@ void main() {
 		#endif
 		}
 		#endif
+		
+		
+		
+#ifdef PBR		
 //////////////////////////////PBR//////////////////////////////		
-
-
-
 
 		vec3 mat_data = vec3(0.0);		
 
@@ -478,20 +488,10 @@ void main() {
 
 	
 		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel, sky);
-		vec3 reflected = ssptr.rgb*fresnel;
+		     reflected = ssptr.rgb*fresnel;
 
-
-
-
-		
-
-
-
-
-
-		
 //////////////////////////////PBR//////////////////////////////		
-
+#endif
 
 
 float weight = 0.0;
@@ -653,8 +653,8 @@ float shadow0 = 0.0;
 
 			float estimatedSunDepth = estimatedDepth/abs(WsunVec.y); //assuming water plane
 			directLightCol *= exp(-totEpsilon*estimatedSunDepth)*(0.91-pow(1.0-WsunVec.y,5.0)*0.86);
-			float caustics = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition);
-			directLightCol *= mix(caustics,1.0,exp(-0.1*estimatedSunDepth)*0.5+0.5);
+			float caustics = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition, WsunVec);
+			directLightCol *= mix(caustics*0.5+0.5,1.0,exp(-estimatedSunDepth/3.0));
 
 			ambientLight *= exp(-totEpsilon*estimatedDepth*1.1)*0.8*8./150./3.;
 			if (isEyeInWater == 0){
@@ -665,12 +665,13 @@ float shadow0 = 0.0;
 			else
 				ambientLight += custom_lightmap.z * 70.0 * exp(-totEpsilon*16.0);
 
-			ambientLight *= mix(caustics,1.0,0.9);
+			float causticsAmbient = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition, vec3(0.0, 1.0, 0.0));
+			ambientLight *= mix(causticsAmbient,1.0,0.85);
 			if (emissive){ ambientLight += custom_lightmap.y;} 
 						else{ ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);}
 
 			//combine all light sources
-			gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + filtered.y*ambientLight)*albedo;
+			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
 
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
@@ -692,29 +693,18 @@ float shadow0 = 0.0;
 			
 			#ifndef SSPT
 
-		//	   ambientLight = ambientLight * filtered.y* custom_lightmap.x *(1+shadowCol*(custom_lightmap.x*100))   + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z +((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y) *filtered.y;
-		
-		
-			 //  ambientLight = ambientLight * filtered.y* custom_lightmap.x    + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z *filtered.y;
+
 				 ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) +((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y);
-			if (emissive) ambientLight = ((ambientLight *filtered.y* custom_lightmap.x + custom_lightmap.y + custom_lightmap.z*vec3(0.9,1.0,1.5))*filtered.y)*albedo.rgb+0.3;
-
-			
-
-
+			if (emissive)  ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*albedo.rgb+0.3;
 
 			#else
 			
 		  	if(!hand && !emissive){ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B), normalize(albedo+1e-5)*0.7);
-	
-			
-
-
 		}
 			else{	
 				
 				ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive) ambientLight = (((ambientLight * custom_lightmap.x + custom_lightmap.y*2 + custom_lightmap.z*vec3(0.9,1.0,1.5))))*alblum*albedo;
+				if (emissive)  ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*albedo.rgb+0.3;
 
 
 		
@@ -723,14 +713,10 @@ float shadow0 = 0.0;
 			#endif			
 			//combine all light sources
 
-		//	gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
-		//	gl_FragData[0].rgb = ((shading*diffuseSun)/pi*8./150./3.0*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo;
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo*ao;
 			
-			
-		//	gl_FragData[0].rgb  = (((rsmfinal*directLightCol.rgb/pi*10./150./3.)*lightmap.y));		
-		//	gl_FragData[0].rgb  = (vec3(fogColor)*2-0.9);			
+
 	
 			
 		}

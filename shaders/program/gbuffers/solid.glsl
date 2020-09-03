@@ -32,10 +32,6 @@
 
 float lightningBolt = float(entityId == 58);	
 
-
-
-
-
 vec2 tempOffset=offsets[framemod8];
 
 	

@@ -117,7 +117,7 @@ vec3 mask2 =vec3(0,0,0);
 
 
   
-  
+
   
 
 if(trpData.a > 0.2 && trpData.a <0.9) mask2=vec3(0,0,1);
@@ -126,7 +126,7 @@ if(trpData.a >0.9 && trpData.a<1.1) mask2=vec3(0,0,1);
 if(trpData.a >0.90 && trpData.a<0.902) mask2=vec3(1,0,0);
 if(trpData.a >0.901 && trpData.a<0.99) mask2=vec3(0,0,1);
   bool isglass = (mask2.b > 0);
-
+ if ( isEyeInWater == 1 && trpData.a >=1) mask2.r = 1;
 bool  iswater = (mask2.r  > 0); 
 
 //if(trpData.a >0.901) trpData.a = 0.1;
@@ -134,7 +134,7 @@ bool  iswater = (mask2.r  > 0);
   
 //  isglass = (trpData.a > 1);
 
-  
+
 
 
 
@@ -160,8 +160,9 @@ bool  iswater = (mask2.r  > 0);
     if (texture2D(colortex3,refractedCoord).a >0.90 && texture2D(colortex3,refractedCoord).a<0.902) mask2 = vec3(0,1,0);	
     if (mask2.g< 1 &&!isglass) refractedCoord = texcoord;	
 
+
 	
-	
+
 
 
   }
@@ -207,8 +208,8 @@ if(hand)transparencies = texture2D(colortex2,texcoord);
   color += vl.rgb;
   gl_FragData[0].r = vl.a;
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
-// gl_FragData[1].rgb = vec3(trpData.a);
-//   gl_FragData[1].rgb += vec3(mask2);
+ //gl_FragData[1].rgb = vec3(trpData.a);
+  // gl_FragData[1].rgb += vec3(mask2);
 
 }
 

@@ -359,7 +359,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-#include "/lib/blur.glsl"
+
 void main() {
 
 
@@ -386,6 +386,7 @@ void main() {
 	
 	//sky
 	if (z >=1.0) {
+	masks += 0.901;
 		vec3 color = vec3(0.0);
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		if (np3.y > 0.){
@@ -428,12 +429,7 @@ void main() {
 		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
 		vec3 tester = texture2D(colortex7,texcoord).rgb;
 		
-		#ifdef GI
-		vec3 rsm = texture2D(colortex7,texcoord).rgb;
-		#endif
-		#ifdef PBR
-		vec4 specular = vec4(sp1,sp2);
-		#endif
+
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -443,7 +439,13 @@ void main() {
 		vec3 reflected = vec3(0.0);
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
 
-
+		
+		#ifdef GI
+		vec3 rsm = texture2D(colortex7,texcoord).rgb;
+		#endif
+		#ifdef PBR
+		vec4 specular = vec4(sp1,sp2);
+		#endif
 		
 		
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency

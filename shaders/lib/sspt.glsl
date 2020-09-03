@@ -183,10 +183,11 @@ float R2_dither(){
 }
 
 
-vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, bool translucent, vec3 torch){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo){
 	int nrays = RAYS;
 	vec3 intRadiance = vec3(0.0);
 	float occlusion = 0.0;
+	float accLight = 0.0;	
 	for (int i = 0; i < nrays; i++){
 		int seed = (frameCounter%40000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
@@ -205,17 +206,13 @@ vec3 rtGI(vec3 normal,  vec3 normal2, vec4 noise,vec3 fragpos, vec3 ambient, boo
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
 
 			#if SSPT_MODE == 1 // SSPT
-				intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
+				intRadiance += texture2D(colortex5,previousPosition.xy).rgb + ambient*normalize(albedo)*translucent*0.5;
 			#endif
 			}else
 			
-				intRadiance += ambient;
+				intRadiance += ambient + ambient*translucent*normalize(albedo)*0.5;
 				occlusion += 1.0;
 
-
-			
-			if (translucent)
-				intRadiance += ambient*0.25;
 		}
 		else {
 			intRadiance += ambient;

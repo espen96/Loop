@@ -202,7 +202,6 @@ void main() {
 	lmcoord = gl_TextureMatrix[1] * gl_MultiTexCoord1;
 	texcoord.xy = gl_MultiTexCoord0.xy;
 	normal = normalize(gl_NormalMatrix * gl_Normal);		 
-//	if(mc_Entity.x == 8 || mc_Entity.x == 9) gl_Position.w = -1.0;
   #ifdef SHADOW_FRUSTRUM_CULLING
   }
   else

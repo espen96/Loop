@@ -30,7 +30,7 @@ float blueNoise(){
 }
 vec3 getRSM(vec3 normal,bool entity, vec3 albedo,vec2 lightmap,float z) {
 
-if(entity || lightmap.y <=0.00 || albedo.x<=0.005 || albedo.y<=0.005 || albedo.z<=0.005) return vec3(0.0);	
+if(entity || lightmap.y <= 0.0) return vec3(0.0);	
 //	float noise = bayer64(gl_FragCoord.xy);
 //		  noise = fract(frameCounter * (1.0 / 9.0) + noise);
 	float noise = blueNoise();

@@ -24,9 +24,10 @@ const int colortex3Format = RGBA16F;				//frame buffer + bloom (deferred6->final
 const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
 const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
 const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
-const int colortex7Format = R11F_G11F_B10F;					//Final output, transparencies id (gbuffer->composite4)
+const int colortex7Format = RGBA16F;					//Final output, transparencies id (gbuffer->composite4)
 */
 //no need to clear the buffers, saves a few fps
+/*
 const bool colortex0Clear = false;
 const bool colortex1Clear = false;
 const bool colortex2Clear = true;
@@ -35,7 +36,7 @@ const bool colortex4Clear = false;
 const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;
-
+*/
 
 flat varying float exposureA;
 flat varying float tempOffsets;
@@ -295,7 +296,7 @@ void main() {
 
 /* DRAWBUFFERS:3 */
 
-#ifdef RT_FILTER
+#ifdef RT_FILTER2
 	vec3 color = TAA_sspt();
 	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(interleaved_gradientNoise())),6.11*1e-5,65000.0);
 #else

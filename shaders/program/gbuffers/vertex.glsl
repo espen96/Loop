@@ -174,13 +174,11 @@ void main() {
 	#endif
 	
 
-//	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);	
-//	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),1.0);	
+//	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);	
 	
-	
-//    normalMat = vec4(normalMat.xy,sqrt(1.0 - dot(normalMat.xy, normalMat.xy)),0); 
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 ? 0.0:1.0);
-	
+
+	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 ? 0.5:1.0);
+	normalMat.a = mc_Entity.x == 10006 ? 0.6 : normalMat.a;	
 	
 
 	
@@ -209,11 +207,11 @@ void main() {
 	
 	if (mc_Entity.x == 10005){
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
-		normalMat.a = 0.8;
+		normalMat.a = 0.9;
 	}
 	if (mc_Entity.x == 10007){
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
-		normalMat.a = 0.8;
+		normalMat.a = 0.9;
 	}
 	
 #ifdef hand	

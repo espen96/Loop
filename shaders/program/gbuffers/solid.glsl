@@ -249,8 +249,13 @@ direct *= shading;
     vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 		data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 		data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
-		data0.a = float(data0.a > 0.5);
+//		data0.a = float(data0.a > 0.5);
+
+#ifdef hand 	
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+#else
+	if (data0.a > 0.1) data0.a = normalMat.a;
+#endif
 	else data0.a = 0.0;
 
 
@@ -288,7 +293,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   data0.rgb = toLinear(data0.rgb);
   float avgBlockLum = dot(toLinear(texture2D(texture, lmtexcoord.xy,128).rgb),vec3(0.333));
   data0.rgb = pow(clamp(mix(data0.rgb*1.7,data0.rgb*0.8,avgBlockLum),0.0,1.0),vec3(1.0/2.2333));
-  
+//   data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0); 
 
 
   #ifdef DISABLE_ALPHA_MIPMAPS
@@ -296,8 +301,12 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   #endif
 
 
-	data0.a = float(data0.a > 0.5);
-		if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+//	data0.a = float(data0.a > 0.5);
+#ifdef hand 	
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+#else
+	if (data0.a > 0.1) data0.a = normalMat.a;
+#endif
 		else data0.a = 0.0;
 	
 

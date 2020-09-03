@@ -4,6 +4,7 @@
 
 #define TEMPORARY_FIX
 #define mask
+#define hand
 #define entity
 
 #include "/lib/settings.glsl"

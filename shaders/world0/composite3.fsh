@@ -126,7 +126,7 @@ if(trpData.a >0.9 && trpData.a<1.1) mask2=vec3(0,0,1);
 if(trpData.a >0.90 && trpData.a<0.902) mask2=vec3(1,0,0);
 if(trpData.a >0.901 && trpData.a<0.99) mask2=vec3(0,0,1);
   bool isglass = (mask2.b > 0);
- if ( isEyeInWater == 1 && trpData.a >=1) mask2.r = 1;
+
 bool  iswater = (mask2.r  > 0); 
 
 //if(trpData.a >0.901) trpData.a = 0.1;
@@ -170,7 +170,7 @@ bool  iswater = (mask2.r  > 0);
     refractedCoord2 = refractedCoord;
   
 	vec4 transparencies = texture2D(colortex2,refractedCoord);  
-if(hand)transparencies = texture2D(colortex2,texcoord);  
+	if(hand)transparencies = texture2D(colortex2,texcoord);  
 	  
 	  
 	  

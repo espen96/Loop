@@ -386,7 +386,7 @@ void main() {
 	
 	//sky
 	if (z >=1.0) {
-	masks += 0.901;
+	
 		vec3 color = vec3(0.0);
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		if (np3.y > 0.){
@@ -401,7 +401,7 @@ void main() {
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 
-		bool iswater = texture2D(colortex3,texcoord).a < 0.9;
+		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
 		if (iswater){
 		gl_FragData[0].a = masks;
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));

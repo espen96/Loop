@@ -148,6 +148,8 @@ void main() {
 			}
 		#endif
 		}
-			gl_FragData[0].a  = texture2D(colortex3,texcoord).a;	
+
 }
+			gl_FragData[0].a  = texture2D(colortex3,texcoord).a;	
+
 }

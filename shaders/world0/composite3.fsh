@@ -82,10 +82,8 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 
   return vl/sum;
 }
-	vec2 newtc = texcoord.xy;
-	float GetDepthLinear(in vec2 coord) { //Function that retrieves the scene depth. 0 - 1, higher values meaning farther away
-		return 1.0f * near * far / (far + near - (1.91f * texture2D(gdepthtex, coord).x - 1.0f) * (far - near));
-	}
+
+
 	
 	
 	
@@ -192,16 +190,15 @@ bool  iswater = (mask2.r  > 0);
   if (isEyeInWater == 1){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
     color.rgb *= exp(-length(fragpos)*totEpsilon);
-
+    vl.a *= dot(exp(-length(fragpos)*totEpsilon),vec3(0.2,0.7,0.1))*0.5+0.5;
 	
 	
   }
 	if(isEyeInWater == 2) {
-		float depth = texture2D(depthtex0, newtc).r;
         color *= vl.a;
 		vec3 fogColor = pow(vec3(255, 87, 0) / 255.0, vec3(2.5));
 
-		color = mix(color, fogColor*10, min(GetDepthLinear(texcoord.st) * 590.0 / far, 1.0))*2;
+		color = mix(color, fogColor*10, min(z * 590.0 / far, 1.0))*2;
 	}
   
   

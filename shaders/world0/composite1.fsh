@@ -667,7 +667,7 @@ float shadow0 = 0.0;
 			else
 				ambientLight += custom_lightmap.z * 70.0 * exp(-totEpsilon*16.0);
 
-			float causticsAmbient = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition, vec3(0.0, 1.0, 0.0));
+			float causticsAmbient = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition, vec3(1.0, 1.0, 1.0));
 			ambientLight *= mix(causticsAmbient,1.0,0.85);
 			if (emissive){ ambientLight += custom_lightmap.y;} 
 						else{ ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);}

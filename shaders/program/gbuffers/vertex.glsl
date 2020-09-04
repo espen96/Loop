@@ -228,7 +228,8 @@ void main() {
 
 
 	if(mc_Entity.x == 79.0) mat = 0.5;
-		if (mc_Entity.x == 10002) mat = 0.0001;
+//		if (mc_Entity.x == 10002) mat = 0.0001;
+		if (mc_Entity.x == 10002) mat = 0.01;
 	normalMat = vec4(normalize( gl_NormalMatrix*gl_Normal),mat);
 
 	tangent = normalize( gl_NormalMatrix *at_tangent.rgb);

@@ -22,14 +22,6 @@ uniform int isEyeInWater;
 #include "/lib/color_dither.glsl"
 #include "/lib/encode.glsl"
 #include "/lib/res_params.glsl"
-		vec4 data = texture2D(colortex1,texcoord);
-		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
-		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-
-		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-
-
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
@@ -166,13 +158,10 @@ void main() {
     col = col*(1.0+(SHARPENING+UPSCALING_SHARPNENING)*contrast)
           - (albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8 + (albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4)/2.0)/6.0 * (SHARPENING+UPSCALING_SHARPNENING)*contrast;
   #endif
-  vec3 emc = texture2D(colortex2,texcoord).rgb;
-  float modWT = sunAngle*10;
-  float modWT2 = -smoothstep(5,5.5,modWT);  
-  float modWT3 = max(modWT2, -0.2);							
+						
   float lum = luma(col);
   vec3 diff = col-lum;
-  col = col + diff*(-lum*(CROSSTALK+modWT3) + SATURATION-(rainStrength/4));
+  col = col + diff*(-lum*CROSSTALK + SATURATION);
 
 
 	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);

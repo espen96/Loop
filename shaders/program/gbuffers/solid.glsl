@@ -203,13 +203,17 @@ direct *= shading;
 		float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
 		fresnel = mix(F0,1.0,fresnel);
 		vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
-		vec4 sky_c = skyCloudsFromTex(wrefl,gaux1)*(1.0-isEyeInWater);
+
+		vec3 sky_c = mix(skyCloudsFromTex(wrefl,gaux1).rgb,texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb*0.5,isEyeInWater);
 		     sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240.0/240.0/150.0*fresnel/3.0;
+
 		vec4 reflection = vec4(0.0);
 		     reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
 			float spec = (F0/255)*SPEC_MULTIPLIER;
-			vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
+		//	vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
+			vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);				
+			
 
 
 		vec3 sp = (reflection.rgb*fresnel+shading*sunSpec);
@@ -336,13 +340,7 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 	gl_FragData[1].gb = vec2(encodeVec2v2(spec1),encodeVec2v2(spec2));
 
 #endif	
-	
-	
 
-	
-	
-	
-	
 	
 #ifdef entity 	
 gl_FragData[2].rgb = vec3(0.0);

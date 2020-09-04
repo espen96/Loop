@@ -285,9 +285,6 @@ void main() {
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
 		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07))-blindness;
 		gl_FragData[0] = clamp(vec4(vl[0],absorbance),0.000001,65000.);
-		vec4 trpData = texture2D(colortex3,texcoord);
-		vec3 mask2 =vec3(0,0,0);
-		if(trpData.a > 0.2 && trpData.a <0.9) mask2=vec3(0,0,1);
 	#endif  
 	}
 	

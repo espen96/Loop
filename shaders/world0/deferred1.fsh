@@ -78,7 +78,7 @@ void main() {
 gl_FragData[0] = vec4(0.0);
 float minLight = MIN_LIGHT_AMOUNT  *0.01/ (exposure + rodExposure/(rodExposure+1.0)*exposure*4.);
 //Lightmap for forward shading (contains average integrated sky color across all faces + torch + min ambient)
-vec3 avgAmbient = (ambientUp + ambientLeft + ambientRight + ambientB + ambientF + ambientDown)/6.*(1.0+rainStrength*0.2);
+vec3 avgAmbient = (ambientUp + ambientLeft + ambientRight + ambientB + ambientF + ambientDown)/6.0;
 if (gl_FragCoord.x < 17. && gl_FragCoord.y < 17.){
   float torchLut = clamp(16.0-gl_FragCoord.x,0.5,15.5);
   torchLut = torchLut+0.712;
@@ -164,7 +164,7 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
   float absorbance = dot(vL[1],vec3(0.22,0.71,0.07));
   vec3 skytex = texelFetch2D(colortex4,ivec2(gl_FragCoord.xy)-ivec2(257,0),0).rgb/150.;
   skytex = skytex*clouds.a + clouds.rgb;
-	gl_FragData[0] = vec4(skytex*absorbance+vL[0].rgb,absorbance*clouds.a);
+	gl_FragData[0] = vec4(skytex*absorbance+vL[0].rgb,1.0);
 }
 
 //Temporally accumulate sky and light values

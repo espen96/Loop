@@ -49,12 +49,6 @@ float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 
-float interleaved_gradientNoise(){
-	vec2 coord = gl_FragCoord.xy;
-	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y)+frameCounter/1.6180339887);
-	return noise;
-}
-
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -64,21 +58,14 @@ float interleaved_gradientNoise(){
 void main() {
 /* DRAWBUFFERS:0 */
 	#ifdef VOLUMETRIC_CLOUDS
-	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY/RENDER_SCALE);
-
-																					 
-																					   
-																											   
-					
-   
-  
-			   
+//	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY/RENDER_SCALE);
+	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE);
+	   
 	vec3 fragpos = toScreenSpace(vec3(halfResTC*texelSize,1.0));
 	vec4 currentClouds = renderClouds(fragpos,vec3(0.), blueNoise(),sunColor/150.,moonColor/150.,avgAmbient/150.);
 	gl_FragData[0] = currentClouds;
 
 	 
-																																																		
 
 	#else
 		gl_FragData[0] = vec4(0.0,0.0,0.0,1.0);

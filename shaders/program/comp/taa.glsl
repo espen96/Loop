@@ -10,7 +10,7 @@ flat varying float tempOffsets;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D depthtex0;
-
+uniform int framemod8;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
 uniform float viewHeight;
@@ -263,9 +263,22 @@ vec3 RGB_YCoCg(vec3 c)
 			c.x - c.y - c.z
 		), 0.0);
 	}
+	
+	
+const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
+							vec2(-1.,3.)/8.,
+							vec2(5.0,1.)/8.,
+							vec2(-3,-5.)/8.,
+							vec2(-5.,5.)/8.,
+							vec2(-7.,-1.)/8.,
+							vec2(3,7.)/8.,
+							vec2(7.,-7.)/8.);	
+	
+	
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
-	vec2 adjTC = clamp(texcoord*RENDER_SCALE,vec2(0.0),RENDER_SCALE-texelSize*2.);
+	vec2 adjTC = clamp((texcoord + offsets[framemod8]*texelSize)*RENDER_SCALE,vec2(0.0),RENDER_SCALE-texelSize*2.);
+
 	#else
 	vec2 adjTC = texcoord;
 	#endif
@@ -291,23 +304,15 @@ vec3 TAA_hq(){
 							
 										
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return max(SampleTextureCatmullRom(colortex3, adjTC,1.0/texelSize).xyz, 0.0);
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return smoothfilter(colortex3, adjTC).xyz;
 
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
-	#ifndef TOASTER
-	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC,vec4(texelSize, 1.0/texelSize), 0.75), 0.0);
-	#else
-	vec3 albedoCurrent0 = max(FastCatmulRom(colortex3, adjTC.xy,vec4(texelSize, 1.0/texelSize), 0.5).xyz, 0.0);
-	#endif
+
+	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC).xyz;
 	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
-	
-	
-//	vec3 cMax = vec3(albedoCurrent0);
-//	vec3 cMin = vec3(albedoCurrent0);
-	
-	vec3 cMax = vec3(0.0);
-	vec3 cMin = vec3(1e30);	
+	vec3 cMax = albedoCurrent0;
+	vec3 cMin = albedoCurrent0;
 	
 	for (int i = -1; i < 2; i++){
 		for (int j = -1; j < 2; j++){
@@ -332,6 +337,10 @@ vec3 TAA_hq(){
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+	// More correct reconstruction
+	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize).rgb;	
+	
+	
 	#endif
 
 

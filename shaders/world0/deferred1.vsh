@@ -208,7 +208,7 @@ void main() {
 	float targetExposure = 0.18/log2(L*2.0+1.04)*0.9;
 
 	avgL2 = clamp(mix(avgB,texelFetch2D(colortex4,ivec2(10,37),0).b,0.975),0.00003051757,65000.0);
-	float targetrodExposure = max(0.012/log2(avgL2+1.002),0.0);
+	float targetrodExposure = max(0.012/log2(avgL2+1.002)-0.1,0.0)*1.2;
 
 
 	exposure=targetExposure*EXPOSURE_MULTIPLIER;

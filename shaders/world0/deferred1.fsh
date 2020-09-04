@@ -6,6 +6,8 @@
 //Prepares sky textures (2 * 256 * 256), computes light values and custom lightmaps
 
 
+uniform float frameTime;
+uniform int worldTime;
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;

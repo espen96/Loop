@@ -180,7 +180,7 @@ void main() {
 //	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.0:1.0);	
 	
 
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 || mc_Entity.x == 500  || mc_Entity.x == 300 ? 0.5:1.0);
+	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10010 || mc_Entity.x == 10003 || mc_Entity.x == 10001 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10010 || mc_Entity.x == 500  || mc_Entity.x == 300 || mc_Entity.x == 10008 || mc_Entity.x == 10009 || mc_Entity.x == 10004  ? 0.5:1.0);
 	normalMat.a = mc_Entity.x == 10006 || mc_Entity.x == 300 ? 0.6 : normalMat.a;	
 	normalMat.a = blockEntityId == 200 || blockEntityId == 100 ? 0.6 : normalMat.a;	
 

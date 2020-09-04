@@ -7,7 +7,7 @@ uniform sampler2D depthtex1;
 
 uniform float near;
 uniform float far;
-
+uniform int worldTime;
 
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));

@@ -11,7 +11,7 @@ flat varying float tempOffsets;
 
 uniform sampler2D depthtex0;
 uniform sampler2D noisetex;
-
+uniform int worldTime;
 uniform vec3 sunVec;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;

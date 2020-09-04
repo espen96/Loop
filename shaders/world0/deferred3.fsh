@@ -4,7 +4,7 @@
 
 uniform sampler2D colortex4;
 uniform sampler2D depthtex1;
-
+uniform int worldTime;
 uniform float near;
 uniform float far;
 

@@ -547,8 +547,8 @@ float shadow0 = 0.0;
 			#endif
 			#ifdef CLOUDS_SHADOWS
 				vec3 pos = p3 + cameraPosition + gbufferModelViewInverse[3].xyz;
-				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(2500.0-cameraPosition.y);
-				shading *= mix(1.0,exp(-20.*getCloudDensity(cloudPos, -1)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
+				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(2000);
+				shading *= mix(1.0,exp(-20.*getCloudDensity2(cloudPos, 5)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
 			#endif
 
 		#ifdef CAVE_LIGHT_LEAK_FIX
@@ -717,7 +717,7 @@ float shadow0 = 0.0;
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo*ao;
-			
+		//	gl_FragData[0].rgb = vec3(shading);				
 
 	
 			
@@ -727,6 +727,7 @@ float shadow0 = 0.0;
 	
 
 gl_FragData[0].a = masks;	
+
 	
 	
 /* DRAWBUFFERS:3 */

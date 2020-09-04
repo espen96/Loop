@@ -6,7 +6,7 @@
 							  
 	 
 					   
-							  
+float cloudSpeed = frameTimeCounter * CLOUDS_SPEED;							  
 float cloud_height = 1500.;
 float maxHeight = 3200.;
 
@@ -89,13 +89,31 @@ float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
 	return cloud;
 }
 
+float cloudVol2(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
+	float noise = 0.0;
+	float totalWeights = 0.0;
+	float pw = log(fbmPower1);
+	float pw2 = log(fbmPower2);
+	for (int i = 0; i <= LoD; i++){
+	  float	weight = exp(-i*pw2);
+		noise += weight - densityAtPos(samplePos*exp(i*pw))*weight;
+		totalWeights += weight;
+	}
+	noise /= totalWeights;
+	noise = noise*noise;
+	float cloud = max(cov-noise*noise*(1.1+rainStrength)*fbmAmount,0.0);
+	//float cloud = clamp(cov-0.1*(0.2+mult2),0.0,1.0);
+	return cloud;
+}
+
+
 
 	//Low quality cloud, noise is replaced by the average noise value, used for shadowing
 	float cloudVolLQ(in vec3 pos){
 		float mult = max(pos.y-2000.0,0.0)/2000.0;
 		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
 		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
-		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+frameTimeCounter*vec3(0.5,0.,0.5)*25.;
+		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+cloudSpeed*vec3(0.5,0.,0.5)*25.;
 		float coverage = (texture2D(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength)-0.1;
 		float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
 		return max(cloud, 0.0);
@@ -103,12 +121,26 @@ float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
 
 
 float getCloudDensity(in vec3 pos, in int LoD){
-	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + frameTimeCounter*vec3(0.5,0.,0.5)*25.;
+	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + cloudSpeed*vec3(0.5,0.,0.5)*25.;
 	float coverageSP = cloudCov(pos,samplePos);
 	if (coverageSP > 0.001) {
 		if (LoD < 0)
 			return max(coverageSP - 0.27*(fbmAmount+rainStrength),0.0);
 		return cloudVol(pos,samplePos,coverageSP, LoD);
+	}
+	else
+		return 0.0;
+}
+
+
+
+float getCloudDensity2(in vec3 pos, in int LoD){
+	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + cloudSpeed*vec3(0.5,0.,0.5)*25.;
+	float coverageSP = cloudCov(pos,samplePos);
+	if (coverageSP > 0.001) {
+		if (LoD < 0)
+			return max(coverageSP - 0.27*(fbmAmount+rainStrength),0.0);
+		return cloudVol2(pos,samplePos,coverageSP, LoD);
 	}
 	else
 		return 0.0;
@@ -132,7 +164,7 @@ float calcShadow(vec3 pos, vec3 ray){
 	return max(exp(-shadowStep*d),exp(-0.25*shadowStep*d)*0.7);
 }
 float cirrusClouds(vec3 pos){
-	vec2 pos2D = pos.xz/50000.0 + frameTimeCounter/200.;
+	vec2 pos2D = pos.xz/50000.0 + cloudSpeed/200.;
 	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
 	float cloud = texture2D(noisetex, pos2D).r;
 	float weights = 1.0;

@@ -1,32 +1,29 @@
 
 
-					   
-const float PI48 = 150;
-float pi2wt = 2*frameTimeCounter;
-float ftpi48 = PI48*frameTimeCounter*0.01;
-
-	float cspeed (in float pos, in float fm, in float mm, in float ma, in float f0, in float f1, in float f2, in float f3, in float f4, in float f5) {
-		float ret;
 
 
-		float magnitude = sin(pi2wt*fm + 5+(rainStrength*0.5)) * mm + ma;
-		
-
-		float d0 = sin(pi2wt*f0);
-		float d1 = sin(pi2wt*f1);
-		float d2 = sin(pi2wt*f2);
-
-		ret = 1+sin(pi2wt*f3 + d0 + d1 ) * abs(magnitude);
 
 
-		return ret;
-	}
-			   
+float cloudSpeed  = (frameTimeCounter);	
+
+
+
+
+vec2 windGenerator(float t) {
+    float tx = t;
+
+    vec2 p = vec2(sin(2.2 * tx)+ - cos(1.4 * tx), cos(1.3 * t) + sin(-1.9 * t));
+    p.y *= 0.0015;
+    p.x *= 0.001;
+ 	return p;
+}
+
+	   
 							  
-	 
+vec2 wind = windGenerator(frameTimeCounter*0.001)*20000*CLOUDS_SPEED; 	 
 					   
-float cloudSpeed  = (frameTimeCounter+(cspeed(worldTime , 0.0001, 0.04, 0.01, 0.001, 0.001, 0.01, 0.006, 0.00001, 0.0001))*1000)*0.25*CLOUDS_SPEED;	
-vec3 cloudSpeed2 = vec3(cloudSpeed) * vec3(0.5+cos(ftpi48*0.001*CLOUDS_SPEED),0.0,0.5+sin((ftpi48*cloudSpeed*0.01*CLOUDS_SPEED)*0.001*0.001))*25.0;
+					   
+vec3 cloudSpeed2 =  vec3(frameTimeCounter*wind.x,0.0,frameTimeCounter*wind.y)*0.5;
 
 						  
 float cloud_height = 1500.0;
@@ -89,7 +86,7 @@ float densityAtPos(in vec3 pos)
 float cloudCov(in vec3 pos,vec3 samplePos){
 	float mult = max(pos.y-2000.0,0.0)/2000.0;
 	float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-	float coverage = max((texture2D(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength) + cloudCoverage/2.5,0.0);
+	float coverage = max((texture2D(noisetex,(samplePos.xz + (wind*100) +sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength) + ((sin(0.2 * frameTimeCounter*0.05)+ - cos(0.4 * frameTimeCounter*0.05))*cloudCoverage)/2.5,0.0);
 	float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
 	return max(cloud, 0.0);
 }

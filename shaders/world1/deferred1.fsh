@@ -8,7 +8,7 @@ flat varying vec3 sunColor;
 flat varying vec3 moonColor;
 flat varying vec3 avgAmbient;
 flat varying float tempOffsets;
-
+uniform float frameTime;  
 uniform sampler2D depthtex0;
 uniform sampler2D noisetex;
 uniform int worldTime;

@@ -4,6 +4,7 @@
 //Volumetric fog rendering
 
 
+
 #include "/lib/settings.glsl"
 
 #extension GL_EXT_gpu_shader4 : enable
@@ -47,7 +48,10 @@ varying vec4 color;
 #include "/lib/color_dither.glsl"
 #include "/lib/projections.glsl"
 #include "/lib/sky_gradient.glsl"
-#include "/lib/res_params.glsl"							   
+#include "/lib/res_params.glsl"			
+#include "/lib/volumetricClouds.glsl"
+
+				   
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
 #ifdef VOLUMETRIC_FOG					 
@@ -56,16 +60,12 @@ float interleaved_gradientNoise(){
 }
 
 
-float phaseg(float x, float g){
-    float gg = g * g;
-    return (gg * -0.25 + 0.25) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5) /3.14;
-}
 float phaseRayleigh(float cosTheta) {
 	const vec2 mul_add = vec2(0.1, 0.28) /acos(-1.0);
 	return cosTheta * mul_add.x + mul_add.y; // optimized version from [Elek09], divided by 4 pi for energy conservation
 }
 
-float densityAtPos(in vec3 pos)
+float densityAtPosFog(in vec3 pos)
 {
 
 	pos /= 18.;
@@ -89,10 +89,10 @@ float cloudVol(in vec3 pos){
 
 	vec3 samplePos = pos*vec3(1.0,1./16.,1.0)+frameTimeCounter*vec3(0.5,0.,0.5)*5.;
 	float coverage = mix(exp2(-(pos.y-SEA_LEVEL)*(pos.y-SEA_LEVEL)/10000.),1.0,rainStrength*0.5);
-	float noise = densityAtPos(samplePos*13.);
+	float noise = densityAtPosFog(samplePos*12.);
 	float unifCov = exp2(-max(pos.y-SEA_LEVEL,0.0)/50.);
 
-	float cloud = pow(clamp(coverage-noise-0.76,0.0,1.0),2.)*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount+rainStrength*2.;
+	float cloud = pow(clamp(coverage-noise-0.76,0.0,1.0),2.)*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount+rainStrength*2.0;
 
 return cloud;
 }
@@ -156,6 +156,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float muS = 1.0*mu;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
+		vec3 WsunVec = mat3(gbufferModelViewInverse) * sunVec * lightCol.a;		
 		for (int i=0;i<N_VL_SAMPLES;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(N_VL_SAMPLES))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(N_VL_SAMPLES)) * log(expFactor) / float(N_VL_SAMPLES)/(expFactor-1.0);
@@ -168,7 +169,17 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
-				sh =  shadow2D( shadow, pos).x;
+				sh = shadow2D( shadow, pos).x;
+				#ifdef VL_Clouds_Shadows
+				float cloudShadow = 0.0;
+				const int rayMarchSteps = 6;
+				for (int i = 0; i < rayMarchSteps; i++){
+					vec3 cloudPos = progressW + WsunVec/abs(WsunVec.y)*(1500+(dither+i)/rayMarchSteps*1700-progressW.y);
+					cloudShadow += getCloudDensity(cloudPos, 0);
+				}
+				cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
+				sh *= cloudShadow;
+				#endif
 			}
 			//Water droplets(fog)
 			float density = densityVol*ATMOSPHERIC_DENSITY*mu*500.0;
@@ -229,7 +240,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		float phase = phaseg(VdotL, Dirt_Mie_Phase);
 		float expFactor = 11.0;
 		vec3 progressW = gbufferModelViewInverse[3].xyz+cameraPosition;
-		vec3 WsunVec = mat3(gbufferModelViewInverse) * sunVec;		
+		vec3 WsunVec = mat3(gbufferModelViewInverse) * sunVec * lightCol.a;	
 		for (int i=0;i<spCount;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(spCount))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);		// exponential step position (0-1)
 			float dd = pow(expFactor, float(i+dither)/float(spCount)) * log(expFactor) / float(spCount)/(expFactor-1.0);	//step length (derivative)

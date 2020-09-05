@@ -266,7 +266,8 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		
 		vec3 sunContribution = mieDay*sunColor*2.14;
 		vec3 moonContribution = mieNight*moonColor*10.14;
-		vec3 skyCol0 = avgAmbient*(1.0-rainStrength*0.8);
+		float ambientMult = exp(-(cloudCoverage+0.24+0.8*rainStrength)*cloudDensity*75.0);
+		vec3 skyCol0 = avgAmbient * ambientMult;
 
 		float powderMulMoon = 1.0;
 		float powderMulSun = 1.0;
@@ -308,7 +309,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					float powder = 1.0-exp(-muE*mult);
 					float sunShadow = max(exp(-muEshD),0.7*exp(-0.25*muEshD))*mix(1.0, powder,  h);
 					float moonShadow = max(exp2(-muEshN),0.7*exp(-0.25*muEshN))*mix(1.0, powder,  h);
-					float ambientPowder = mix(1.0,powder,h);
+					float ambientPowder = mix(1.0,powder,h * ambientMult);
 					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
 
 

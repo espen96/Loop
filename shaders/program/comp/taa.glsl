@@ -277,7 +277,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 	
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
-	vec2 adjTC = clamp((texcoord + offsets[framemod8]*texelSize)*RENDER_SCALE,vec2(0.0),RENDER_SCALE-texelSize*2.);
+	vec2 adjTC = clamp(texcoord*RENDER_SCALE, vec2(0.0),RENDER_SCALE-texelSize*2.);
 
 	#else
 	vec2 adjTC = texcoord;
@@ -304,12 +304,13 @@ vec3 TAA_hq(){
 							
 										
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return smoothfilter(colortex3, adjTC).xyz;
-
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
+	
+	
 	//Samples current frame 3x3 neighboorhood
 	#ifdef TAA_UPSCALING
 
-	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC).xyz;
+	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
 	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
 	vec3 cMax = albedoCurrent0;
 	vec3 cMin = albedoCurrent0;
@@ -338,8 +339,7 @@ vec3 TAA_hq(){
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
 	// More correct reconstruction
-	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize).rgb;	
-	
+	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).rgb;
 	
 	#endif
 

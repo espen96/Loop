@@ -317,8 +317,11 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	const float PI = 3.14159265;
 	const float samplingRadius = 0.712;
 	float angle_thresh = 0.05;
+	float maxR2 = fragpos.z*fragpos.z*mulfov2*2.*1.412/50.0;
 
-	float rd = mulfov2*0.05;
+
+
+	float rd = mulfov2*0.04;
 	//pre-rotate direction
 	float n = 0.;
 
@@ -327,20 +330,21 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
 
-	vec2 v = fract(vec2(dither,interleaved_gradientNoise2()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
-	for (int j = 0; j < SSAO_SAMPLES+2 ;j++) {
-			vec2 sp = tapLocation2(j,v.x,SSAO_SAMPLES+2,2.,v.y);
+	vec2 v = fract(vec2(dither,R2_dither()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
+	for (int j = 0; j < 7 ;j++) {
+
+			vec2 sp = tapLocation2(j,v.x,7,88.,v.y);
 			vec2 sampleOffset = sp*rd;
-			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight));
-			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
-				vec3 t0 = toScreenSpace(vec3(offset/RENDER_SCALE*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio)*RENDER_SCALE);
+			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth*RENDER_SCALE.x && offset.y < viewHeight*RENDER_SCALE.y ) {
+				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x) * vec3(1.0/RENDER_SCALE, 1.0));
 
 				vec3 vec = t0.xyz - fragpos;
 				float dsquared = dot(vec,vec);
 				if (dsquared > 1e-5){
-					if (dsquared < fragpos.z*fragpos.z*0.05*0.05*mulfov2*2.*1.412){
+					if (dsquared < maxR2){
 						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
-						occlusion += NdotV;
+						occlusion += NdotV * clamp(1.0-dsquared/maxR2,0.0,1.0);
 					}
 					n += 1.0;
 				}
@@ -349,7 +353,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-		occlusion = clamp(1.0-occlusion/n*2.0,0.0,1.0);
+		occlusion = clamp(1.0-occlusion/n*1.6,0.,1.0);
 		//occlusion = mult;
 
 }
@@ -512,10 +516,20 @@ float shadow0 = 0.0;
 		}
 		float shading = 1.0 - filtered.b;
 		float pShadow = filtered.b*2.0-1.0;
+		vec3 SSS = vec3(0.0);
+		float sssAmount = 0.0;
+		#ifdef Variable_Penumbra_Shadows
 		// compute shadows only if not backfacing the sun
 		// or if the blocker search was full or empty
 		// always compute all shadows at close range where artifacts may be more visible
 		if (diffuseSun > 0.001 && (abs(pShadow) < 0.99 || length(fragpos) < 3.0 )) {
+		#else
+		if (translucent) {
+			sssAmount = 0.5;
+			diffuseSun = mix(max(phaseg(dot(np3, WsunVec),0.5), 2.0*phaseg(dot(np3, WsunVec),0.1))*3.14150*1.6, diffuseSun, 0.3);
+		}
+		if (diffuseSun > 0.000) {
+		#endif
 			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
 			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
 			//apply distortion
@@ -526,7 +540,11 @@ float shadow0 = 0.0;
 				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
+				#ifdef Variable_Penumbra_Shadows
 				float diffthresh = distortThresh/6000.0*threshMul;
+				#else
+				float diffthresh = translucent? 0.0001 : distortThresh/6000.0*threshMul;
+				#endif
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 				shading = 0.0;
 				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
@@ -538,24 +556,6 @@ float shadow0 = 0.0;
 				}
 			}
 		}
-		//else albedo = vec3(0.0);
-		if (diffuseSun*shading > 0.001){
-			#ifdef SCREENSPACE_CONTACT_SHADOWS
-				vec3 vec = lightCol.a*sunVec;
-				float screenShadow = rayTraceShadow(vec,fragpos,noise);
-				shading = min(screenShadow, shading);
-			#endif
-			#ifdef CLOUDS_SHADOWS
-				vec3 pos = p3 + cameraPosition + gbufferModelViewInverse[3].xyz;
-				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(2000);
-				shading *= mix(1.0,exp(-20.*getCloudDensity2(cloudPos, 5)),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
-			#endif
-
-		#ifdef CAVE_LIGHT_LEAK_FIX
-			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
-		#endif
-
-		}			
 		
 		
 			vec3 closestToCamera = vec3(texcoord,texture2D(depthtex2,texcoord).x);
@@ -580,10 +580,9 @@ float shadow0 = 0.0;
 #endif		
 		
 		
-		#ifdef SubSurfaceScattering
+
 		//custom shading model for translucent objects
-		vec3 SSS = vec3(0.0);
-		float sssAmount = 0.0;
+		#ifdef Variable_Penumbra_Shadows
 		if (translucent) {
 			sssAmount = 0.5;
 			vec3 extinction = 1.0 - albedo*0.85;
@@ -605,6 +604,31 @@ float shadow0 = 0.0;
 		}
 
 		#endif
+
+		if (diffuseSun*shading > 0.001 ){
+			#ifdef SCREENSPACE_CONTACT_SHADOWS
+				vec3 vec = lightCol.a*sunVec;
+				float screenShadow = rayTraceShadow(vec,fragpos,noise);
+				shading = min(screenShadow, shading);
+			#endif
+
+		#ifdef CAVE_LIGHT_LEAK_FIX
+			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
+		#endif
+		}
+		#ifdef CLOUDS_SHADOWS
+			vec3 pos = p3 + cameraPosition;
+			const int rayMarchSteps = 6;
+			float cloudShadow = 0.0;
+			for (int i = 0; i < rayMarchSteps; i++){
+				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(1500+(noise+i)/rayMarchSteps*1700-pos.y);
+				cloudShadow += getCloudDensity(cloudPos, 0);
+			}
+			cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
+			shading *= cloudShadow;
+			SSS *= cloudShadow;
+		#endif
+
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 1.0/6.0, sssAmount);

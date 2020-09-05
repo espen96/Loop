@@ -76,10 +76,10 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 
-		vec3 skyCol0 = ambientLight*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*4.0/3.1415;
+		vec3 skyCol0 = ambientLight*eyeBrightnessSmooth.y/vec3(240.)*Ambient_Mult*2.0/3.1415;
 		// Makes fog more white idk how to simulate it correctly
-		vec3 sunColor = mix(lightCol.rgb, vec3(luma(lightCol.rgb)), 0.45);
-		skyCol0 = mix(skyCol0.rgb, vec3(luma(skyCol0.rgb)), 0.45);
+		vec3 sunColor = mix(lightCol.rgb, vec3(luma(lightCol.rgb)), 0.2);
+		skyCol0 = mix(skyCol0.rgb, vec3(luma(skyCol0.rgb)), 0.2);
 
 		vec3 rC = vec3(fog_coefficientRayleighR*1e-6, fog_coefficientRayleighG*1e-5, fog_coefficientRayleighB*1e-5);
 		vec3 mC = vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6);
@@ -89,6 +89,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float muS = 1.0*mu;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
+		vec3 WsunVec = mat3(gbufferModelViewInverse) * sunVec;
 		for (int i=0;i<VL_SAMPLES2;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES2))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES2)) * log(expFactor) / float(VL_SAMPLES2)/(expFactor-1.0);
@@ -102,6 +103,22 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
 				sh =  shadow2D( shadow, pos).x;
+				
+				
+				
+				#ifdef VL_Clouds_Shadows
+				float cloudShadow = 0.0;
+				const int rayMarchSteps = 6;
+				for (int i = 0; i < rayMarchSteps; i++){
+					vec3 cloudPos = progressW + WsunVec/abs(WsunVec.y)*(1500+(dither+i)/rayMarchSteps*1700-progressW.y);
+					cloudShadow += getCloudDensity(cloudPos, 0);
+				}
+				cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
+				sh *= cloudShadow;
+				#endif				
+				
+				
+				
 			}
 			//Water droplets(fog)
 			float density = densityVol*ATMOSPHERIC_DENSITY*mu*500.;

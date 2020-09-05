@@ -153,7 +153,7 @@ bool  iswater = (mask2.r  > 0);
     float displ = norm/(length(fragpos)/far)/40.;
     if(mask2.r>0)refractedCoord += displ;
     if(mask2.g>0 || mask2.b >0)refractedCoord += vec2(0.0,-displ);
-
+    refractedCoord += displ*RENDER_SCALE;
 
     if (texture2D(colortex3,refractedCoord).a >0.90 && texture2D(colortex3,refractedCoord).a<0.902) mask2 = vec3(0,1,0);	
     if (mask2.g< 1 &&!isglass) refractedCoord = texcoord;	
@@ -194,14 +194,14 @@ bool  iswater = (mask2.r  > 0);
 	
 	
   }
-	if(isEyeInWater == 2) {
-        color *= vl.a;
-		vec3 fogColor = pow(vec3(255, 87, 0) / 255.0, vec3(2.5));
-
-		color = mix(color, fogColor*10, min(z * 590.0 / far, 1.0))*2;
-	}
-  
-  
+  if (isEyeInWater == 2){
+    vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
+    color.rgb *= exp(-length(fragpos)*vec3(0.2,0.7,4.0)*4.);
+    color.rgb += vec3(4.0,0.31,0.1)*2;
+    vl.a = 0.0;
+  }
+  else
+    color += vl.rgb;
   color += vl.rgb;
   gl_FragData[0].r = vl.a;
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);

@@ -20,6 +20,7 @@ uniform sampler2D colortex0;
 uniform sampler2D noisetex;
 uniform sampler2D gdepthtex;
 uniform float frameTimeCounter;
+
 uniform int frameCounter;
 uniform float far;
 uniform float near;
@@ -84,6 +85,13 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 }
 
 
+	
+	
+
+	
+	
+	
+	
 	
 	
 	

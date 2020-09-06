@@ -641,7 +641,8 @@ float shadow0 = 0.0;
 		vec3 directLightCol = lightCol.rgb;
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
 
-		float alblum = clamp(luma(albedo),0.30,0.40); 	
+		float alblum = clamp(luma(albedo),0.30,0.35)+( ambientLight.y*(0.0005 + (rainStrength*0.001) ) ); 	
+
 
 		
     #ifdef PBR

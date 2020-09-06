@@ -1,4 +1,11 @@
 
+
+
+
+		
+		
+		
+		
 float getWaterHeightmap(vec2 posxz, float waveM, float waveZ, float iswater) {
   vec2 pos = posxz*4.0;
   float moving = clamp(iswater*2.-1.0,0.0,1.0);

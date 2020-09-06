@@ -149,7 +149,9 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		skyCol0 = mix(skyCol0.rgb, vec3(luma(skyCol0.rgb)), 0.45);
 
 		vec3 rC = vec3(fog_coefficientRayleighR*1e-6, fog_coefficientRayleighG*1e-5, fog_coefficientRayleighB*1e-5);
-		vec3 mC = vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6);
+
+		vec3 mC = mix(vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6),vec3(1*1e-6),rainStrength*0.5);
+	//	vec3 mC = (vec3(fog_coefficientMieR*1e-6, fog_coefficientMieG*1e-6, fog_coefficientMieB*1e-6));
 
 
 		float mu = 1.0;

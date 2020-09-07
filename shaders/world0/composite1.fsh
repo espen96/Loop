@@ -741,7 +741,7 @@ float shadow0 = 0.0;
 			//combine all light sources
 
 		    
-			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo*ao;
+			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
 		//	gl_FragData[0].rgb = vec3(cloudSpeed);		
 
 

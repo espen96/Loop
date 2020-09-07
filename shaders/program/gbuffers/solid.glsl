@@ -310,6 +310,7 @@ vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
 	normal = normalMat.xyz;
 
 	data0.rgb = texture2D(texture, lmtexcoord.xy).rgb*color.rgb;
+	
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 
 
@@ -357,6 +358,8 @@ gl_FragData[1].a = 0.1;
 if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
 if (lightningBolt > 0.5) data1 = vec4(1.0);	
 if (lightningBolt > 0.5) gl_FragData[1].a = 0.2;	
+
+
 
 gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));			
 

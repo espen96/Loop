@@ -167,7 +167,7 @@ direct *= shading;
 	
 #endif	
 	
-	
+	#ifdef PBR
 	#ifdef  MC_NORMAL_MAP
 	
 	vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
@@ -181,13 +181,13 @@ direct *= shading;
 
 
     }
-	
+
 	
 	
 
 	normal = applyBump(tbnMatrix,normal2);
 	#endif
-	
+	#endif		
 	
 #ifdef PBR
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);

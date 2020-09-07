@@ -13,8 +13,10 @@
 #define MC_NORMAL_MAP
 #endif
 
+#ifdef PBR
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
+#endif
 
 const float mincoord = 1.0/4096.0;
 const float maxcoord = 1.0-mincoord;
@@ -26,6 +28,8 @@ uniform sampler2D normals;
 #endif
 uniform int entityId;
 
+
+#ifdef PBR
 #ifdef TAA_UPSCALING
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*0.5/RENDER_SCALE_X;
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*0.5/RENDER_SCALE_Y;
@@ -33,6 +37,9 @@ vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*0.5/RENDER_SCALE_Y;
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)/2.0;
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0;
 #endif
+#endif
+
+
 uniform sampler2DShadow shadow;
 uniform ivec2 eyeBrightnessSmooth;
 uniform sampler2D gaux2;

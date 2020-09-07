@@ -100,7 +100,7 @@ float ao = 1.0;
 					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
 					}
 
-direct *= shading;
+					direct *= shading;
 
 
 			}
@@ -167,7 +167,7 @@ direct *= shading;
 	
 #endif	
 	
-	#ifdef PBR
+	
 	#ifdef  MC_NORMAL_MAP
 	
 	vec3 normal2 = vec3(texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).rgb)*2.0-1.;
@@ -181,13 +181,13 @@ direct *= shading;
 
 
     }
-
+	
 	
 	
 
 	normal = applyBump(tbnMatrix,normal2);
 	#endif
-	#endif		
+	
 	
 #ifdef PBR
 	vec4 alb = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
@@ -229,31 +229,25 @@ direct *= shading;
 		}
 		
 		reflected *= shading;
-
+#endif
 	
 
     vec4 data0 = vec4(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy).rgb,texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a);
-
+	
+	
+	
 	     data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
-
-#endif		 
-		 
-
 #ifdef hand 	
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 #else
 	if (data0.a > 0.1) data0.a = normalMat.a;
 #endif
 	else data0.a = 0.0;
-
-
-
-
-
 	data0.rgb*=color.rgb;
 	
 
 	
+
 	#ifdef entities
 	normal = normalMat.xyz;
 	data0 = texture2D(texture, lmtexcoord.xy)*color;
@@ -264,15 +258,13 @@ direct *= shading;
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
 	#endif	
+	
+	
 	vec4 data1 = clamp(encode(normal),0.,1.0);
 	#else
-
-
 	
-
 	
-
-vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
+  vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
   data0.rgb*=color.rgb;
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);

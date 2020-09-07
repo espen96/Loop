@@ -612,9 +612,7 @@ float shadow0 = 0.0;
 				shading = min(screenShadow, shading);
 			#endif
 
-		#ifdef CAVE_LIGHT_LEAK_FIX
-			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
-		#endif
+
 		}
 		#ifdef CLOUDS_SHADOWS
 			vec3 pos = p3 + cameraPosition;
@@ -627,8 +625,11 @@ float shadow0 = 0.0;
 			cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
 			shading *= cloudShadow;
 			SSS *= cloudShadow;
+		#endif		
+		
+		#ifdef CAVE_LIGHT_LEAK_FIX
+			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 		#endif
-
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 1.0/6.0, sssAmount);
@@ -742,7 +743,7 @@ float shadow0 = 0.0;
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-		//	gl_FragData[0].rgb = vec3(cloudSpeed);		
+		//	gl_FragData[0].rgb = vec3(shading);		
 
 
 		

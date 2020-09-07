@@ -143,6 +143,7 @@ vec3 shadowCol = vec3(0.0);
 	
 		#endif		
 		gl_FragData[0].rgb  = shadowCol;		
+	
 
 	
 	

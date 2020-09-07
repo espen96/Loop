@@ -40,6 +40,7 @@ uniform float skyIntensity;
 uniform mat4 gbufferPreviousModelView;
 uniform vec3 previousCameraPosition;
 uniform int framemod8;
+uniform ivec2 eyeBrightnessSmooth;
 uniform int frameCounter;
 uniform int isEyeInWater;
 #include "/lib/Shadow_Params.glsl"
@@ -319,7 +320,7 @@ void main() {
 						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/9.0;
 						}
 
-
+			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));
 
 					direct *= shading;
 				}

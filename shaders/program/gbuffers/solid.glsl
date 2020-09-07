@@ -229,13 +229,15 @@ direct *= shading;
 		}
 		
 		reflected *= shading;
-#endif
+
 	
 
     vec4 data0 = vec4(texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy).rgb,texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a);
 
 	     data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 
+#endif		 
+		 
 
 #ifdef hand 	
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;

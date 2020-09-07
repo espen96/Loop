@@ -320,7 +320,7 @@ void main() {
 						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/9.0;
 						}
 
-			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0));
+			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lmtexcoord.w,0.0,1.0))*lmtexcoord.w;
 
 					direct *= shading;
 				}
@@ -379,6 +379,7 @@ void main() {
 		#else
 			vec3 sunSpec = drawSun(dot(lightSign*sunVec,reflectedVector), 0.0,texelFetch2D(gaux1,ivec2(6,37),0).rgb,vec3(0.0))*8./3./150.0*fresnel/3.1415 * (1.0-rainStrength*0.9);
 		#endif
+		sunSpec *= shading;
 		vec3 reflected= reflection.rgb*fresnel+shading*sunSpec;
 
 

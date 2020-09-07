@@ -88,7 +88,7 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 
 vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
-	vec3 clipPosition = toClipSpace3(position);
+
 	
 
 
@@ -100,6 +100,9 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
 
 
+	vec3 clipPosition = toClipSpace3(position);	
+	
+
 	float rayLength = ((position.z + dir.z * sqrt(3.0)*maxLength) > -sqrt(3.0)*near) ?  (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*maxLength;
 
 	vec3 end = toClipSpace3(position+dir*rayLength);
@@ -110,8 +113,8 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
 	
 	//get at which length the ray intersects with the edge of the screen
-	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction*0.75;
-	float mult = min(min(maxLengths.x*0.75,maxLengths.y*0.75),maxLengths.z*0.75);
+	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
+	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 
 
 	vec3 stepv = direction/len;
@@ -123,30 +126,22 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*4.0;
 	spos.xy+= TAA_Offset*texelSize*0.5;
 	
-	float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
+	float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 	float currZ = linZ(spos.z);
 
 	if( sp < currZ) {
-
-       
 		float dist = abs(sp-currZ)/currZ;
 		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 	}
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
-	spos += stepv *noise;	
+	spos += stepv*noise;	
 	
  for(int i = 0; i < iterations; i++){
-		float sp = texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w;
+		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 		float currZ = linZ(spos.z);
 		if( sp < currZ) {
-			float dist = abs(sp-currZ)/currZ;			
-
-			
-			
-
-	
-	
+			float dist = abs(sp-currZ)/currZ;
 			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;

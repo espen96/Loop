@@ -82,7 +82,7 @@ float blueNoise(vec2 coord){
   return texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a;
 }
 void main() {
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:37 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.1, 0.0, 0.0);
@@ -151,5 +151,6 @@ void main() {
 
 }
 			gl_FragData[0].a  = texture2D(colortex3,texcoord).a;	
+			gl_FragData[1]  = vec4(encodeVec2v2(texture2D(colortex7,texcoord).rg),texture2D(colortex7,texcoord).b,texture2D(colortex7,texcoord).gb);	
 
 }

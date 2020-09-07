@@ -429,8 +429,8 @@ void main() {
 
 		vec4 data = texture2D(colortex1,texcoord);
 
-		vec2 sp1 = decodeVec2(texture2D(colortex3,texcoord).g);
-		vec2 sp2 = decodeVec2(texture2D(colortex3,texcoord).b);
+		vec2 sp1 = decodeVec2(texture2D(colortex7,texcoord).g);
+		vec2 sp2 = decodeVec2(texture2D(colortex7,texcoord).b);
 		vec3 tester = texture2D(colortex7,texcoord).rgb;
 		
 
@@ -445,7 +445,7 @@ void main() {
 
 		
 		#ifdef GI
-		vec3 rsm = texture2D(colortex7,texcoord).rgb;
+		vec3 rsm = vec3(decodeVec2(texture2D(colortex7,texcoord).r),texture2D(colortex7,texcoord).g);
 		#endif
 		#ifdef PBR
 		vec4 specular = vec4(sp1,sp2);
@@ -537,7 +537,7 @@ float shadow0 = 0.0;
 			projectedShadowPosition.xy *= distortFactor;
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
+				float rdMul = filtered.r*distortFactor*d0*k/shadowMapResolution;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
 				#ifdef Variable_Penumbra_Shadows
@@ -743,7 +743,7 @@ float shadow0 = 0.0;
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-		//	gl_FragData[0].rgb = vec3(shading);		
+		//	gl_FragData[0].rgb = vec3(rsm.rgb);		
 
 
 		

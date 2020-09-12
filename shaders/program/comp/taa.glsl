@@ -10,11 +10,12 @@ flat varying float tempOffsets;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D depthtex0;
-uniform int framemod8;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
 uniform float viewHeight;
 uniform float viewWidth;
+uniform int frameCounter;
+uniform int framemod8;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
@@ -41,74 +42,28 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 //returns the projected coordinates of the closest point to the camera in the 3x3 neighborhood
-#ifdef TAA_UPSCALING
-vec3 closestToCamera3x3(vec2 texcoord)
+vec3 closestToCamera5taps(vec2 texcoord)
 {
 	vec2 du = vec2(texelSize.x, 0.0);
 	vec2 dv = vec2(0.0, texelSize.y);
 
 	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture2D(depthtex0, texcoord - dv).x);
 	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-
-	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture2D(depthtex0, texcoord - du).x);
 	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture2D(depthtex0, texcoord + du).x);
-
 	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture2D(depthtex0, texcoord + dv).x);
 	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
-
-	dmin = dmin.z > dtc.z? dtc : dmin;
 	dmin = dmin.z > dtr.z? dtr : dmin;
-
-	dmin = dmin.z > dml.z? dml : dmin;
 	dmin = dmin.z > dtl.z? dtl : dmin;
-	dmin = dmin.z > dmr.z? dmr : dmin;
-
 	dmin = dmin.z > dbl.z? dbl : dmin;
-	dmin = dmin.z > dbc.z? dbc : dmin;
 	dmin = dmin.z > dbr.z? dbr : dmin;
-	dmin.xy = clamp(dmin.xy/RENDER_SCALE, vec2(0.0), 1.0-texelSize);
+	#ifdef TAA_UPSCALING
+	dmin.xy = dmin.xy/RENDER_SCALE;
+	#endif
 	return dmin;
 }
-#else
-vec3 closestToCamera3x3(vec2 texcoord)
-{
 
-	vec2 du = vec2(texelSize.x, 0.0);
-	vec2 dv = vec2(0.0, texelSize.y);
-
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture2D(depthtex0, texcoord - dv).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-
-	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture2D(depthtex0, texcoord - du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture2D(depthtex0, texcoord + du).x);
-
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture2D(depthtex0, texcoord + dv).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
-
-	vec3 dmin = dmc;
-
-	dmin = dmin.z > dtc.z? dtc : dmin;
-	dmin = dmin.z > dtr.z? dtr : dmin;
-
-	dmin = dmin.z > dml.z? dml : dmin;
-	dmin = dmin.z > dtl.z? dtl : dmin;
-	dmin = dmin.z > dmr.z? dmr : dmin;
-
-	dmin = dmin.z > dbl.z? dbl : dmin;
-	dmin = dmin.z > dbc.z? dbc : dmin;
-	dmin = dmin.z > dbr.z? dbr : dmin;
-
-	return dmin;
-}
-#endif
 //Modified texture interpolation from inigo quilez
 vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 {
@@ -116,12 +71,7 @@ vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 	uv = uv*textureResolution + 0.5;
 	vec2 iuv = floor( uv );
 	vec2 fuv = fract( uv );
-	#ifndef SMOOTHESTSTEP_INTERPOLATION
-	uv = iuv + (fuv*fuv)*(3.0-2.0*fuv);
-	#endif
-	#ifdef SMOOTHESTSTEP_INTERPOLATION
 	uv = iuv + fuv*fuv*fuv*(fuv*(fuv*6.0-15.0)+10.0);
-	#endif
 	uv = (uv - 0.5)/textureResolution;
 	return texture2D( tex, uv);
 }
@@ -183,6 +133,10 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 
     return result;
 }
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+}
 //approximation from SMAA presentation from siggraph 2016
 vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float sharpenAmount)
 {
@@ -233,38 +187,11 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
 }
 
 vec3 tonemap(vec3 col){
-	return pow(col/(1+luma(col)),vec3(1/2.232));
+	return col/(1+luma(col));
 }
 vec3 invTonemap(vec3 col){
-	col = pow(col,vec3(2.232));
 	return col/(1-luma(col));
 }
-vec3 RGB_YCoCg(vec3 c)
-	{
-		// Y = R/4 + G/2 + B/4
-		// Co = R/2 - B/2
-		// Cg = -R/4 + G/2 - B/4
-		return vec3(
-			 c.x/4.0 + c.y/2.0 + c.z/4.0,
-			 c.x/2.0 - c.z/2.0,
-			-c.x/4.0 + c.y/2.0 - c.z/4.0
-		);
-	}
-
-	// https://software.intel.com/en-us/node/503873
-	vec3 YCoCg_RGB(vec3 c)
-	{
-		// R = Y + Co - Cg
-		// G = Y + Cg
-		// B = Y - Co - Cg
-		return max(vec3(
-			c.x + c.y - c.z,
-			c.x + c.z,
-			c.x - c.y - c.z
-		), 0.0);
-	}
-	
-	
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,
 							vec2(5.0,1.)/8.,
@@ -272,18 +199,17 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-5.,5.)/8.,
 							vec2(-7.,-1.)/8.,
 							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);	
-	
-	
+							vec2(7.,-7.)/8.);
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
 	vec2 adjTC = clamp(texcoord*RENDER_SCALE, vec2(0.0),RENDER_SCALE-texelSize*2.);
 	#else
 	vec2 adjTC = texcoord;
 	#endif
+
 	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
 	#ifdef CLOSEST_VELOCITY
-	vec3 closestToCamera = closestToCamera3x3(adjTC);
+	vec3 closestToCamera = closestToCamera5taps(adjTC);
 	#endif
 
 	#ifndef CLOSEST_VELOCITY
@@ -299,42 +225,11 @@ vec3 TAA_hq(){
 	previousPosition.xy = texcoord + velocity;
 
 	//reject history if off-screen and early exit
-	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0)
+		return smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
 
 
-	#ifdef TAA_UPSCALING
-	vec2 varTC = gl_FragCoord.xy*RENDER_SCALE;
-	vec2 sampleTC = gl_FragCoord.xy*RENDER_SCALE  + offsets[framemod8] * 0.5;
-	ivec2 centerTC = ivec2(varTC + 0.5);
-	vec3 albedoCurrent0 = vec3(0.0);
-	vec3 m1 = vec3(0.0);
-	vec3 m2 = vec3(0.0);
-	float tw = 0.0;
-	float tw2 = 0.0;
-	for (int i = -2; i < 2; i++){
-		for (int j = -2; j < 2; j++){
-			// Weighting each variance estimation sample according to the distance to the true center
-			vec2 pos = varTC - (centerTC + ivec2(i, j)+0.5);
-			float w = exp(-dot(pos, pos));
-			// Blackmann-harris window for sampling the current frame
-			pos = sampleTC - (centerTC + ivec2(i, j)+0.5);
-			float w2 = exp(-2.23*4.*dot(pos, pos));
-			vec3 current = texelFetch2D(colortex3, centerTC + ivec2(i, j), 0).rgb;
-			albedoCurrent0 += current * w2;
-			m1 += current * w;
-			m2 += current * current * w;
-			tw += w;
-			tw2 += w2;
-		}
-	}
-	albedoCurrent0 /= tw2;
-	vec3 mu = m1 / tw;
-	vec3 sigma = sqrt(max(m2 / tw - mu * mu, 0.0));
-	vec3 cMax = mu + 1.5 * sigma;
-	vec3 cMin = mu - 1.5 * sigma;
-	#else
-	//Samples current frame 3x3 neighboorhood
-	vec3 albedoCurrent0 = texture2D(colortex3, adjTC).rgb;
+	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).rgb;
 	vec3 albedoCurrent1 = texture2D(colortex3, adjTC + vec2(texelSize.x,texelSize.y)).rgb;
 	vec3 albedoCurrent2 = texture2D(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
 	vec3 albedoCurrent3 = texture2D(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
@@ -346,13 +241,12 @@ vec3 TAA_hq(){
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
-	// More correct reconstruction
-	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).rgb;
-	#endif
+
 
 
 	#ifndef NO_CLIP
 	vec3 albedoPrev = max(FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);
 
 
@@ -383,7 +277,7 @@ void main() {
 gl_FragData[0].a = 1.0;
 	#ifdef TAA
 	vec3 color = TAA_hq();
-	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(interleaved_gradientNoise())),6.11*1e-5,65000.0);
+	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(R2_dither())),6.11*1e-5,65000.0);
 	#endif
 	#ifndef TAA
 	vec3 color = clamp(fp10Dither(texture2D(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);

@@ -34,6 +34,10 @@ vec3 toScreenSpace(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+}
 
 #include "/lib/volumetricClouds.glsl"
 #include "/lib/res_params.glsl"
@@ -61,7 +65,7 @@ void main() {
 	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
 	   
 	vec3 fragpos = toScreenSpace(vec3(halfResTC*texelSize,1.0));
-	vec4 currentClouds = renderClouds(fragpos,vec3(0.), blueNoise(),sunColor/150.,moonColor/150.,avgAmbient/150.);
+	vec4 currentClouds = renderClouds(fragpos,vec3(0.), R2_dither(),sunColor/150.,moonColor/150.,avgAmbient/150.);
 	gl_FragData[0] = currentClouds;
 
 	 

@@ -2,9 +2,32 @@
 #define SKY_BRIGHTNESS_DAY 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
 #define SKY_BRIGHTNESS_NIGHT 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
+
+const float sphere_screen_radius = 0.4;
+const float scatter_light_threshold = 0.9;
+
+
+
+
 vec3 drawSun(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
 	return inColor+nsunlight/0.0008821203*pow(smoothstep(cos(0.0093084168595*3.2),cos(0.0093084168595*1.8),cosY),3.)*0.62;
 }
+vec3 drawmoon(float cosY, float sunInt,vec3 nsunlight){
+
+vec3 moon = nsunlight/0.0008821203*pow(smoothstep(cos(0.0093084168595*2.2),cos(0.0093084168595*1.8),cosY),3.0)*0.1;
+
+	return moon;
+}
+
+
+vec3 project(vec2 p) {
+ return vec3(p.x, p.y, sqrt(-(p.x*p.x+p.y*p.y-0.24)));   
+}
+
+
+
+
+
 const float pi = 3.141592653589793238462643383279502884197169;
 vec2 sphereToCarte(vec3 dir) {
     float lonlat = atan(-dir.x, -dir.z);

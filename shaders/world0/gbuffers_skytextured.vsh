@@ -12,9 +12,9 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 
-varying vec4 color;
+//varying vec4 color;
 varying vec2 texcoord;
-
+varying vec3 viewPosition;
 uniform vec2 texelSize;
 uniform int framemod8;
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
@@ -25,13 +25,21 @@ uniform int framemod8;
 									vec2(-7.,-1.)/8.,
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
+									
+									
+									
+									
+									
+								
+							
+									
 void main() {
 	texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;
 
 
 
-	color = gl_Color;
-
+//	color = gl_Color;
+	viewPosition = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
 	gl_Position = ftransform();
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;

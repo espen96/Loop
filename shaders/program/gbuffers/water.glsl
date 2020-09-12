@@ -223,12 +223,7 @@ float R2_dither(){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-const vec2 shadowOffsets[6] = vec2[6](vec2(  0.5303,  0.5303 ),
-vec2( -0.6250, -0.0000 ),
-vec2(  0.3536, -0.3536 ),
-vec2( -0.0000,  0.3750 ),
-vec2( -0.1768, -0.1768 ),
-vec2( 0.1250,  0.0000 ));															   
+															   
 /* DRAWBUFFERS:23 */
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
@@ -308,7 +303,7 @@ void main() {
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 
 				shading = 0.0;
-					float noise = blueNoise();
+					float noise = R2_dither();
 					float rdMul = 4.0/shadowMapResolution;
 																						
 																		
@@ -362,7 +357,7 @@ void main() {
 
 		vec4 reflection = vec4(sky_c.rgb,0.);
 			#ifdef SCREENSPACE_REFLECTIONS
-			vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,blueNoise(), fresnel);
+			vec3 rtPos = rayTrace(reflectedVector,fragpos.xyz,R2_dither(), fresnel);
 			if (rtPos.z <1.){
 				vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 				previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;

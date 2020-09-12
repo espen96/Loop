@@ -16,6 +16,7 @@ flat varying vec3 ambientB;
 flat varying vec3 ambientF;
 flat varying vec3 ambientDown;
 flat varying vec3 WsunVec;
+
 flat varying vec2 TAA_Offset;
 flat varying float tempOffsets;
 
@@ -40,7 +41,7 @@ uniform vec3 fogColor;
 uniform sampler2DShadow shadowtex1;
 uniform sampler2DShadow shadowtex0;
 
-						   
+uniform vec3 sunPosition;						   
 
 uniform sampler2D shadowcolor1;
 uniform sampler2DShadow shadowcolor0;
@@ -64,9 +65,6 @@ uniform vec3 previousCameraPosition;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform mat4 gbufferModelView;
-uniform int entityId;
-uniform int blockEntityId;
-uniform int worldTime;
 
 uniform vec2 texelSize;
 uniform float viewWidth;
@@ -371,6 +369,8 @@ void main() {
 
 	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
 	float masks = texture2D(colortex3,texcoord).a;
+	float masks2 = 0;
+
 
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -390,20 +390,26 @@ void main() {
 	
 	//sky
 	if (z >=1.0) {
-	
+
 		vec3 color = vec3(0.0);
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
+		float moon = 0;
+		
+		
 		if (np3.y > 0.){
+	
 			color += stars(np3);
-			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
+			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));		
+			moon = (drawmoon(dot(-lightCol.a*WsunVec,np3+0.000022),0, lightCol.rgb/150)).x ;
+			color *= 1-clamp(moon,0,1);
 		}
-		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+
+		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/8.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3))*moon;
 
 		color = color*cloud.a+cloud.rgb;
 
 		
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
-		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 
 		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
 		if (iswater){
@@ -757,6 +763,8 @@ float shadow0 = 0.0;
 	
 
 gl_FragData[0].a = masks;	
+//gl_FragData[0].rgb = vec3(masks2);
+	
 
 	
 	

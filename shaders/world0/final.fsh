@@ -140,23 +140,19 @@ void main() {
  	 
 		 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
-    vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent3 = texture2D(colortex2, texcoord + vec2(-texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent4 = texture2D(colortex2, texcoord + vec2(-texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent5 = texture2D(colortex2, texcoord + vec2(0.0,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent6 = texture2D(colortex2, texcoord + vec2(0.0,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent7 = texture2D(colortex2, texcoord + vec2(-texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent8 = texture2D(colortex2, texcoord + vec2(texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
+    //Weights : 1 in the center, 0.5 middle, 0.25 corners
+    vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent3 = texture2D(colortex2, texcoord + vec2(-texelSize.x,-texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent4 = texture2D(colortex2, texcoord + vec2(-texelSize.x,texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
 
-    vec3 m1 = (col + albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4 + albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8)/9.0;
+
+    vec3 m1 = -0.5/3.5*col + albedoCurrent1/3.5 + albedoCurrent2/3.5 + albedoCurrent3/3.5 + albedoCurrent4/3.5;
     vec3 std = abs(col - m1) + abs(albedoCurrent1 - m1) + abs(albedoCurrent2 - m1) +
-     abs(albedoCurrent3 - m1) + abs(albedoCurrent3 - m1) + abs(albedoCurrent4 - m1) +
-     abs(albedoCurrent5 - m1) + abs(albedoCurrent6 - m1) + abs(albedoCurrent7 - m1) +
-     abs(albedoCurrent8 - m1);
-    float contrast = 1.0 - luma(std)/9.0;
+     abs(albedoCurrent3 - m1) + abs(albedoCurrent3 - m1) + abs(albedoCurrent4 - m1);
+    float contrast = 1.0 - luma(std)/5.0;
     col = col*(1.0+(SHARPENING+UPSCALING_SHARPNENING)*contrast)
-          - (albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8 + (albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4)/2.0)/6.0 * (SHARPENING+UPSCALING_SHARPNENING)*contrast;
+          - (SHARPENING+UPSCALING_SHARPNENING)/(1.0-0.5/3.5)*contrast*(m1 - 0.5/3.5*col);
   #endif
 						
   float lum = luma(col);

@@ -278,7 +278,6 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
 	vec2 adjTC = clamp(texcoord*RENDER_SCALE, vec2(0.0),RENDER_SCALE-texelSize*2.);
-
 	#else
 	vec2 adjTC = texcoord;
 	#endif
@@ -299,78 +298,73 @@ vec3 TAA_hq(){
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 	previousPosition.xy = texcoord + velocity;
 
-																																
-																												 
-							
-										
 	//reject history if off-screen and early exit
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0) return smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
-	
-	
-	//Samples current frame 3x3 neighboorhood
-	#ifdef TAA_UPSCALING
 
-	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
-	ivec2 centerTC = ivec2(gl_FragCoord.xy*RENDER_SCALE);
-	vec3 cMax = albedoCurrent0;
-	vec3 cMin = albedoCurrent0;
-	
-	for (int i = -1; i < 2; i++){
-		for (int j = -1; j < 2; j++){
+
+	#ifdef TAA_UPSCALING
+	vec2 varTC = gl_FragCoord.xy*RENDER_SCALE;
+	vec2 sampleTC = gl_FragCoord.xy*RENDER_SCALE  + offsets[framemod8] * 0.5;
+	ivec2 centerTC = ivec2(varTC + 0.5);
+	vec3 albedoCurrent0 = vec3(0.0);
+	vec3 m1 = vec3(0.0);
+	vec3 m2 = vec3(0.0);
+	float tw = 0.0;
+	float tw2 = 0.0;
+	for (int i = -2; i < 2; i++){
+		for (int j = -2; j < 2; j++){
+			// Weighting each variance estimation sample according to the distance to the true center
+			vec2 pos = varTC - (centerTC + ivec2(i, j)+0.5);
+			float w = exp(-dot(pos, pos));
+			// Blackmann-harris window for sampling the current frame
+			pos = sampleTC - (centerTC + ivec2(i, j)+0.5);
+			float w2 = exp(-2.23*4.*dot(pos, pos));
 			vec3 current = texelFetch2D(colortex3, centerTC + ivec2(i, j), 0).rgb;
-			cMax = max(cMax, current);
-			cMin = min(cMin, current);
+			albedoCurrent0 += current * w2;
+			m1 += current * w;
+			m2 += current * current * w;
+			tw += w;
+			tw2 += w2;
 		}
 	}
+	albedoCurrent0 /= tw2;
+	vec3 mu = m1 / tw;
+	vec3 sigma = sqrt(max(m2 / tw - mu * mu, 0.0));
+	vec3 cMax = mu + 1.5 * sigma;
+	vec3 cMin = mu - 1.5 * sigma;
 	#else
-	vec3 albedoCurrent0 =  texture2D(colortex3, adjTC).rgb;
-	   
+	//Samples current frame 3x3 neighboorhood
+	vec3 albedoCurrent0 = texture2D(colortex3, adjTC).rgb;
 	vec3 albedoCurrent1 = texture2D(colortex3, adjTC + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 =  texture2D(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 =  texture2D(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 =  texture2D(colortex3, adjTC + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 =  texture2D(colortex3, adjTC + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 =  texture2D(colortex3, adjTC + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 =  texture2D(colortex3, adjTC + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortex3, adjTC + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortex3, adjTC + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortex3, adjTC + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortex3, adjTC + vec2(-texelSize.x,0.0)).rgb;
 	vec3 albedoCurrent8 = texture2D(colortex3, adjTC + vec2(texelSize.x,0.0)).rgb;
-
-				
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
 	// More correct reconstruction
 	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).rgb;
-	
 	#endif
 
 
 	#ifndef NO_CLIP
-	vec3 albedoPrev = FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz;
+	vec3 albedoPrev = max(FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);
 
-
-
-																											  
-																   
 
 	//reduces blending factor if current texel is far from history, reduces flickering
 	float lumDiff2 = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
 	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*FLICKER_REDUCTION;
 
-	
-	
-	
-
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
-//	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev);
-//	float movementRejection = isclamped * clamp(length(velocity/texelSize),0.0,1.0)*0.5;
-	
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 	float movementRejection = isclamped*0.5 + isclamped*clamp(length(velocity/texelSize),0.0,1.0)*1.5;
-	
-	
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
-	vec3 supersampled =   invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR*lumDiff2 + movementRejection,0.,1.)));
+	vec3 supersampled = invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR*lumDiff2 + movementRejection,0.,1.)));
 	#endif
 
 
@@ -385,7 +379,7 @@ vec3 TAA_hq(){
 
 void main() {
 
-/* DRAWBUFFERS:53 */
+/* DRAWBUFFERS:5 */
 gl_FragData[0].a = 1.0;
 	#ifdef TAA
 	vec3 color = TAA_hq();
@@ -394,10 +388,12 @@ gl_FragData[0].a = 1.0;
 	#ifndef TAA
 	vec3 color = clamp(fp10Dither(texture2D(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);
 	gl_FragData[0].rgb = color;
-
 	#endif
-	gl_FragData[1] = vec4(0.0);					 
-													  
+
+
+
+
+
 }
 
 

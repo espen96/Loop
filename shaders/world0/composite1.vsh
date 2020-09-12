@@ -4,6 +4,7 @@
 varying vec2 texcoord;
 
 flat varying vec3 WsunVec;
+
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;
@@ -16,7 +17,6 @@ flat varying vec2 TAA_Offset;
 flat varying vec3 zMults;
 attribute vec4 mc_Entity;
 uniform sampler2D colortex4;
-
 uniform float far;
 uniform float near;
 uniform mat4 gbufferModelViewInverse;
@@ -24,6 +24,8 @@ uniform vec3 sunPosition;
 uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
+
+
 
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,
@@ -38,6 +40,9 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 #include "/lib/util.glsl"
 #include "/lib/res_params.glsl"
 void main() {
+
+
+
 
 	gl_Position = ftransform();
 	#ifdef TAA_UPSCALING
@@ -62,7 +67,7 @@ void main() {
 	lightCol.a = float(sunElevation > 1e-5)*2-1.;
 	lightCol.rgb = sc;
 
-	WsunVec = lightCol.a*normalize(mat3(gbufferModelViewInverse) *sunPosition);
+	WsunVec =  lightCol.a*normalize(mat3(gbufferModelViewInverse) *  sunPosition);
 	zMults = vec3((far * near)*2.0,far+near,far-near);
 
 

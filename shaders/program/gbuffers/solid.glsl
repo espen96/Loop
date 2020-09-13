@@ -15,16 +15,10 @@
 #undef PBR
 #endif
 
-	
-	
-  if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y){	
- // Level of detail choice by default is log2(abs(dFdx(p)) + abs(dFdy(p)))
-  float LoDbias = -1.0; 
 
+	float lightningBolt = float(entityId == 58);	
 
-float lightningBolt = float(entityId == 58);	
-
-vec2 tempOffset=offsets[framemod8];
+	vec2 tempOffset=offsets[framemod8];
 
 	
 	float noise = interleaved_gradientNoise();
@@ -32,19 +26,14 @@ vec2 tempOffset=offsets[framemod8];
 	vec4 specularity = vec4(0.0);
 	vec3 mat_data = vec3(0.0);
 	vec4 reflected = vec4(0.0);
-	vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
+
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
-	vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
-	float ao = 1.0;
+
+
 	vec4 color = color;	
-		 color.rgb *= ao;	
-
-
-
-
-
+	
 
 
 #ifdef MC_NORMAL_MAP
@@ -59,6 +48,9 @@ vec2 tempOffset=offsets[framemod8];
 
 
 #ifdef PBR		
+	float ao = 1.0;
+	color.rgb *= ao;
+	vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
 	float iswater = normalMat.w;		
 	float NdotL = lightSign*dot(normal,sunVec);
 	float NdotU = dot(upVec,normal);
@@ -68,33 +60,33 @@ vec2 tempOffset=offsets[framemod8];
 	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
 	float shading = 0.0;
 		//compute shadows only if not backface
-		if (diffuseSun > 0.001) {
-			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
+			if (diffuseSun > 0.001) {
+				vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
+				vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
+				projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
 
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
-				float diffthresh = distortThresh/6000.0*threshMul;
+				//apply distortion
+				float distortFactor = calcDistort(projectedShadowPosition.xy);
+				projectedShadowPosition.xy *= distortFactor;
+				//do shadows only if on shadow map
+				if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
+					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
+					float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
+					float diffthresh = distortThresh/6000.0*threshMul;
 
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
+					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 
-				shading = 0.0;
-				float noise = R2_dither();
-				float rdMul = 3.0*distortFactor*d0*k/shadowMapResolution;
-				mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
-									 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
-									);
-				for(int i = 0; i < 6; i++){
-					vec2 offsetS = noiseM*shadowOffsets[i];
+					shading = 0.0;
+					float noise = R2_dither();
+					float rdMul = 4.0/shadowMapResolution;
+					mat2 noiseM = mat2( cos( noise*3.14159265359*2.0 ), -sin( noise*3.14159265359*2.0 ),
+										 sin( noise*3.14159265359*2.0 ), cos( noise*3.14159265359*2.0 )
+										);
+					for(int i = 0; i < 6; i++){
+						vec2 offsetS = noiseM*shadowOffsets[i];
 
-					float weight = 1.0+(i+noise)*rdMul/8.0*shadowMapResolution;
-					shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
+						float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
+						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/6.0;
 					}
 
 					direct *= shading;
@@ -113,12 +105,17 @@ vec2 tempOffset=offsets[framemod8];
 
 
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
-		vec3 viewVector = normalize(tbnMatrix*fragpos);
-		float dist = length(fragpos);
+
 		
 		
 		
 #ifdef POM2		
+
+
+		vec3 viewVector = normalize(tbnMatrix*fragpos);
+		float dist = length(fragpos);
+
+
     if (dist < MAX_OCCLUSION_DISTANCE) {
     	#ifndef USE_LUMINANCE_AS_HEIGHTMAP
     		if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001) {
@@ -260,7 +257,7 @@ vec2 tempOffset=offsets[framemod8];
 	#else
 	
 	
-  vec4 data0 = texture2D(texture, lmtexcoord.xy, LoDbias);
+  vec4 data0 = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias);
   data0.rgb*=color.rgb;
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
@@ -325,7 +322,6 @@ vec2 spec2 = vec2(specularity.b,mat_data.z);
 		
 		
 #ifndef entity
-
 	gl_FragData[2] = clamp(vec4(reflected.rgb,0),0.0,10.0);
 	gl_FragData[1].a = 0;
 	gl_FragData[1].gb = vec2(encodeVec2v2(spec1),encodeVec2v2(spec2));
@@ -354,8 +350,5 @@ if (lightningBolt > 0.5) gl_FragData[1].a = 0.2;
 gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));			
 
 
-  }
-  else
-  gl_FragData[0] = vec4(0.0,0.0,0.0,1.0);
 
 }

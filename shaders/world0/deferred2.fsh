@@ -63,12 +63,11 @@ void main() {
 /* DRAWBUFFERS:0 */
 	#ifdef VOLUMETRIC_CLOUDS
 	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
-	   
+
 	vec3 fragpos = toScreenSpace(vec3(halfResTC*texelSize,1.0));
-	vec4 currentClouds = renderClouds(fragpos,vec3(0.), R2_dither(),sunColor/150.,moonColor/150.,avgAmbient/150.);
+	vec4 currentClouds = renderClouds(fragpos,vec3(0.), blueNoise(),sunColor/150.,moonColor/150.,avgAmbient/150.);
 	gl_FragData[0] = currentClouds;
 
-	 
 
 	#else
 		gl_FragData[0] = vec4(0.0,0.0,0.0,1.0);

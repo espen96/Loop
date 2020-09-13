@@ -5,14 +5,8 @@
 #include "/lib/settings.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/encode.glsl"
-
-
-
 #define SSPT_FLICKER_REDUCTION 1.0
 #define SSPT_BLEND_FACTOR 0.2
-
-
-
 const int noiseTextureResolution = 32;
 
 
@@ -38,10 +32,13 @@ const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 */
 
+uniform sampler2D colortex3;
+
+
 flat varying float exposureA;
 flat varying float tempOffsets;
 uniform sampler2D colortex1;
-uniform sampler2D colortex3;
+
 uniform sampler2D colortex5;
 uniform sampler2D colortex6;
 uniform sampler2D depthtex0;
@@ -59,6 +56,8 @@ uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 #include "/lib/res_params.glsl"
 #include "/lib/projections.glsl"
+
+
 
 vec2 texcoord = gl_FragCoord.xy*texelSize;	
 
@@ -290,7 +289,12 @@ vec3 TAA_sspt(){
 
 	//De-tonemap
 	return supersampled;
-}
+	
+	
+	
+}	
+
+
 
 void main() {
 

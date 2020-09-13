@@ -32,19 +32,13 @@ uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
-uniform sampler2D texture;
-uniform sampler2D normals;
+
+
 uniform sampler2DShadow shadow;
-uniform vec3 fogColor;
-
-
-uniform sampler2DShadow shadowtex1;
-uniform sampler2DShadow shadowtex0;
 
 uniform vec3 sunPosition;						   
 
-uniform sampler2D shadowcolor1;
-uniform sampler2DShadow shadowcolor0;
+
 
 uniform int heldBlockLightValue;
 uniform int frameCounter;
@@ -166,9 +160,6 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 
 			if (dist < 0.01 ) return 0.0;
-
-
-
 	}
 
 	}
@@ -369,9 +360,6 @@ void main() {
 
 	vec2 texcoord = gl_FragCoord.xy*texelSize;							 
 	float masks = texture2D(colortex3,texcoord).a;
-	float masks2 = 0;
-
-
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
@@ -511,9 +499,6 @@ vec3 indirectLight = vec3(0.0);
 vec3 shadowColBase = vec3(0.0);
 vec3 shadowCol = vec3(0.0);
 vec3 rsmfinal = vec3(0.0);
-vec3 caustic = vec3(0.0);
-float shadow1 = 0.0;
-float shadow0 = 0.0;
 
 		
 		vec3 filtered = vec3(1.412,1.0,0.0);
@@ -715,8 +700,9 @@ float shadow0 = 0.0;
 
 		}
 		else {				
-		
+		#ifdef GI
 		shadowCol *= (1-shading);		
+		#endif
 		if (lightning) ambientLight *= vec3(2.0);	
 
 		
@@ -740,8 +726,6 @@ float shadow0 = 0.0;
 				ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
 				if (emissive)  ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*albedo.rgb+0.3;
 
-
-		
 		 
 }
 			#endif			
@@ -749,21 +733,14 @@ float shadow0 = 0.0;
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-		//	gl_FragData[0].rgb = vec3(rsm.rgb);		
-
-
-		
-		//	gl_FragData[0].rgb = cloudSpeed2;				
-
 	
-			
 		}
 		
 }
 	
 
 gl_FragData[0].a = masks;	
-//gl_FragData[0].rgb = vec3(masks2);
+
 	
 
 	

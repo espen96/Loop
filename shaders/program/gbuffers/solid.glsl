@@ -1,14 +1,6 @@
 
 #include "/program/gbuffers/shared.glsl"
 
-
-
-
-
-
-
-
-
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -44,8 +36,17 @@ vec2 tempOffset=offsets[framemod8];
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 
-vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
-float ao = 1.0;
+	vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;	
+	float ao = 1.0;
+	vec4 color = color;	
+		 color.rgb *= ao;	
+
+
+
+
+
+
+
 #ifdef MC_NORMAL_MAP
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
@@ -56,17 +57,13 @@ float ao = 1.0;
 //////////////////////////////PBR//////////////////////////////
 
 
-		vec4 color = color;	
-
-		  color.rgb *= ao;	
 
 #ifdef PBR		
 	float iswater = normalMat.w;		
 	float NdotL = lightSign*dot(normal,sunVec);
 	float NdotU = dot(upVec,normal);
 
-	float daytime = dot(normalize(sunPosition),upPosition);
-	
+
 	
 	float diffuseSun = clamp(NdotL,0.0f,1.0f);	
 	float shading = 0.0;
@@ -258,8 +255,7 @@ float ao = 1.0;
 	if (data0.a > 0.3) data0.a = normalMat.a*0.5+0.1;
 	else data0.a = 0.0;
 	#endif	
-	
-	
+
 	vec4 data1 = clamp(encode(normal),0.,1.0);
 	#else
 	

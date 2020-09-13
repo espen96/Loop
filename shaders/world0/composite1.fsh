@@ -423,8 +423,8 @@ void main() {
 
 		vec4 data = texture2D(colortex1,texcoord);
 
-		vec2 sp1 = decodeVec2(texture2D(colortex7,texcoord).g);
-		vec2 sp2 = decodeVec2(texture2D(colortex7,texcoord).b);
+		vec2 sp1 = decodeVec2(texture2D(colortex7,texcoord).b);
+		vec2 sp2 = decodeVec2(texture2D(colortex7,texcoord).a);
 		vec3 tester = texture2D(colortex7,texcoord).rgb;
 		
 
@@ -733,13 +733,14 @@ vec3 rsmfinal = vec3(0.0);
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-	
+	//		gl_FragData[0].rgb = vec3(reflected);	
 		}
 		
 }
 	
 
 gl_FragData[0].a = masks;	
+
 
 	
 

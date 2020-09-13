@@ -151,6 +151,6 @@ void main() {
 
 }
 			gl_FragData[0].a  = texture2D(colortex3,texcoord).a;	
-			gl_FragData[1]  = vec4(encodeVec2v2(texture2D(colortex7,texcoord).rg),texture2D(colortex7,texcoord).b,texture2D(colortex7,texcoord).gb);	
+			gl_FragData[1]  = vec4(encodeVec2v2(texture2D(colortex7,texcoord).rg),texture2D(colortex7,texcoord).b,texture2D(colortex3,texcoord).gb);	
 
 }

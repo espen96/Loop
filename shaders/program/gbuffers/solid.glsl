@@ -205,8 +205,8 @@
 		     reflection.rgb = mix(sky_c.rgb*0.1, clamp(reflection.rgb,0,5), reflection.a);
 
 			float spec = (F0/255)*SPEC_MULTIPLIER;
-		//	vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*10.0/3./150.0/3.1415 * (1.0-rainStrength*0.9)*clamp(sunElevation,0.01,1);
-			vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy+0.02)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);				
+
+			vec3 sunSpec = GGX(normal,normalize(fragpos),  lightSign*sunVec, mat_data.xy)* (texelFetch2D(gaux1,ivec2(6,37),0).rgb*spec)*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);				
 			
 
 

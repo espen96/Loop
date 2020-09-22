@@ -384,7 +384,7 @@ uniform float far;
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-
+		vec3 normal = decode(dataUnpacked0.yw);
 
 float cdist(vec2 coord) {
 	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
@@ -428,7 +428,7 @@ vec3 closestToCamera3x3()
 	return dmin;
 }
 void main() {
-  /* DRAWBUFFERS:2 */
+  /* DRAWBUFFERS:23 */
     
   float v = 1.004f;
   vec2 d = vec2(v / ratio, v);
@@ -571,7 +571,7 @@ void main() {
 	#endif
 
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
-//	gl_FragData[0].rgb = vec3(focus)*100;
+	gl_FragData[1].rgb = normal.rgb;
 	
 
 

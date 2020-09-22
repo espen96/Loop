@@ -733,7 +733,7 @@ vec3 rsmfinal = vec3(0.0);
 
 		    
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-	//		gl_FragData[0].rgb = vec3(reflected);	
+	//		gl_FragData[0].rgb = vec3(rsmfinal);	
 		}
 		
 }

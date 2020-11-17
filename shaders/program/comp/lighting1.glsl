@@ -85,7 +85,7 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/util.glsl"
 #include "/lib/res_params.glsl"							   
 #include "/lib/stars.glsl"
-#include "/lib/waterBump.glsl"
+
 #include "/lib/encode.glsl"
 
 

@@ -87,7 +87,6 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/sky_gradient.glsl"
 #include "/lib/stars.glsl"
 #include "/lib/volumetricClouds.glsl"
-#include "/lib/waterBump.glsl"
 
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
@@ -246,10 +245,11 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	for (int i = 0; i < 5; i++){
-		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
+	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
+	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
-		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
 		weightSum += exp2(-0.8*i);
 	}
 	return caustic * weightSum;
@@ -519,13 +519,12 @@ vec3 rsmfinal = vec3(0.0);
 						else{ ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);}
 
 			//combine all light sources
-			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight)*albedo;
+			gl_FragData[0].rgb = (((shading*diffuseSun))*albedo)*0.1;
 
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
 			vec3 ambientColVol =  ambientUp*8./150./3.*0.84*2.0/pi / 240.0 * eyeBrightnessSmooth.y;
-			if (isEyeInWater == 0)
-				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
+
 
 		}
 		else {				

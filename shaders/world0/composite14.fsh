@@ -1,10 +1,11 @@
 #version 120
-//Vignetting, applies bloom, applies exposure and tonemaps the final image
+//Merge and upsample the blurs into a 1/4 res bloom buffer
+
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
 #define fsh
 
-#include "/program/comp/dof.glsl"
+#include "/program/comp/bloom4.glsl"
 
 

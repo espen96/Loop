@@ -110,7 +110,7 @@ vec3 shadowCol = vec3(0.0);
 		bool glass = texture2D(colortex2,texcoord).a >=0.01;			
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		bool entity = (masks) <=0.10 && (masks) >=0.09;
-
+gl_FragData[2].rgb  = normal;	
 	
 
 		
@@ -131,18 +131,14 @@ vec3 shadowCol = vec3(0.0);
 
 			
 				}
-			
-
-
-	
-			
-		
-		
+				
 		}
 	
-	
+		
 		#endif		
 		gl_FragData[0].rgb  = shadowCol;		
+
+
 	
 
 	

@@ -1,24 +1,27 @@
 #version 120
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
+
 #include "/lib/settings.glsl"
-#include "/lib/res_params.glsl"	
-uniform float far;
-uniform float near;
+
+varying vec2 texcoord;
+
 uniform sampler2D colortex2;
-uniform sampler2D depthtex1;
+
 uniform vec2 texelSize;
+
+uniform float rainStrength;
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float frameTimeCounter;
+uniform float sunAngle;					   
 uniform int frameCounter;
+uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform int isEyeInWater;
 #include "/lib/color_transforms.glsl"
 #include "/lib/color_dither.glsl"
+#include "/lib/encode.glsl"
 #include "/lib/res_params.glsl"
-float linZ(float depth) {
-    return (2.0 * near) / (far + near - depth * (far - near));
-}
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
@@ -69,53 +72,94 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
     return result;
 }
 
+	vec3 doChromaticAberration(vec2 coord) {
 
+		const float offsetMultiplier	= 0.002;
 
+		float dist = pow(distance(coord.st, vec2(0.5)), 2.5);
 
+		vec3 color = vec3(0.0);
 
+		color.r = texture2D(colortex2, coord.st + vec2(offsetMultiplier * dist, 0.0)).r;
+		color.g = texture2D(colortex2, coord.st).g;
+		color.b = texture2D(colortex2, coord.st - vec2(offsetMultiplier * dist, 0.0)).b;
 
+		return color;
 
-		
-		
-		
+	}
+
+	vec3 vignette(vec3 color) {
+
+		float vignetteStrength	= 1.0;
+		float vignetteSharpness	= 3.0;
+
+		float dist = 1.0 - pow(distance(texcoord.st, vec2(0.5)), vignetteSharpness) * vignetteStrength;
+
+		return color * dist;
+
+	}
+
+	
+	
+	float rand(vec2 coord) {
+	  return fract(sin(dot(coord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+	}
+
+	vec3 filmgrain(vec3 color) {
+
+		const float noiseAmount = 0.03;
+
+		vec2 coord = texcoord + frameTimeCounter * 0.01;
+
+		vec3 noise = vec3(0.0);
+				 noise.r = rand(coord + 0.1);
+				 noise.g = rand(coord);
+				 noise.b = rand(coord - 0.1);
+
+		return color * (1.0 - noiseAmount + noise * noiseAmount) + noise * noiseAmount;
+
+	}	
+	
+	
+	
 void main() {
-vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
-vec2 coord = texcoord.st;
-
-
-		 
-		 
   #ifdef BICUBIC_UPSCALING
-    vec3 col = SampleTextureCatmullRom(colortex2,coord,1.0/texelSize).rgb;
-
+    vec3 col = SampleTextureCatmullRom(colortex2,texcoord,1.0/texelSize).rgb;
   #else
-    vec3 col = texture2D(colortex2,coord).rgb;
+    vec3 col = texture2D(colortex2,texcoord).rgb;
   #endif
-
+  #ifdef CHROMATIC  
+	     col = doChromaticAberration(texcoord); 
+  #endif
+  #ifdef GRAIN  
+		col = filmgrain(col);
+  #endif
+  #ifdef VIGNETTE
+		 col = vignette(col);
+  #endif
+ 	 
+		 
   #ifdef CONTRAST_ADAPTATIVE_SHARPENING
-    vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent3 = texture2D(colortex2, texcoord + vec2(-texelSize.x,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent4 = texture2D(colortex2, texcoord + vec2(-texelSize.x,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent5 = texture2D(colortex2, texcoord + vec2(0.0,texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent6 = texture2D(colortex2, texcoord + vec2(0.0,-texelSize.y)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent7 = texture2D(colortex2, texcoord + vec2(-texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
-    vec3 albedoCurrent8 = texture2D(colortex2, texcoord + vec2(texelSize.x,0.0)/MC_RENDER_QUALITY).rgb;
+    //Weights : 1 in the center, 0.5 middle, 0.25 corners
+    vec3 albedoCurrent1 = texture2D(colortex2, texcoord + vec2(texelSize.x,texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent2 = texture2D(colortex2, texcoord + vec2(texelSize.x,-texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent3 = texture2D(colortex2, texcoord + vec2(-texelSize.x,-texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
+    vec3 albedoCurrent4 = texture2D(colortex2, texcoord + vec2(-texelSize.x,texelSize.y)/MC_RENDER_QUALITY*0.5).rgb;
 
-    vec3 m1 = (col + albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4 + albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8)/9.0;
+
+    vec3 m1 = -0.5/3.5*col + albedoCurrent1/3.5 + albedoCurrent2/3.5 + albedoCurrent3/3.5 + albedoCurrent4/3.5;
     vec3 std = abs(col - m1) + abs(albedoCurrent1 - m1) + abs(albedoCurrent2 - m1) +
-     abs(albedoCurrent3 - m1) + abs(albedoCurrent3 - m1) + abs(albedoCurrent4 - m1) +
-     abs(albedoCurrent5 - m1) + abs(albedoCurrent6 - m1) + abs(albedoCurrent7 - m1) +
-     abs(albedoCurrent8 - m1);
-    float contrast = 1.0 - luma(std)/9.0;
+     abs(albedoCurrent3 - m1) + abs(albedoCurrent3 - m1) + abs(albedoCurrent4 - m1);
+    float contrast = 1.0 - luma(std)/5.0;
     col = col*(1.0+(SHARPENING+UPSCALING_SHARPNENING)*contrast)
-          - (albedoCurrent5 + albedoCurrent6 + albedoCurrent7 + albedoCurrent8 + (albedoCurrent1 + albedoCurrent2 + albedoCurrent3 + albedoCurrent4)/2.0)/6.0 * (SHARPENING+UPSCALING_SHARPNENING)*contrast;
-#endif		  
-
+          - (SHARPENING+UPSCALING_SHARPNENING)/(1.0-0.5/3.5)*contrast*(m1 - 0.5/3.5*col);
+  #endif
+						
   float lum = luma(col);
   vec3 diff = col-lum;
-  col = col + diff*(-lum*N_CROSSTALK + N_SATURATION);
-  //col = -vec3(-lum*CROSSFADING + SATURATION);
-	gl_FragColor.rgb = clamp(int8Dither(col,coord),0.0,1.0);
-  //gl_FragColor.rgb = vec3(contrast);
+  col = col + diff*(-lum*CROSSTALK + SATURATION);
+
+
+	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
+
 }

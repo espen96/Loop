@@ -1,10 +1,11 @@
 #version 120
-//downsample 1st pass (half res) for bloom
+//6 Vertical gaussian blurs and vertical downsampling
+
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
 #define fsh
 
-#include "/program/comp/bloom1.glsl"
+#include "/program/comp/bloom3.glsl"
 
 

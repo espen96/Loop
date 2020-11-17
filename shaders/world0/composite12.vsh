@@ -1,11 +1,9 @@
 #version 120
-//6 Vertical gaussian blurs and vertical downsampling
-
-#extension GL_EXT_gpu_shader4 : enable
+//6 Horizontal gaussian blurs and horizontal downsampling
 
 #include "/lib/settings.glsl"
 #define vsh
 
-#include "/program/comp/bloom3.glsl"
+#include "/program/comp/bloom2.glsl"
 
 

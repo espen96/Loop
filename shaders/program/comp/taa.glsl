@@ -9,6 +9,7 @@ flat varying float exposureA;
 flat varying float tempOffsets;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
+uniform sampler2D colortex7;
 uniform sampler2D colortex0;
 uniform sampler2D colortex6;
 uniform sampler2D depthtex0;
@@ -273,13 +274,81 @@ vec3 TAA_hq(){
 	return supersampled;
 }
 
+vec3 TAA_hq2(){
+	#ifdef TAA_UPSCALING
+	vec2 adjTC = clamp(texcoord*RENDER_SCALE, vec2(0.0),RENDER_SCALE-texelSize*2.);
+	#else
+	vec2 adjTC = texcoord;
+	#endif
+
+	//use velocity from the nearest texel from camera in a 3x3 box in order to improve edge quality in motion
+
+
+
+	vec3 closestToCamera = closestToCamera5taps(adjTC);
+
+	//reproject previous frame
+	vec3 fragposition = toScreenSpace(closestToCamera);
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+	previousPosition.xy = texcoord + velocity;
+	float z = texture2D(depthtex0, adjTC).r;
+	//reject history if off-screen and early exit
+	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0 || z >= 1)
+		return vec3(0.0);
+
+	#ifdef TAA_UPSCALING
+	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
+	// Interpolating neighboorhood clampling boundaries between pixels
+	vec3 cMax = texture2D(colortex0, adjTC).rgb;
+	vec3 cMin = texture2D(colortex6, adjTC).rgb;
+	#else
+	vec3 albedoCurrent0 = texture2D(colortex3, adjTC).rgb;
+	vec3 albedoCurrent1 = texture2D(colortex3, adjTC + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortex3, adjTC + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortex3, adjTC + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortex3, adjTC + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortex3, adjTC + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture2D(colortex3, adjTC + vec2(texelSize.x,0.0)).rgb;
+	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
+	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
+	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+	albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).rgb;
+	#endif
+
+	#ifndef NO_CLIP
+	vec3 albedoPrev = max(FastCatmulRom(colortex5, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 finalcAcc = clamp(texture2D(colortex5, previousPosition.xy).xyz,cMin,cMax);
+
+	//Increases blending factor when far from AABB and in motion, reduces ghosting
+	float isclamped = distance(albedoPrev,albedoCurrent0)*0.1;
+	float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
+	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
+	vec3 supersampled = invTonemap((tonemap(finalcAcc)));
+	#endif
+
+
+
+ supersampled =  vec3(luma(clamp((tonemap(albedoCurrent0)-supersampled),0,1)));
+	//De-tonemap
+	return supersampled;
+}
+
+
 void main() {
 
-/* DRAWBUFFERS:5 */
+/* DRAWBUFFERS:57 */
 gl_FragData[0].a = 1.0;
 	#ifdef TAA
 	vec3 color = TAA_hq();
+	vec3 color2 = TAA_hq2();
+	if (color2.r >0.001) color2.rgb = color;
 	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(R2_dither())),6.11*1e-5,65000.0);
+	gl_FragData[1].rgb = clamp(fp10Dither(color2,triangularize(R2_dither())),6.11*1e-5,65000.0);
 	#endif
 	#ifndef TAA
 	vec3 color = clamp(fp10Dither(texture2D(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);

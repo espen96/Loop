@@ -46,11 +46,15 @@ vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)/2.0;
 
 uniform sampler2DShadow shadow;
 uniform ivec2 eyeBrightnessSmooth;
+uniform sampler2D gaux3;
 uniform sampler2D gaux2;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex0;
 
+uniform sampler2D colortex0;
+uniform sampler2D colortex1;
+uniform sampler2D colortex2;
 uniform sampler2D colortex4;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
@@ -285,13 +289,13 @@ vec3 getParallaxDisplacement(vec3 posxz, float iswater,float bumpmult,vec3 viewV
 	float waveM = mix(0.0,4.0,iswater);
 
 	vec3 parallaxPos = posxz;
-	vec2 vec = viewVector.xy * (1.0 / float(PW_POINTS)) * 22.0 * PW_DEPTH;
-	float waterHeight = getWaterHeightmap(posxz.xz, waveM, waveZ, iswater) * 0.5;
+	vec2 vec = viewVector.xy * (1.0 / float(PW_POINTS)) * PW_DEPTH;
+	float waterHeight = getWaterHeightmap(posxz.xz, iswater) * 2.0;
 parallaxPos.xz += waterHeight * vec;
 
 	return parallaxPos;
 
-}									
+}								
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
 {
     float alpha = (sampleNumber+jitter)/nb;

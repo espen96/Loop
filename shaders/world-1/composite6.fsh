@@ -1,30 +1,10 @@
 #version 120
-#extension GL_ARB_shader_texture_lod : enable
+//Temporal Anti-Aliasing + Dynamic exposure calculations (vertex shader)
 
+#extension GL_EXT_gpu_shader4 : enable
 #include "/lib/settings.glsl"
-uniform vec2 texelSize;
-vec2 texcoord = gl_FragCoord.xy*texelSize;	
+#include "/lib/res_params.glsl"
 
-uniform float aspectRatio;
-uniform float viewWidth;
-uniform float viewHeight;
+#define fsh
 
-uniform sampler2D colortex3;
-
-
-#ifdef FXAA
-	#include "/program/comp/fxaa.glsl"
-#endif
-
-#ifndef FXAA
-	void main() {
-		vec3 color = texture2D(colortex3, texcoord.st).rgb;
-
-		/* DRAWBUFFERS:3 */
-		gl_FragData[0] = vec4(color, 1.0); //colortex3
-	}
-#endif
-
-
-
-
+#include "/program/comp/taa.glsl"

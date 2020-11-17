@@ -1,67 +1,39 @@
 
-
-
-
-		
-		
-		
-		
-float getWaterHeightmap(vec2 posxz, float waveM, float waveZ, float iswater) {
-  vec2 pos = posxz*4.0;
+float getWaterHeightmap(vec2 posxz, float iswater) {
+	vec2 pos = posxz;
   float moving = clamp(iswater*2.-1.0,0.0,1.0);
-	vec2 movement = vec2(-0.02*frameTimeCounter*moving);
+	vec2 movement = vec2(-0.005*frameTimeCounter*moving,0.0);
 	float caustic = 0.0;
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
 	for (int i = 0; i < 4; i++){
 		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+    float wave = texture2D(gaux3, (pos*vec2(3., 1.0)/128. + movement + displ/128.0)*exp(i*1.0)).a;
+		caustic += wave*exp(-i*1.0);
+		weightSum += exp(-i*1.0);
 		pos = rotationMatrix * pos;
-		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
-		weightSum += exp2(-i);
 	}
-	return caustic * weightSum / 300. * (1.0+isEyeInWater*4.);
+	return caustic / weightSum;
 }
 vec3 getWaveHeight(vec2 posxz, float iswater){
-
-	vec2 coord = posxz;
-
-		float deltaPos = 0.25;
-
-		float waveZ = mix(20.0,0.25,iswater);
-		float waveM = mix(0.0,4.0,iswater);
-
-		float h0 = getWaterHeightmap(coord, waveM, waveZ, iswater);
-		float h1 = getWaterHeightmap(coord + vec2(deltaPos,0.0), waveM, waveZ, iswater);
-		float h3 = getWaterHeightmap(coord + vec2(0.0,deltaPos), waveM, waveZ, iswater);
-
-
-		float xDelta = ((h1-h0))/deltaPos*2.;
-		float yDelta = ((h3-h0))/deltaPos*2.;
-
-		vec3 wave = normalize(vec3(xDelta,yDelta,1.0-pow(abs(xDelta+yDelta),2.0)));
-
-		return wave;
-}
-float glassRefraction(vec2 posxz, float waveM, float waveZ, float iswater,bool isglass) {
-  vec2 pos = posxz*4.0;
+	vec2 pos = posxz;
   float moving = clamp(iswater*2.-1.0,0.0,1.0);
-	vec2 movement = vec2(-0.02*frameTimeCounter*moving);
-	float caustic = 0.0;
+	vec2 movement = vec2(-0.005*frameTimeCounter*moving,0.0);
+	vec3 caustic = vec3(0.0);
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
 	for (int i = 0; i < 4; i++){
 		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+    vec3 wave = texture2D(gaux3, (pos*vec2(3., 1.0)/128. + movement + displ/128.0)*exp(i*1.0)).rgb;
+		// Hardcoded normalization
+		// The python script will output these values
+		wave = wave * vec3(0.28517825805472996,0.36291568757087544,0.02637002277616962) + vec3(-0.1532914212634342,-0.13959442174921308,0.9736299772192376);
+		caustic += wave*exp(-i*1.0);
+		weightSum += exp(-i*1.0);
 		pos = rotationMatrix * pos;
-		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
-		if(isglass) caustic = exp2(-0.5*i);
-		weightSum += exp2(-i);
 	}
-	return caustic * weightSum / 300. * (1.0+isEyeInWater*4.);
+	return normalize(caustic / weightSum);
 }
-
-
-
-
-//caustic += sin(dot((pos)/1.74/1.74 * exp2(0.8*i) + vec2(0.5),vec2(0.5)))*0.15;

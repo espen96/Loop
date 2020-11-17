@@ -17,6 +17,7 @@ uniform sampler2D texture;
 uniform sampler2D noisetex;
 uniform sampler2DShadow shadow;
 uniform sampler2D gaux2;
+uniform sampler2D gaux3;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
 
@@ -158,8 +159,8 @@ vec3 getParallaxDisplacement(vec3 posxz, float iswater,float bumpmult,vec3 viewV
 	float waveM = mix(0.0,4.0,iswater);
 
 	vec3 parallaxPos = posxz;
-	vec2 vec = viewVector.xy * (1.0 / float(PW_POINTS)) * 22.0 * PW_DEPTH;
-	float waterHeight = getWaterHeightmap(posxz.xz, waveM, waveZ, iswater) * 0.5;
+	vec2 vec = viewVector.xy * (1.0 / float(PW_POINTS)) * PW_DEPTH;
+	float waterHeight = getWaterHeightmap(posxz.xz, iswater) * 2.0;
 parallaxPos.xz += waterHeight * vec;
 
 	return parallaxPos;

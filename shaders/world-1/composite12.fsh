@@ -1,11 +1,10 @@
 #version 120
-//6 Vertical gaussian blurs and vertical downsampling
-
+//Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
 #define fsh
 
-#include "/program/comp/bloom3.glsl"
+#include "/program/comp/dof.glsl"
 
 

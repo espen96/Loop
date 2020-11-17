@@ -5,6 +5,6 @@
 #include "/lib/settings.glsl"
 #define vsh
 
-#include "/program/comp/bloom1.glsl"
+#include "/program/comp/bloom0.glsl"
 
 

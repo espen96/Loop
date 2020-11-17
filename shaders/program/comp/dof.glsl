@@ -379,6 +379,7 @@ uniform float far;
 #include "/lib/encode.glsl"
 
 		vec4 data = texture2D(colortex1,texcoord*RENDER_SCALE);
+		float depth = texture2D(depthtex0,texcoord*RENDER_SCALE).r;
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -428,7 +429,7 @@ vec3 closestToCamera3x3()
 	return dmin;
 }
 void main() {
-  /* DRAWBUFFERS:23 */
+  /* DRAWBUFFERS:2 */
     
   float v = 1.004f;
   vec2 d = vec2(v / ratio, v);
@@ -571,7 +572,8 @@ void main() {
 	#endif
 
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
-	gl_FragData[1].rgb = normal.rgb;
+	gl_FragData[1] = vec4(normal.rgb,depth);
+
 	
 
 

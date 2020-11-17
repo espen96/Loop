@@ -85,6 +85,56 @@ vec3 labpbr(vec4 unpacked_tex, out bool is_metal) {
 	return mat_data;
 }	
 
+vec3 rayTrace2(vec3 dir,vec3 position,float dither, float fresnel){
+
+    float quality = mix(10,SSR_STEPS,fresnel);
+    vec3 clipPosition = toClipSpace3(position);
+	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
+       (-near -position.z) / dir.z : far*sqrt(3.);
+    vec3 direction = normalize(toClipSpace3(position+dir*rayLength)-clipPosition);  //convert to clip space
+    direction.xy = normalize(direction.xy);
+
+    //get at which length the ray intersects with the edge of the screen
+    vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
+    float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+
+
+    vec3 stepv = direction * mult / quality*vec3(RENDER_SCALE,1.0);
+
+
+
+
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv*dither;
+	float minZ = clipPosition.z;
+	float maxZ = spos.z+stepv.z*0.5;
+	spos.xy+=offsets[framemod8]*texelSize*0.5*RENDER_SCALE;
+																	  
+
+
+    for (int i = 0; i <= int(quality); i++) {
+			#ifdef USE_QUARTER_RES_DEPTH
+			// decode depth buffer
+			float sp = sqrt(texelFetch2D(gaux1,ivec2(spos.xy/texelSize/4),0).w/65000.0);
+			sp = invLinZ(sp);
+          if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
+						return vec3(spos.xy/RENDER_SCALE,sp);
+	        }
+        spos += stepv;
+			#else
+			float sp = texelFetch2D(depthtex1,ivec2(spos.xy/texelSize),0).r;
+          if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
+						return vec3(spos.xy/RENDER_SCALE,sp);
+
+	        }
+        spos += stepv;
+			#endif
+		//small bias
+		minZ = maxZ-0.00004/ld(spos.z);
+		maxZ += stepv.z;
+    }
+
+    return vec3(1.1);
+}
 
 vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	
@@ -129,10 +179,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 	float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 	float currZ = linZ(spos.z);
 
-	if( sp < currZ) {
-		float dist = abs(sp-currZ)/currZ;
-		if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
-	}
+
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
 	spos += stepv*noise;	
@@ -142,7 +189,7 @@ vec3 sspr(vec3 dir,vec3 position,float noise, float fresnel){
 		float currZ = linZ(spos.z);
 		if( sp < currZ) {
 			float dist = abs(sp-currZ)/currZ;
-			if (dist <= 0.035 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+			if (dist <= 0.036 ) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
 			spos += stepv;
 	}
@@ -175,12 +222,12 @@ vec3 TangentToWorld2(vec3 N, vec3 H)
 }
 
 vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float fresnel, vec3 sky){
-	int nrays = 4;
+	int nrays = 1;
 	vec3 intRadiance = vec3(0.0);
+
 	for (int i = 0; i < nrays; i++){
 
-	
-		if (roughness>=0.75) break;
+
 
 	
 
@@ -188,29 +235,33 @@ vec3 SSPTR(vec3 normal,vec4 noise,vec3 fragpos,float roughness, float f0, float 
 		int seed = (frameCounter%10000)*nrays+i;
 		vec2 ij = fract(R2_samples2(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample2(ij));
-		rayDir = TangentToWorld2(normal*fresnel,rayDir);
-		vec3 offset = rayDir-normal;
-	//	if (offset.x>=0.2) break;
+		rayDir = TangentToWorld2(normal,rayDir);
 
-		vec3 reflectedVector = reflect(normalize(fragpos), normalize(mix(normal,rayDir,(clamp(roughness,0,1)))));
-		
+
+		vec3 reflectedVector = reflect(normalize(fragpos), (mix(normal,rayDir,(roughness))));
+
 		vec3 rayHit = sspr(reflectedVector, fragpos, R2_dither(),fresnel);
 
-		if (rayHit.z < 1.0 - 1e-5){
+		if (rayHit.z < 1.0){
+
+
+		
+		
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
-			
+		
 			
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-			intRadiance = texture2D(colortex5,previousPosition.xy).rgb;
+			intRadiance = texture2D(colortex3,rayHit.xy*RENDER_SCALE).rgb;
 
 			
 
 		
-		} 
+		}else{ 
 
+			intRadiance += sky;}
 
 	}
-	return clamp(intRadiance/nrays,0,10)*(1-roughness)*f0;
+	return intRadiance*f0;
 }

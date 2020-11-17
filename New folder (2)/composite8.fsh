@@ -39,7 +39,7 @@ uniform float far;
 uniform float near;
 
 
-vec2 texcoord = gl_FragCoord.xy*texelSize;	
+varying vec2 texcoord;
 #define pow2(x) (x * x)
 #define pow3(x) (pow2(x) * x)
 #define pow4(x) (pow2(x) * pow2(x))
@@ -142,6 +142,8 @@ void main() {
 
 
 		vec4 data = texture2D(colortex1,texcoord);
+		vec4 mask = vec4(texture2D(colortex7,texcoord).rgba);
+		float mask2 = luma(mask.rgb);
 
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));	
@@ -155,19 +157,19 @@ void main() {
 
 	vec4 data1 = encode(normal,lightmap);
 	vec4 data0 = vec4(albedo,dataUnpacked1.w);
-#ifdef RT_FILTER
-vec4 color = vec4(0.0);
+
+vec4 color = texture2D(colortex5,texcoord);
 
 
-if(z <1) color.rgb = atrous(texcoord,64).rgb;
+
+if(z <1 &&mask2 > 0.001) color.rgb = atrous3(texcoord,2).rgb;
+
 
 	gl_FragData[0] = color; 
-#else
-	vec3 color2 = texture2D(colortex7,texcoord).rgb;
-	gl_FragData[0].rgb = color2;
-#endif
 
-gl_FragData[1] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));		
+
+
+
 
 
 }

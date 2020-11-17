@@ -24,7 +24,7 @@ uniform vec3 sunPosition;
 uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
-
+flat varying vec3 refractedSunVec;
 
 
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
@@ -69,6 +69,7 @@ void main() {
 
 	WsunVec =  lightCol.a*normalize(mat3(gbufferModelViewInverse) *  sunPosition);
 	zMults = vec3((far * near)*2.0,far+near,far-near);
+	refractedSunVec = refract(WsunVec, -vec3(0.0,1.0,0.0), 1.0/1.33333);
 
 
 }

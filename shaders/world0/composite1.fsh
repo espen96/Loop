@@ -32,7 +32,7 @@ uniform sampler2D depthtex2;//depth
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
-
+flat varying vec3 refractedSunVec;
 
 uniform sampler2DShadow shadow;
 
@@ -87,7 +87,7 @@ vec3 toScreenSpace(vec3 p) {
 #include "/lib/sky_gradient.glsl"
 #include "/lib/stars.glsl"
 #include "/lib/volumetricClouds.glsl"
-#include "/lib/waterBump.glsl"
+
 
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
@@ -246,10 +246,11 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	for (int i = 0; i < 5; i++){
-		vec2 displ = texture2D(noisetex, pos/32.0 + movement).bb*2.0-1.0;
+	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
+	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
-		caustic += pow(0.5+sin(dot((pos+vec2(1.74*frameTimeCounter)) * exp2(0.8*i) + displ*3.0,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
 		weightSum += exp2(-0.8*i);
 	}
 	return caustic * weightSum;
@@ -296,57 +297,6 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		inColor += vL;
 }
 
-#ifdef SSAO
-void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal)
-{
-	ivec2 pos = ivec2(gl_FragCoord.xy);
-	const float tan70 = tan(70.*3.14/180.);
-	float mulfov2 = gbufferProjection[1][1]/tan70;
-
-	const float PI = 3.14159265;
-	const float samplingRadius = 0.712;
-	float angle_thresh = 0.05;
-	float maxR2 = fragpos.z*fragpos.z*mulfov2*2.*1.412/50.0;
-
-
-
-	float rd = mulfov2*0.04;
-	//pre-rotate direction
-	float n = 0.;
-
-	occlusion = 0.0;
-
-	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
-	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
-
-	vec2 v = fract(vec2(dither,R2_dither()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
-	for (int j = 0; j < 7 ;j++) {
-
-			vec2 sp = tapLocation2(j,v.x,7,88.,v.y);
-			vec2 sampleOffset = sp*rd;
-			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio)*RENDER_SCALE);
-			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth*RENDER_SCALE.x && offset.y < viewHeight*RENDER_SCALE.y ) {
-				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x) * vec3(1.0/RENDER_SCALE, 1.0));
-
-				vec3 vec = t0.xyz - fragpos;
-				float dsquared = dot(vec,vec);
-				if (dsquared > 1e-5){
-					if (dsquared < maxR2){
-						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
-						occlusion += NdotV * clamp(1.0-dsquared/maxR2,0.0,1.0);
-					}
-					n += 1.0;
-				}
-			}
-		}
-
-
-
-		occlusion = clamp(1.0-occlusion/n*1.6,0.,1.0);
-		//occlusion = mult;
-
-}
-#endif
 
 
 
@@ -364,7 +314,7 @@ void main() {
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
-	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
+	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
 	float z0 = texture2D(depthtex0,texcoord).x;
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
@@ -399,17 +349,17 @@ void main() {
 		
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 
-		bool iswater = texture2D(colortex3,texcoord).a > 0.9;
+		bool iswater = masks > 0.9;
 		if (iswater){
-		gl_FragData[0].a = masks;
+
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
-			float estimatedSunDepth = estimatedDepth/abs(WsunVec.y); //assuming water plane
+			float estimatedSunDepth = estimatedDepth/abs(refractedSunVec.y); //assuming water plane
 
-			vec3 lightColVol = lightCol.rgb * (0.91-pow(1.0-WsunVec.y,5.0)*0.86);	//fresnel
-			vec3 ambientColVol = ambientUp*8./150./3.*0.84*2.0/pi * eyeBrightnessSmooth.y / 240.0;
+			vec3 lightColVol = lightCol.rgb * (1.0-pow(1.0-WsunVec.y,5.0));	//fresnel
+			vec3 ambientColVol = ambientUp*8./150./3.*0.5 * eyeBrightnessSmooth.y / 240.0;
 			if (isEyeInWater == 0)
 				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
 		}
@@ -438,9 +388,7 @@ void main() {
 		vec2 lightmap = vec2(dataUnpacked1.yz);			
 
 		
-		#ifdef GI
-		vec3 rsm = vec3(decodeVec2(texture2D(colortex7,texcoord).r),texture2D(colortex7,texcoord).g);
-		#endif
+
 		#ifdef PBR
 		vec4 specular = vec4(sp1,sp2);
 		#endif
@@ -453,45 +401,19 @@ void main() {
 		bool entity = (masks) <=0.10 && (masks) >=0.09;
 		bool lightning = (masks) <=0.20 && (masks) >=0.19;
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-		float NdotL = dot(normal,WsunVec);
+		float NdotLGeom = dot(normal,WsunVec);
+		float NdotL = NdotLGeom;
+		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater ==1))
+			NdotL = dot(normal,refractedSunVec);
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		
 		float ao = 1.0;
 		
-		#ifndef SSPT
-		if (!hand)
-		{
-		#ifdef SSAO
-			ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-		#endif
-		}
-		#endif
+
 		
 		
 		
-#ifdef PBR		
-//////////////////////////////PBR//////////////////////////////		
 
-		vec3 mat_data = vec3(0.0);		
-
-		bool is_metal = false;
-		
-				mat_data = labpbr(specular, is_metal);
-		float roughness = mat_data.x;
-		float F0 = mat_data.y;
-		float f0 = (F0*(1.0-gl_FragData[0].a));
-		vec3 sky = skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
-
-
-		float fresnel = pow(clamp(1.0 + dot(normal, normalize(fragpos.xyz)), 0.0, 1.0), 5.0);
-		fresnel = mix(f0,1.0,fresnel);
-
-	
-		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel, sky);
-		     reflected = ssptr.rgb*fresnel;
-
-//////////////////////////////PBR//////////////////////////////		
-#endif
 
 
 float weight = 0.0;
@@ -530,7 +452,7 @@ vec3 rsmfinal = vec3(0.0);
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
 				float rdMul = filtered.r*distortFactor*d0*k/shadowMapResolution;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-				float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
+				float distortThresh = (sqrt(1.0-NdotLGeom*NdotLGeom)/NdotLGeom+0.7)/distortFactor;
 				#ifdef Variable_Penumbra_Shadows
 				float diffthresh = distortThresh/6000.0*threshMul;
 				#else
@@ -551,24 +473,34 @@ vec3 rsmfinal = vec3(0.0);
 		
 			vec3 closestToCamera = vec3(texcoord,texture2D(depthtex2,texcoord).x);
 
-			
-			
-#ifdef GI			
-	//reproject previous frame
-	vec3 fragposition =	toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
-	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
-	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
-	previousPosition = toClipSpace3Prev(previousPosition);
-	vec2 velocity = previousPosition.xy - closestToCamera.xy;
-	previousPosition.xy = texcoord + velocity;
-			
-		
-	//	rsm = mix(texture2D(colortex5,previousPosition.xy).rgb,rsm,0.99);
-		
+				
+#ifdef PBR		
+//////////////////////////////PBR//////////////////////////////		
 
-		if(!hand ||!translucent || !iswater ||!translucent2 || lightmap.y>0) rsmfinal += rsm;
+		vec3 mat_data = vec3(0.0);		
 
-#endif		
+		bool is_metal = false;
+		
+				mat_data = labpbr(vec4(specular.x+0.1,specular.yzw), is_metal);
+		float roughness = mat_data.x;
+		float F0 = mat_data.y;
+		float f0 = (F0*(1.0-gl_FragData[0].a));
+		vec3 sky = skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+		sky *= lightmap.y;	
+
+
+		float fresnel = pow(clamp(1.0 + dot(normal, normalize(fragpos.xyz)), 0.0, 1.0), 5.0);
+		fresnel = mix(f0,1.0,fresnel);
+
+	
+		vec3 ssptr = SSPTR(normal2, blueNoise(gl_FragCoord.xy), fragpos, roughness, f0, fresnel, sky);
+		     reflected = (ssptr.rgb*fresnel);
+
+//////////////////////////////PBR//////////////////////////////		
+#endif
+
+		
+	
 		
 		
 
@@ -706,40 +638,18 @@ vec3 rsmfinal = vec3(0.0);
 		if (lightning) ambientLight *= vec3(2.0);	
 
 		
-			#ifdef SPEC_SCREENSPACE_REFLECTIONS
-				if (!entity) albedo.rgb += reflected.rgb*(shading*diffuseSun)/pi;
-			#endif
-			
-			
-			#ifndef SSPT
-
-
-				 ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) +((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y);
-			if (emissive)  ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*albedo.rgb+0.3;
-
-			#else
-			
-		  	if(!hand && !emissive){ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B)+((rsmfinal*directLightCol.rgb/pi*8./150./3.)*lightmap.y), normalize(albedo+1e-5)*0.7);
-		}
-			else{	
-				
-				ambientLight = ambientLight * filtered.y* custom_lightmap.x + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B) + custom_lightmap.z*vec3(0.9,1.0,1.5)*filtered.y;
-				if (emissive)  ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*albedo.rgb+0.3;
-
-		 
-}
-			#endif			
+	
 			//combine all light sources
+			gl_FragData[1] = vec4(albedo.rgb,z);
 
-		    
-			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*(directLightCol.rgb*lightmap.yyy) + ambientLight)*albedo*ao;
-	//		gl_FragData[0].rgb = vec3(rsmfinal);	
+			gl_FragData[0].rgb = texture2D(colortex3,texcoord).rgb;				
 		}
 		
 }
 	
 
 gl_FragData[0].a = masks;	
+	
 
 
 	

@@ -29,7 +29,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec2 texelSize;
 uniform vec3 cameraPosition;
-#include "/lib/waterBump.glsl"
+
 #include "/lib/waterOptions.glsl"
 #include "/lib/encode.glsl"
 #include "/lib/res_params.glsl"
@@ -88,7 +88,23 @@ vec4 BilateralUpscale(sampler2D tex, sampler2D depth,vec2 coord,float frDepth){
 	
 	
 
-	
+float getWaterHeightmap(vec2 posxz, float iswater) {
+	vec2 pos = posxz;
+  float moving = clamp(iswater*2.-1.0,0.0,1.0);
+	vec2 movement = vec2(-0.005*frameTimeCounter*moving,0.0);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	for (int i = 1; i < 3; i++){
+		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+    float wave = texture2D(noisetex, (pos*vec2(3., 1.0)/128. + movement + displ/128.0)*exp(i*1.0)).b;
+		caustic += wave*exp(-i*1.0);
+		weightSum += exp(-i*1.0);
+		pos = rotationMatrix * pos;
+	}
+	return caustic / weightSum;
+}	
 	
 	
 	
@@ -153,26 +169,17 @@ bool  iswater = (mask2.r  > 0);
 
 
   
-  if (iswater||isglass){
-
+  if (iswater){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
   	vec3 np3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition;
-    float norm = glassRefraction(np3.xz*1.71, 4.0, 0.25, 1.0,isglass);
-    float displ = norm/(length(fragpos)/far)/40.;
-    if(mask2.r>0)refractedCoord += displ;
-    if(mask2.g>0 || mask2.b >0)refractedCoord += vec2(0.0,-displ);
+    float norm = getWaterHeightmap(np3.xz+np3.y, 1.0)-0.5;
+    float displ = norm/(length(fragpos)/far)/2000. * (1.0 + isEyeInWater*2.0);
     refractedCoord += displ*RENDER_SCALE;
 
-    if (texture2D(colortex3,refractedCoord).a >0.90 && texture2D(colortex3,refractedCoord).a<0.902) mask2 = vec3(0,1,0);	
-    if (mask2.g< 1 &&!isglass) refractedCoord = texcoord;	
-
-
-	
-
-
+    if (texture2D(colortex3,refractedCoord).a < 0.90)
+      refractedCoord = texcoord;
 
   }
-  
     refractedCoord2 = refractedCoord;
   
 	vec4 transparencies = texture2D(colortex2,refractedCoord);  

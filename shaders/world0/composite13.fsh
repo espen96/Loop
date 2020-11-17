@@ -1,11 +1,11 @@
 #version 120
-//Merge and upsample the blurs into a 1/4 res bloom buffer
+//6 Vertical gaussian blurs and vertical downsampling
 
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/settings.glsl"
 #define fsh
 
-#include "/program/comp/bloom4.glsl"
+#include "/program/comp/bloom3.glsl"
 
 

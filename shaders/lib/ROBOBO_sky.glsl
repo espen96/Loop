@@ -74,31 +74,38 @@ vec3 sky_density(float centerDistance) {
 	return vec3(rayleighMie, ozone);
 }
 
-vec3 sky_airmass(vec3 position, vec3 direction, float rayLength, const float steps) {
-	float stepSize  = rayLength * (1.1 / steps);
-	vec3  increment = direction * stepSize;
-//	position += increment * 0.1;
-	position += increment * 0.45;
-
-	vec3 airmass = vec3(0.0);
-	for (int i = 0; i < steps; ++i, position += increment) {
-		airmass += sky_density(length(position));
-	}
-
-	return airmass * stepSize;
+// Seb Lagarde Approx
+float ATanPos(float x)
+{
+    float t0 = (x < 1.0f) ? x : 1.0f / x;
+    float t1 = (-0.218891 * t0 + 1.01991) * t0; // p(x)
+    return (x < 1.0f) ? t1: PI/2.0 - t1; // undo range reduction
 }
+
+float ATan(float x)
+{
+    float t0 = ATanPos(abs(x));
+    return (x < 0.0f) ? -t0: t0; // undo range reduction
+}
+
+
+ 
 vec3 sky_airmass(vec3 position, vec3 direction, const float steps) {
-	float rayLength = dot(position, direction);
-	      rayLength = rayLength * rayLength + sky_atmosphereRadiusSquared - dot(position, position);
-		  if (rayLength < 0.0) return vec3(0.0);
-	      rayLength = sqrt(rayLength) - dot(position, direction);
+	float l = length(position);
+	vec2 rayLeighMie = exp(sky_scaledPlanetRadius - l * sky_inverseScaleHeights)  / sky_inverseScaleHeights;
+	// Integral of the lorentzian approximation of ozone distribution : 1/(1+((x-40000)/5000)^2)
+	float l2 = (l - 40000 - sky_planetRadius)/7000.;
+	float ozone =  0.5 * PI *7000. - ATan(l2)*7000.;
+	// The integral path is longer near the horizon, it is "streching" the vertical path
+	return vec3(rayLeighMie, ozone) / clamp(direction.y*0.82+0.18*(position.y-sky_planetRadius)/110e3,1e-10,1.0);
+															  
 
-	return sky_airmass(position, direction, rayLength, steps);
+														   
 }
 
-vec3 sky_opticalDepth(vec3 position, vec3 direction, float rayLength, const float steps) {
-	return sky_coefficientsAttenuation * sky_airmass(position, direction, rayLength, steps);
-}
+																						  
+																						 
+ 
 vec3 sky_opticalDepth(vec3 position, vec3 direction, const float steps) {
 	return sky_coefficientsAttenuation * sky_airmass(position, direction, steps);
 }
@@ -112,7 +119,7 @@ vec3 sky_transmittance(vec3 position, vec3 direction, const float steps) {
 vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 sunVector, vec3 moonVector, out vec2 pid, out vec3 transmittance, const int iSteps, float noise) {
 	const int jSteps = 4;
 
-	vec3 viewPosition = (sky_planetRadius + eyeAltitude) * upVector;
+	vec3 viewPosition = vec3(0.0,sky_planetRadius + eyeAltitude,0.0);
 
 	vec2 aid = rsi(viewPosition, viewVector, sky_atmosphereRadius);
 	if (aid.y < 0.0) {transmittance = vec3(1.0); return vec3(0.0);}
@@ -124,10 +131,11 @@ vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 s
 
 	float stepSize  = (sd.y - sd.x) * (1.0 / iSteps);
 	vec3  increment = viewVector * stepSize;
-	vec3  position  = viewVector * sd.x + viewPosition;
-	position += increment * (0.34*noise);
-	vec2 phaseSun  = sky_phase(dot(viewVector, sunVector ), sky_mieg);
-	vec2 phaseMoon = sky_phase(dot(viewVector, moonVector), sky_mieg);
+													
+	vec3  position  = viewPosition + increment * (0.34*noise);
+	float SdotV = dot(viewVector, sunVector );
+	vec2 phaseSun  = sky_phase(SdotV, sky_mieg);
+	vec2 phaseMoon = sky_phase(-SdotV, sky_mieg);
 
 	vec3 scatteringSun     = vec3(0.0);
 	vec3 scatteringMoon    = vec3(0.0);
@@ -141,7 +149,7 @@ vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 s
 		vec3 stepOpticalDepth = sky_coefficientsAttenuation * stepAirmass;
 
 		vec3 stepTransmittance       = exp2(-stepOpticalDepth * rLOG2);
-		vec3 stepTransmittedFraction = clamp01((stepTransmittance - 1.0) / -stepOpticalDepth);
+		vec3 stepTransmittedFraction = (stepTransmittance - 1.0) / -stepOpticalDepth;
 		vec3 stepScatteringVisible   = transmittance * stepTransmittedFraction;
 
 		scatteringSun  += sky_coefficientsScattering * (stepAirmass.xy * phaseSun ) * stepScatteringVisible * sky_transmittance(position, sunVector,  jSteps);

@@ -1,5 +1,5 @@
 #version 120
-#include "/lib/settings.glsl"
+#define TAA
 
 /*
 !! DO NOT REMOVE !!

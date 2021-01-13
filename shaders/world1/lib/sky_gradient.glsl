@@ -1,6 +1,6 @@
 #define DRAW_SUN //if not using custom sky
-#define SKY_BRIGHTNESS_DAY 100.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
-#define SKY_BRIGHTNESS_NIGHT 100.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
+#define SKY_BRIGHTNESS_DAY 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
+#define SKY_BRIGHTNESS_NIGHT 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
 vec3 drawSun(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
 	return inColor+nsunlight/0.0008821203*pow(smoothstep(cos(0.0093084168595*3.2),cos(0.0093084168595*1.8),cosY),3.)*0.62;

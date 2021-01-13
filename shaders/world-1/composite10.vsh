@@ -1,11 +1,17 @@
 #version 120
-//6 Vertical gaussian blurs and vertical downsampling
 
-#extension GL_EXT_gpu_shader4 : enable
+uniform float viewWidth;
+uniform float viewHeight;
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
+//////////////////////////////VOID MAIN//////////////////////////////
 
-#include "/lib/settings.glsl"
-#define vsh
-
-#include "/program/comp/bloom3.glsl"
-
-
+void main() {
+	//Improves performances and makes sure bloom radius stays the same at high resolution (>1080p)
+	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
+	gl_Position = ftransform();
+	//*0.51 to avoid errors when sampling outside since clearing is disabled
+	gl_Position.xy = (gl_Position.xy*0.5+0.5)*0.26/clampedRes*vec2(1920.0,1080.)*2-1.0;
+}

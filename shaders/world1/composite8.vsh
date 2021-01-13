@@ -1,10 +1,17 @@
 #version 120
-//Temporal Anti-Aliasing + Dynamic exposure calculations (vertex shader)
-
 #extension GL_EXT_gpu_shader4 : enable
-#include "/lib/settings.glsl"
-#include "/lib/res_params.glsl"
 
-#define vsh
 
-#include "/program/comp/taa.glsl"
+varying vec2 texcoord;
+flat varying float exposureA;
+flat varying float tempOffsets;
+uniform sampler2D colortex4;
+uniform int frameCounter;
+#include "/lib/util.glsl"
+void main() {
+
+	tempOffsets = HaltonSeq2(frameCounter%10000);
+	gl_Position = ftransform();
+	texcoord = gl_MultiTexCoord0.xy;
+	exposureA = texelFetch2D(colortex4,ivec2(10,37),0).r;
+}

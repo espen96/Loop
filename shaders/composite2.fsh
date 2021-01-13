@@ -758,9 +758,7 @@ void main() {
 
 			}
 
-
-			gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
-			gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
+			if (!hand) gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
 
 			//waterVolumetrics(gl_FragData[0].rgb, vec3(0.0), fragpos, 0.0, 0.0, length(fragpos), noise, waterEpsilon, ambientUp*8./150./3. + custom_lightmap.z, lightCol.rgb);
 		}

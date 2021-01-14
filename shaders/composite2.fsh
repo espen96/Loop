@@ -2,7 +2,13 @@
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
+
+
 #define SPEC
+#define SPEC_REF
+
+
+
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
 #define POM_DEPTH 0.15 // [0.025 0.05 0.075 0.1 0.125 0.15 0.20 0.25 0.30 0.50 0.75 1.0] //Increase to increase POM strength
 #define CAVE_LIGHT_LEAK_FIX // Hackish way to remove sunlight incorrectly leaking into the caves. Can inacurrately create shadows in some places
@@ -732,6 +738,7 @@ void main() {
 				// Skip calculations if ray does not contribute much to the lighting
 				if (luma(rayContrib) > 0.02){
 					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
+					#ifdef SPEC_REF	
 					// Scale quality with ray contribution
 					float rayQuality = 35*sqrt(luma(rayContrib));
 					// Skip SSR if ray contribution is low
@@ -748,6 +755,7 @@ void main() {
 							}
 						}
 					}
+					#endif
 
 					// Sample skybox
 					if (reflection.a < 0.9){

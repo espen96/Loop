@@ -602,7 +602,7 @@ void main() {
 			#endif
 
 		#ifdef CAVE_LIGHT_LEAK_FIX
-			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0));
+			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 		#endif
 		}
 		#ifdef CLOUDS_SHADOWS

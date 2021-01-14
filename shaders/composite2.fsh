@@ -378,7 +378,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 			intRadiance += ambient;
 		}
 	}
-	return intRadiance/nrays + (1.0-occlusion/nrays)*torch;
+	return clamp(intRadiance/nrays + (1.0-occlusion/nrays)*torch,0,10);
 }
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)

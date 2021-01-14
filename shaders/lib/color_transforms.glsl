@@ -40,24 +40,24 @@ vec3 ToneMap_Hejl2015(in vec3 hdr)
 }
 vec3 HableTonemap(vec3 linearColor) {
 	// A = shoulder strength
-	const float A = 0.45;
+	const float A = 0.4;
 	// B = linear strength
-	const float B = 0.28;
+	const float B = 0.32;
 	// C = linear angle
 	const float C = 0.1;
 	// D = toe strength
-	const float D = 0.5;
+	const float D = 0.25;
 	// E = toe numerator
-	const float E = 0.01;
+	const float E = 0.016;
 	// F = toe denominator
-	const float F = 0.3;
+	const float F = 0.30;
 	// Note: E / F = toe angle
 	// linearWhite = linear white point value
 
 	vec3 x = linearColor*2.0;
 	vec3 color = ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
 
-	const float W = 11.0;
+	const float W = 12.0;
 	const float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
 
 	return color / white;
@@ -69,7 +69,7 @@ return x/(1.0+x);
 }
 vec3 ACESFilm( vec3 x )
 {
-		x*=0.9;
+		x *= 0.23/0.267;
     float a = 2.51f;
     float b = 0.03f;
     float c = 2.43f;
@@ -81,10 +81,10 @@ vec3 ACESFilm( vec3 x )
 // From https://www.shadertoy.com/view/WdjSW3
 vec3 Tonemap_Lottes(vec3 x) {
     // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
-		const float a = 1.6;
-    const float d = 0.977;
-    const float hdrMax = 8.0;
-    const float midIn = 0.23;
+    const float a = 1.7;
+    const float d = 0.92;
+    const float hdrMax = 3.0;
+    const float midIn = 0.2475;
     const float midOut = 0.267;
 
     // Can be precomputed
@@ -143,15 +143,15 @@ vec3 Tonemap_Uchimura(vec3 x, float P, float a, float m, float l, float c, float
     vec3 S = P - (P - S1) * exp(CP * (x - S0));
     vec3 L = m + a * (x - m);
 
-    return clamp(T * w0 + L * w1 + S * w2,0.0,1.0);
+    return T * w0 + L * w1 + S * w2;
 }
 
-vec3 Tonemap_Uchimura(vec3 x) {
-	const float P = 1.0;  // max display brightness 1.0
-	const float a = 1.0;  // contrast 1.0
-	const float m = 0.12; // linear section start 0.22
-	const float l = 0.22;  // linear section length 0.4
-	const float c = 1.5; // black 1.33
-	const float b = 0.0;  // pedestal 0.0
-    return Tonemap_Uchimura_Modified(x, P, a, m, l, c, b);
+vec3 Tonemap_Loop(vec3 x) {
+    const float P = 1.0;  // max display brightness
+    const float a = 0.9;  // contrast
+    const float m = 0.09; // linear section start
+    const float l = 0.4;  // linear section length
+    const float c = 1.3; // black
+    const float b = 0.0;  // pedestal
+    return Tonemap_Uchimura(x, P, a, m, l, c, b);
 }

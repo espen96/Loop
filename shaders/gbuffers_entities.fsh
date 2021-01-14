@@ -67,7 +67,7 @@ void main() {
 	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
-	if (data0.a > 0.1) data0.a = normalMat.a;
+	if (data0.a > 0.3) data0.a = normalMat.a;
 	else data0.a = 0.0;
 
 

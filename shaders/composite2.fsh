@@ -621,7 +621,7 @@ void main() {
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 
 		vec3 directLightCol = lightCol.rgb;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
+		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
 			emitting = luma(albedo)*3.0*Emissive_Strength;
@@ -713,7 +713,7 @@ void main() {
 			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
 
 			vec3 indirectSpecular = vec3(0.0);
-			const int nSpecularSamples = 1;
+			const int nSpecularSamples = 2;
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;
 			for (int i = 0; i < nSpecularSamples; i++){
@@ -733,7 +733,7 @@ void main() {
 				if (luma(rayContrib) > 0.02){
 					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
 					// Scale quality with ray contribution
-					float rayQuality = 16*sqrt(luma(rayContrib));
+					float rayQuality = 35*sqrt(luma(rayContrib));
 					// Skip SSR if ray contribution is low
 					if (rayQuality > 5.0) {
 						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);

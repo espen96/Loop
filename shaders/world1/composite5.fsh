@@ -30,7 +30,9 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
-
+uniform sampler2DShadow shadow;
+flat varying vec3 refractedSunVec;
+flat varying vec3 WsunVec;
 
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
@@ -46,10 +48,13 @@ uniform float frameTimeCounter;
 uniform int isEyeInWater;
 uniform vec2 texelSize;
 #include "lib/waterOptions.glsl"
+#include "lib/Shadow_Params.glsl"
 #include "lib/color_transforms.glsl"
 #include "lib/color_dither.glsl"
 #include "lib/projections.glsl"
 #include "lib/sky_gradient.glsl"
+#include "/lib/res_params.glsl"
+
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
 float interleaved_gradientNoise(){
@@ -200,9 +205,9 @@ float blueNoise(){
 void main() {
 /* DRAWBUFFERS:0 */
 	if (isEyeInWater == 0){
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
+		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
+		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
 		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
@@ -213,10 +218,10 @@ void main() {
 		vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 		vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 		vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
-		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
-		vec2 tc = floor(gl_FragCoord.xy)*2.0*texelSize+0.5*texelSize;
+		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
+		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
-		vec3 fragpos = toScreenSpace(vec3(tc,z));
+		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		vec3 vl = vec3(0.0);
 		float estEyeDepth = clamp((14.0-eyeBrightnessSmooth.y/255.0*16.0)/14.0,0.,1.0);
@@ -224,8 +229,9 @@ void main() {
 		#ifndef lightMapDepthEstimation
 			estEyeDepth = max(Water_Top_Layer - cameraPosition.y,0.0);
 		#endif
-		waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), noise, totEpsilon, scatterCoef, ambientUp*8./150./3.*0.84*2.0/pi, lightCol.rgb*8./150./3.0*(0.91-pow(1.0-sunElevation,5.0)*0.86), dot(normalize(fragpos), normalize(sunVec)));
+		waterVolumetrics(vl, vec3(0.0), fragpos, estEyeDepth, estEyeDepth, length(fragpos), noise, totEpsilon, scatterCoef, ambientUp*8./150./3.*0.5, lightCol.rgb*8./150./3.0*(1.0-pow(1.0-sunElevation*lightCol.a,5.0)), dot(normalize(fragpos), normalize(sunVec)));
 		gl_FragData[0] = clamp(vec4(vl,1.0),0.000001,65000.);
 	}
+
 
 }

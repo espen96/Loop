@@ -14,7 +14,6 @@
 #define TORCH_B 0.12 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
 const bool shadowHardwareFiltering = true;
 
-varying vec2 texcoord;
 
 flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
 flat varying vec3 ambientUp;
@@ -69,11 +68,19 @@ vec3 toScreenSpace(vec3 p) {
     vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
     return fragposition.xyz / fragposition.w;
 }
+vec3 toScreenSpacePrev(vec3 p) {
+	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
+    vec3 p3 = p * 2. - 1.;
+    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    return fragposition.xyz / fragposition.w;
+}
+
+#include "/lib/res_params.glsl"
 #include "lib/waterOptions.glsl"
-#include "lib/color_transforms.glsl"
-#include "lib/sky_gradient.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/sky_gradient.glsl"
 #include "lib/stars.glsl"
-#include "lib/volumetricClouds.glsl"
+#include "/lib/volumetricClouds.glsl"
 #include "lib/waterBump.glsl"
 
 vec3 normVec (vec3 vec){
@@ -164,10 +171,9 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither,float translucent){
 
 
 
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0);
+    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
 
-	vec3 spos = clipPosition+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
-
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
 
 
 
@@ -245,6 +251,7 @@ vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 
     return vec2(cos_v, sin_v)*ssR;
 }
+ 
 void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal)
 {
 	ivec2 pos = ivec2(gl_FragCoord.xy);
@@ -257,8 +264,8 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 
 
-
 	float rd = mulfov2*0.05;
+	
 	//pre-rotate direction
 	float n = 0.;
 
@@ -271,9 +278,9 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	for (int j = 0; j < SSAO_SAMPLES+2 ;j++) {
 			vec2 sp = tapLocation(j,v.x,SSAO_SAMPLES+2,2.,v.y);
 			vec2 sampleOffset = sp*rd;
-			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight));
-			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth && offset.y < viewHeight ) {
-				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x));
+			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio)*RENDER_SCALE);
+			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth*RENDER_SCALE.x && offset.y < viewHeight*RENDER_SCALE.y ) {
+				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x) * vec3(1.0/RENDER_SCALE, 1.0));
 
 				vec3 vec = t0.xyz - fragpos;
 				float dsquared = dot(vec,vec);
@@ -294,8 +301,8 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 
 }
 void main() {
-	float dirtAmount = Dirt_Amount;
-	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
+	vec2 texcoord = gl_FragCoord.xy*texelSize;	
+	float dirtAmount = Dirt_Amount;	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B) / pi;
@@ -304,7 +311,7 @@ void main() {
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
-	vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z));
+	vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
 	vec3 np3 = normVec(p3);
 
@@ -318,7 +325,7 @@ void main() {
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
-			vec3 fragpos0 = toScreenSpace(vec3(texcoord-vec2(tempOffset)*texelSize*0.5,z0));
+			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
 			float VdotU = np3.y;
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane

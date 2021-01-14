@@ -370,11 +370,11 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent;
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
-			occlusion += 1.0;
+			occlusion += 1.5;
 		}
 		else {
-		//	float bounceAmount = float(rayDir.y > 0.0) + clamp(-rayDir.y*0.1+0.1, 0.0,1.0);
-			//vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb * bounceAmount;
+
+		
 			intRadiance += ambient;
 		}
 	}

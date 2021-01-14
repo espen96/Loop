@@ -4,6 +4,7 @@
 //#define POM
 
 
+#define SSAO
 #define SPEC
 #define SPEC_REF
 
@@ -370,7 +371,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 				intRadiance += texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent;
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
-			occlusion += 1.2;
+			occlusion += 1.1;
 		}
 		else {
 
@@ -661,7 +662,7 @@ void main() {
 			}
 			ambientLight *= mix(caustics,1.0,0.85);
 			ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
-			#ifdef SSGI
+			#ifndef SSGI
 				float ao = 1.0;
 				if (!hand)
 					ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
@@ -688,10 +689,21 @@ void main() {
 					ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
 			#endif
 			//combine all light sources
+			
+			
+			
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
+			
+			#ifndef SSGI
+			#ifdef SSAO
+				float ao = 1.0;
+				if (!hand)
+					ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
+				gl_FragData[0].rgb *= ao;
+			#endif
+			#endif
 
-
-		#ifdef SPEC
+	#ifdef SPEC
 			// Speculars
 			// Unpack labpbr
 			float roughness = unpackRoughness(trpData.x);
@@ -755,7 +767,7 @@ void main() {
 							}
 						}
 					}
-					#endif
+	#endif
 
 					// Sample skybox
 					if (reflection.a < 0.9){
@@ -769,6 +781,7 @@ void main() {
 			}
 
 			if (!hand) gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
+
 		#endif
 			//waterVolumetrics(gl_FragData[0].rgb, vec3(0.0), fragpos, 0.0, 0.0, length(fragpos), noise, waterEpsilon, ambientUp*8./150./3. + custom_lightmap.z, lightCol.rgb);
 		}

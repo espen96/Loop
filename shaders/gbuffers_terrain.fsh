@@ -232,6 +232,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	
 	normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
+	normalTex.z = clamp(normalTex.z,0,1);	
 	normal = applyBump(tbnMatrix,normalTex);
 
 

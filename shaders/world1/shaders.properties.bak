@@ -1,18 +1,20 @@
 #shaders/shaders.properties
 #Minecraft Settings
 oldLighting=false
-underwaterOverlay=false
+underwaterOverlay = false
 sun=false
 moon=true
 stars=false
 vignette=false
 dynamicHandLight=true
 
-program.composite7.enabled=TAA_UPSCALING
+
+
+
+
 #Get the correct alpha value : S_A*(1-DST_A)+DST_A
 blend.gbuffers_terrain=off
 blend.gbuffers_textured= SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE_MINUS_DST_ALPHA ONE
-blend.gbuffers_armor_glint= SRC_ALPHA ZERO ONE_MINUS_DST_ALPHA ONE
 blend.gbuffers_textured_lit= SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE_MINUS_DST_ALPHA ONE
 blend.gbuffers_weather= SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE_MINUS_DST_ALPHA ONE
 blend.gbuffers_water= SRC_ALPHA ONE_MINUS_SRC_ALPHA ONE_MINUS_DST_ALPHA ONE
@@ -30,39 +32,33 @@ alphaTest.gbuffers_water=false
 alphaTest.gbuffers_skybasic=false
 alphaTest.gbuffers_skytextured=false
 
-sliders=BLOOMY_FOG FOG_RAIN_MULTIPLIER FOG_TOD_MULTIPLIER CLOUDY_FOG_AMOUNT BASE_FOG_AMOUNT WAVY_SPEED WAVY_STRENGTH ANTI_GHOSTING BLOOM_STRENGTH Underwater_Fog_Density shadowDistance shadowDistanceRenderMul FinalR FinalG FinalB Ambient_Mult Sky_Brightness fog_coefficientMieR fog_coefficientMieG fog_coefficientMieB sun_illuminance sunColorG sunColorB sunColorR sky_mieg sky_coefficientMieB sky_coefficientMieG sky_coefficientMieR sky_coefficientRayleighB sky_coefficientRayleighG sky_coefficientRayleighR CLOUDS_QUALITY EXPOSURE_MULTIPLIER MIN_LIGHT_AMOUNT TORCH_R TORCH_G TORCH_B TORCH_AMOUNT shadowMapResolution sunPathRotation SKY_BRIGHTNESS_DAY SKY_BRIGHTNESS_NIGHT BLEND_FACTOR FLICKER_REDUCTION MOTION_REJECTION VL_SAMPLES Exposure_Speed POM_MAP_RES POM_DEPTH MAX_ITERATIONS MAX_DIST SSR_STEPS ambientOcclusionLevel SEA_LEVEL ATMOSPHERIC_DENSITY CLOUDS_SHADOWS_STRENGTH moon_illuminance moonColorR moonColorG moonColorB fog_mieg1 fog_mieg2 fog_coefficientRayleighR fog_coefficientRayleighG Emissive_Strength Texture_MipMap_Bias SATURATION Manual_exposure_value focal aperture MANUAL_FOCUS SHADOW_FILTER_SAMPLE_COUNT Max_Filter_Depth VPS_Search_Samples Min_Shadow_Filter_Radius Max_Shadow_Filter_Radius SSAO_SAMPLES Water_Top_Layer fog_coefficientRayleighB SHARPENING rayMarchSampleCount Dirt_Mie_Phase Dirt_Amount Dirt_Scatter_R Dirt_Scatter_G Dirt_Scatter_B Dirt_Absorb_R Dirt_Absorb_G Dirt_Absorb_B Water_Absorb_R Water_Absorb_G Water_Absorb_B Purkinje_strength Purkinje_strength Purkinje_R Purkinje_G Purkinje_B DoF_Adaptation_Speed Purkinje_Multiplier CROSSTALK RENDER_SCALE_X RENDER_SCALE_Y VL_RENDER_RESOLUTION BLOOM_QUALITY VL_RENDER_RESOLUTION RAY_COUNT STEPS STEP_LENGTH cloud_LevelOfDetail cloud_ShadowLevelOfDetail cloud_LevelOfDetailLQ cloud_ShadowLevelOfDetailLQ minRayMarchSteps maxRayMarchSteps minRayMarchStepsLQ maxRayMarchStepsLQ cloudDensity cloudCoverage fbmAmount fbmPower1 fbmPower2 cloudMieG cloudMieG2 cloudMie2Multiplier
-
+sliders=BLOOMY_FOG FOG_RAIN_MULTIPLIER FOG_TOD_MULTIPLIER CLOUDY_FOG_AMOUNT BASE_FOG_AMOUNT WAVY_SPEED WAVY_STRENGTH ANTI_GHOSTING BLOOM_STRENGTH Underwater_Fog_Density shadowDistance shadowDistanceRenderMul FinalR FinalG FinalB Ambient_Mult Sky_Brightness fog_coefficientMieR fog_coefficientMieG fog_coefficientMieB sun_illuminance sunColorG sunColorB sunColorR sky_mieg sky_coefficientMieB sky_coefficientMieG sky_coefficientMieR sky_coefficientRayleighB sky_coefficientRayleighG sky_coefficientRayleighR CLOUDS_QUALITY EXPOSURE_MULTIPLIER MIN_LIGHT_AMOUNT TORCH_R TORCH_G TORCH_B TORCH_AMOUNT shadowMapResolution sunPathRotation SKY_BRIGHTNESS_DAY SKY_BRIGHTNESS_NIGHT BLEND_FACTOR FLICKER_REDUCTION MOTION_REJECTION VL_SAMPLES Exposure_Speed POM_MAP_RES POM_DEPTH MAX_ITERATIONS MAX_DIST SSR_STEPS ambientOcclusionLevel SEA_LEVEL ATMOSPHERIC_DENSITY CLOUDS_SHADOWS_STRENGTH moon_illuminance moonColorR moonColorG moonColorB fog_mieg1 fog_mieg2 fog_coefficientRayleighR fog_coefficientRayleighG SATURATION Manual_exposure_value focal aperture MANUAL_FOCUS SHADOW_FILTER_SAMPLE_COUNT Max_Filter_Depth VPS_Search_Samples Min_Shadow_Filter_Radius Max_Shadow_Filter_Radius SSAO_SAMPLES Water_Top_Layer fog_coefficientRayleighB SHARPENING rayMarchSampleCount Dirt_Mie_Phase Dirt_Amount Dirt_Scatter_R Dirt_Scatter_G Dirt_Scatter_B Dirt_Absorb_R Dirt_Absorb_G Dirt_Absorb_B Water_Absorb_R Water_Absorb_G Water_Absorb_B Purkinje_strength Purkinje_strength Purkinje_R Purkinje_G Purkinje_B Purkinje_Multiplier CROSSTALK
 screen=[Atmospherics] [TAA_OPTIONS] [Lighting] [Camera] [Shading] [Wavy_stuff] [Water_and_transparencies]
 screen.Wavy_stuff = WAVY_STRENGTH WAVY_SPEED WAVY_PLANTS
-screen.Atmospherics= SEA_LEVEL  VL_SAMPLES   [Clouds] [Fog_Color] [Fog_Densities] BLOOMY_FOG VL_RENDER_RESOLUTION VL_Clouds_Shadows
-screen.Clouds = VOLUMETRIC_CLOUDS CLOUDS_QUALITY cloud_LevelOfDetail cloud_ShadowLevelOfDetail cloud_LevelOfDetailLQ cloud_ShadowLevelOfDetailLQ minRayMarchSteps maxRayMarchSteps minRayMarchStepsLQ maxRayMarchStepsLQ cloudDensity cloudCoverage fbmAmount fbmPower1 fbmPower2 cloudMieG cloudMieG2 cloudMie2Multiplier
+screen.Atmospherics= SEA_LEVEL  VL_SAMPLES  CLOUDS_QUALITY VOLUMETRIC_CLOUDS [Fog_Color] [Fog_Densities] BLOOMY_FOG
 screen.Fog_Densities = FOG_RAIN_MULTIPLIER FOG_TOD_MULTIPLIER CLOUDY_FOG_AMOUNT BASE_FOG_AMOUNT ATMOSPHERIC_DENSITY Underwater_Fog_Density
 screen.Fog_Color = fog_mieg1 fog_mieg2 fog_coefficientRayleighR fog_coefficientRayleighG fog_coefficientRayleighB fog_coefficientMieR fog_coefficientMieG fog_coefficientMieB
-screen.Water_and_transparencies = Dirt_Amount Dirt_Mie_Phase rayMarchSampleCount SCREENSPACE_REFLECTIONS SSR_STEPS USE_QUARTER_RES_DEPTH SUN_MICROFACET_SPECULAR Water_Top_Layer lightMapDepthEstimation [Advanced]
+screen.Water_and_transparencies = Dirt_Amount Dirt_Mie_Phase rayMarchSampleCount SCREENSPACE_REFLECTIONS SSR_STEPS SUN_MICROFACET_SPECULAR Water_Top_Layer lightMapDepthEstimation [Advanced]
 screen.Advanced = Dirt_Scatter_R Dirt_Scatter_G Dirt_Scatter_B Dirt_Absorb_R Dirt_Absorb_G Dirt_Absorb_B Water_Absorb_R Water_Absorb_G Water_Absorb_B
-screen.TAA_OPTIONS= TAA <empty> BLEND_FACTOR CLOSEST_VELOCITY NO_CLIP TAA_UPSCALING RENDER_SCALE_X RENDER_SCALE_Y
+screen.TAA_OPTIONS= TAA <empty> FLICKER_REDUCTION BLEND_FACTOR ANTI_GHOSTING MOTION_REJECTION CLOSEST_VELOCITY NO_CLIP
 
-screen.Lighting= [Torch] [Sky] [Ambient] SPEC SPEC_REF
-screen.Torch = TORCH_R TORCH_G TORCH_B TORCH_AMOUNT Emissive_Strength
+screen.Lighting= [Torch] [Sky] [Ambient]
+screen.Torch = TORCH_R TORCH_G TORCH_B TORCH_AMOUNT
 screen.Sky=[Sky_coefficients] [Sun_and_Moon_Colors] sunPathRotation
 screen.Sky_coefficients = Sky_Brightness sky_mieg sky_coefficientRayleighR sky_coefficientRayleighG sky_coefficientRayleighB sky_coefficientMieR sky_coefficientMieG sky_coefficientMieB
 screen.Sun_and_Moon_Colors =  sunColorR sunColorG sunColorB sun_illuminance moonColorR moonColorG moonColorB moon_illuminance
 screen.Ambient = MIN_LIGHT_AMOUNT SEPARATE_AO ambientOcclusionLevel Ambient_Mult
 
-screen.Shading =  Texture_MipMap_Bias  DISABLE_ALPHA_MIPMAPS [Shadows] [POM] BICUBIC_UPSCALING CONTRAST_ADAPTATIVE_SHARPENING SHARPENING
-screen.Shadows = [Filtering] [SSGI_Parameters] SCREENSPACE_CONTACT_SHADOWS shadowMapResolution CLOUDS_SHADOWS CLOUDS_SHADOWS_STRENGTH shadowDistanceRenderMul shadowDistance SHADOW_FRUSTRUM_CULLING CAVE_LIGHT_LEAK_FIX SHADOW_DISABLE_ALPHA_MIPMAPS Stochastic_Transparent_Shadows
-screen.SSGI_Parameters = SSGI RAY_COUNT STEPS STEP_LENGTH
+screen.Shading =      DISABLE_ALPHA_MIPMAPS [Shadows] [POM] BICUBIC_UPSCALING CONTRAST_ADAPTATIVE_SHARPENING SHARPENING
+screen.Shadows = [Filtering] SCREENSPACE_CONTACT_SHADOWS shadowMapResolution CLOUDS_SHADOWS CLOUDS_SHADOWS_STRENGTH shadowDistanceRenderMul shadowDistance SHADOW_FRUSTRUM_CULLING CAVE_LIGHT_LEAK_FIX SSAO  SSAO_SAMPLES SHADOW_DISABLE_ALPHA_MIPMAPS Stochastic_Transparent_Shadows
 screen.Filtering = Variable_Penumbra_Shadows VPS_Search_Samples Min_Shadow_Filter_Radius Max_Shadow_Filter_Radius Max_Filter_Depth SHADOW_FILTER_SAMPLE_COUNT
-screen.POM = POM Depth_Write_POM POM_DEPTH MAX_ITERATIONS MAX_DIST AutoGeneratePOMTextures
-screen.Camera = EXPOSURE_MULTIPLIER Exposure_Speed AUTO_EXPOSURE Manual_exposure_value BLOOM_STRENGTH BLOOM_QUALITY FinalR FinalG FinalB [Tonemapping]  [DepthOfField] [Purkinje_effect]
+screen.POM = POM_MAP_RES POM POM_DEPTH MAX_ITERATIONS MAX_DIST USE_LUMINANCE_AS_HEIGHTMAP
+screen.Camera = EXPOSURE_MULTIPLIER Exposure_Speed AUTO_EXPOSURE Manual_exposure_value BLOOM_STRENGTH FinalR FinalG FinalB [Tonemapping]  [DepthOfField] [Purkinje_effect]
 screen.Purkinje_effect = Purkinje_strength Purkinje_strength Purkinje_R Purkinje_G Purkinje_B Purkinje_Multiplier
 screen.Tonemapping = TONEMAP USE_ACES_COLORSPACE_APPROXIMATION SATURATION CROSSTALK
-screen.DepthOfField = DOF HQ_DOF HEXAGONAL_BOKEH AUTOFOCUS focal aperture MANUAL_FOCUS FAR_BLUR_ONLY DoF_Adaptation_Speed
-
-
+screen.DepthOfField = DOF HQ_DOF HEXAGONAL_BOKEH AUTOFOCUS focal aperture MANUAL_FOCUS FAR_BLUR_ONLY
 texture.noise=texture/noises.png
-texture.composite.colortex6=texture/blueNoise.png
-texture.gbuffers.gaux3=texture/wave.png
+
 separateAo=true
 
 
@@ -123,4 +119,3 @@ variable.float.shSunZ = (shadowModelView.0.2 * wSunX + shadowModelView.1.2 * wSu
 uniform.vec3.shadowLightVec = vec3(lightSign*shSunX, lightSign*shSunY, lightSign*shSunZ)
 
 uniform.float.shadowMaxProj = 150.0/abs(sunPosY)
-uniform.float.waveScale = if(in(biome_category,CAT_OCEAN,CAT_BEACH), 1.0, 0.0)*74.0+54.0

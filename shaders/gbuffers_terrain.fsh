@@ -229,6 +229,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	vec3 normalTex = texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz;
 	vec2 lm = lmtexcoord.zw*normalTex.b;
 	normalTex.xy = normalTex.xy*2.0-1.0;
+
+	
 	normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 	normal = applyBump(tbnMatrix,normalTex);
 
@@ -262,8 +264,11 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	vec3 normalTex = texture2D(normals, lmtexcoord.xy, Texture_MipMap_Bias).rgb;
 	lm *= normalTex.b;
 	normalTex.xy = normalTex.xy*2.0-1.0;
+
 	normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
+	normalTex.z = clamp(normalTex.z,0,1);			
 	normal = applyBump(tbnMatrix,normalTex);
+
 	#endif
 	vec4 data1 = clamp(noise/256.+encode(normal, lm),0.,1.0);
 

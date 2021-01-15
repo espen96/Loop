@@ -163,6 +163,22 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 
 }
+float waterCaustics(vec3 wPos, vec3 lightSource){
+	vec2 pos = (wPos.xz - lightSource.xz/lightSource.y*wPos.y)*4.0 ;
+	vec2 movement = vec2(-0.02*frameTimeCounter);
+	float caustic = 0.0;
+	float weightSum = 0.0;
+	float radiance =  2.39996;
+	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
+	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
+	for (int i = 0; i < 3; i++){
+		pos = rotationMatrix * pos;
+		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		weightSum += exp2(-0.8*i);
+	}
+	return caustic * weightSum;
+}
 void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estEyeDepth, float estSunDepth, float rayLength, float dither, vec3 waterCoefs, vec3 scatterCoef, vec3 ambient, vec3 lightSource, float VdotL){
 		int spCount = 16;
 

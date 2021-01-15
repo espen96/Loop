@@ -152,13 +152,7 @@ float linZ(float depth) {
 	// d = -((2n/l)-f-n)/(f-n)
 
 }
-float invLinZ (float lindepth){
-	return -((2.0*near/lindepth)-far-near)/(far-near);
-}
 
-vec3 toClipSpace3(vec3 viewSpacePosition) {
-    return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
-}
 float bayer2(vec2 a){
 	a = floor(a);
     return fract(dot(a,vec2(0.5,a.y*0.75)));
@@ -210,9 +204,6 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 }
 
 
-float ld(float dist) {
-    return (2.0 * near) / (far + near - dist * (far - near));
-}
 
 
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)

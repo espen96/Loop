@@ -474,7 +474,7 @@ void main() {
 
 	//sky
 	if (z >=1.0) {
-		vec3 color = vec3(1.0,0.75,0.9)/4000.0*150.0*0.1;
+		vec3 color = vec3(1.0,0.4,0.2)/4000.0*1050.0*0.1;
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		color = color*cloud.a+cloud.rgb;
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
@@ -632,7 +632,7 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		vec3 directLightCol = lightCol.rgb;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*5./150./3.;
+		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
 			emitting = luma(albedo)*1.2*Emissive_Strength;

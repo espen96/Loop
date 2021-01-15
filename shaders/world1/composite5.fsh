@@ -147,8 +147,8 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 
 		vec3 skyCol0 = ambientLight*8.*2./150./3.*Ambient_Mult*3.14;
 
-		float mu = 0.4;
-		float muS = 0.4;
+		float mu = 1.0;
+		float muS = 1.05;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
 		for (int i=0;i<VL_SAMPLES+8;i++) {
@@ -157,7 +157,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			progressW = gbufferModelViewInverse[3].xyz+cameraPosition + d*dVWorld;
 			float densityVol = cloudVol(progressW);
 			float density = densityVol;
-			vec3 vL0 = (mie*vec3(1.0,0.75,0.9)*0.2 + skyCol0)*density*muS*min(exp((progressW.y-40.0)/20.0),1.0);
+			vec3 vL0 = (mie*vec3(1.0,0.4,0.2)*0.2 + skyCol0)*density*muS*min(exp((progressW.y-40.0)/20.0),1.0);
 			vL += (vL0 - vL0 * exp(-density*mu*dd*dL)) / (density*mu+0.00000001)*absorbance;
 			absorbance *= clamp(exp(-density*mu*dd*dL),0.0,1.0);
 		}

@@ -77,6 +77,9 @@ vec3 cosineHemisphereSample(vec2 Xi)
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
+vec3 toLinear(vec3 sRGB){
+	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+}
 
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter)
 {

@@ -632,10 +632,10 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		vec3 directLightCol = lightCol.rgb;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
+		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*5./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-			emitting = luma(albedo)*3.0*Emissive_Strength;
+			emitting = luma(albedo)*1.2*Emissive_Strength;
 			custom_lightmap.y = 0.0;
 		}
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater == 1)){

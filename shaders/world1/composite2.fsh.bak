@@ -632,10 +632,10 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		vec3 directLightCol = lightCol.rgb;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*8./150./3.;
+		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*3./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-			emitting = luma(albedo)*3.0*Emissive_Strength;
+			emitting = luma(albedo)*1.2*Emissive_Strength;
 			custom_lightmap.y = 0.0;
 		}
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater == 1)){
@@ -686,7 +686,7 @@ void main() {
 		else {
 			#ifdef SSGI
 				if (!hand)
-					ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B)*0.5, normalize(albedo+1e-5)*0.7);
+					ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B), normalize(albedo+1e-5)*0.7);
 				else
 					ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
 			#else

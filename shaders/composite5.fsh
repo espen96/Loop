@@ -510,13 +510,13 @@ void main() {
 	#ifdef TAA
 	vec3 color = TAA_hq();
 	vec3 color2 = TAA2_hq();
-	vec2 frametime2 = vec2( clamp(mix(texture2D(colortex8,texcoord).rg,drs(),0.001),0.1,1));
+	float frametime2 =  (mix(texture2D(colortex8,texcoord).r,frameTime,0.1));
 
 
 
 	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(R2_dither())),6.11*1e-5,65000.0);
 	gl_FragData[1].rgb = color2;
-	gl_FragData[2].rg = frametime2.rg;
+	gl_FragData[2].r = frametime2;
 
 
 

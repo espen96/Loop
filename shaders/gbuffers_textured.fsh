@@ -157,7 +157,7 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:2 */
+/* DRAWBUFFERS:27 */
 void main() {
 
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
@@ -214,6 +214,7 @@ void main() {
 
 
 	gl_FragData[0].rgb = diffuseLight*albedo*8./3.0/150.*0.1;
+	gl_FragData[1].rgba = vec4(0.0);
 
 
 

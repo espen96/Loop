@@ -47,7 +47,7 @@ uniform float sunElevation;
 uniform float nightVision;
 uniform float near;
 uniform float far;
-uniform float frameTime;
+//uniform float frameTime;
 uniform float eyeAltitude;
 uniform int frameCounter;
 uniform int worldTime;

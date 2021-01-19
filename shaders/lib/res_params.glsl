@@ -15,10 +15,10 @@ uniform sampler2D colortex8;
 vec2 drs(){
 	vec2 scale = vec2(1.0);
 	
-	float frametimes = clamp(texture2D(colortex8,vec2(1)).r,0.25,1);
+	float frametimes = clamp(texture2D(colortex8,vec2(1)).r,0.0,1.0);
 	
-	if (frametimes > 0.03) scale *= frametimes;
-	if (frametimes > 0.015) scale *= 1.0;
+ scale = vec2(clamp(1-frametimes,0.25,1));
+
 
 
 

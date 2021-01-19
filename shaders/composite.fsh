@@ -782,7 +782,7 @@ void main() {
 			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
 
 			vec3 indirectSpecular = vec3(0.0);
-			const int nSpecularSamples = 3;
+			const int nSpecularSamples = 2;
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;								
 
@@ -865,7 +865,7 @@ void main() {
 		}
 		else{			 
 	
-		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,0.5);	}	
+		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(0.3+(roughness),0,1));	}	
 			
 		gl_FragData[4].rgb = speculars.rgb;	
 

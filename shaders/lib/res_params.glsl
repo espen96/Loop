@@ -8,7 +8,7 @@ uniform float frameTime;
 
 
 
-uniform sampler2D colortex8;
+//uniform sampler2D colortex8;
 
 
 #ifdef TAA_UPSCALING

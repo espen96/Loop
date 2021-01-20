@@ -2,6 +2,9 @@
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
 
+
+#define SPEC
+
 //#define POM
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
 #define POM_DEPTH 0.25 // [0.025 0.05 0.075 0.1 0.125 0.15 0.20 0.25 0.30 0.50 0.75 1.0] //Increase to increase POM strength
@@ -20,12 +23,18 @@
 #define MC_NORMAL_MAP
 #endif
 
+
+
+#ifdef POM
 const float mincoord = 1.0/4096.0;
 const float maxcoord = 1.0-mincoord;
 
 const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
 const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
 const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
+#endif
+
+
 
 uniform vec2 texelSize;
 #ifdef POM
@@ -43,7 +52,9 @@ varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
 #endif
+#ifdef SPEC
 uniform sampler2D specular;
+#endif
 #ifdef POM
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
@@ -55,6 +66,7 @@ uniform mat4 gbufferProjection;
 float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
+#ifdef Depth_Write_POM
 mat3 inverse(mat3 m) {
   float a00 = m[0][0], a01 = m[0][1], a02 = m[0][2];
   float a10 = m[1][0], a11 = m[1][1], a12 = m[1][2];
@@ -70,6 +82,7 @@ mat3 inverse(mat3 m) {
               b11, (a22 * a00 - a02 * a20), (-a12 * a00 + a02 * a10),
               b21, (-a21 * a00 + a01 * a20), (a11 * a00 - a01 * a10)) / det;
 }
+#endif
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
 vec4 encode (vec3 n, vec2 lightmaps)
 {
@@ -184,8 +197,9 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
       }
       adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 
-      vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*interval;
+
       #ifdef Depth_Write_POM
+      vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*interval;	  
       gl_FragDepth = toClipSpace3(truePos).z;
       #endif
     }
@@ -210,8 +224,9 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 		}
 		adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 
-		vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*(interval);
+
 		#ifdef Depth_Write_POM
+		vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*(interval);		
 		gl_FragDepth = toClipSpace3(truePos).z;
 		#endif
 	}
@@ -240,13 +255,16 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal, lm),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+	#ifdef SPEC
 	gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
 	gl_FragData[1].a = 0.0;
-
+	#endif
 	#else
 
 	vec4 data0 = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias);
+	#ifdef SPEC
 	gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
+	#endif
 	data0.rgb*=color.rgb;
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);

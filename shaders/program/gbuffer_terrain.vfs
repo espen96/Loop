@@ -16,7 +16,7 @@ varying vec3 tangent;
 varying float dist;
 varying vec3 viewVector;
 attribute vec4 mc_Entity;
-#define SHADOW_MAP_BIAS 0.8
+
 attribute vec4 at_tangent;
 uniform mat4 gbufferModelViewInverse;
 #else

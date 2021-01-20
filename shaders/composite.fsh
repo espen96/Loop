@@ -5,8 +5,8 @@
 
 
 #define SSAO
-#define SPEC
-#define SPEC_REF
+//#define SPEC
+//#define SPEC_REF
 
 
 
@@ -47,9 +47,9 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 
-uniform sampler2D colortexB;
+
 uniform sampler2D colortexC;
-uniform sampler2D colortexD;
+
 uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
@@ -103,9 +103,14 @@ vec3 toScreenSpacePrev(vec3 p) {
 #include "lib/sky_gradient.glsl"
 #include "lib/stars.glsl"
 #include "lib/volumetricClouds.glsl"
+
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
+#ifdef SPEC
+uniform sampler2D colortexD;
+#endif
+
 #include "lib/specular.glsl"
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
@@ -162,7 +167,7 @@ float linZ(float depth) {
 
 float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
-    const float quality = 16.;
+    const float quality = 8.;
     vec3 clipPosition = toClipSpace3(position);
 	//prevents the ray from going behind the camera
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
@@ -300,7 +305,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		}
 		inColor += vL;
 }
-
+#ifdef SSGI
 vec3 RT(vec3 dir,vec3 position,float noise, vec3 N){
 	float stepSize = STEP_LENGTH;
 	int maxSteps = STEPS;
@@ -407,12 +412,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		else{
 		intRadiance.rgb = mix(texture2D(colortexC,previousPosition.xy*RENDER_SCALE).rgb,intRadiance.rgb,0.5);}		
 			
-		gl_FragData[2].rgb = intRadiance.rgb;	
+		gl_FragData[1].rgb = intRadiance.rgb;	
 		
 	return intRadiance.rgb;
 //	return texture2D(colortexC,gl_FragCoord.xy*texelSize).rgb;
 }
-
+#endif
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
     float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
@@ -450,7 +455,7 @@ void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 norm
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
 
 	vec2 v = fract(vec2(dither,R2_dither()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
-	for (int j = 0; j < 7 ;j++) {
+	for (int j = 0; j < 4 ;j++) {
 
 			vec2 sp = tapLocation(j,v.x,7,88.,v.y);
 			vec2 sampleOffset = sp*rd;
@@ -871,32 +876,20 @@ void main() {
 	
 		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(0.1+(roughness),0,1));	}	
 			
-		gl_FragData[3].rgb = speculars.rgb;	
+		gl_FragData[2].rgb = speculars.rgb;	
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
 			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/nSpecularSamples) *  gl_FragData[0].rgb;
 
 
 		#endif
-			gl_FragData[1].rgb = normal.rgb;
-//			gl_FragData[0].rgb = vec3(frameCounter);
 
 
-			
-
-
-
-			
-			
-
-
-
-		
 			//waterVolumetrics(gl_FragData[0].rgb, vec3(0.0), fragpos, 0.0, 0.0, length(fragpos), noise, waterEpsilon, ambientUp*8./150./3. + custom_lightmap.z, lightCol.rgb);
 		}
 	}
 
 
 
-/* DRAWBUFFERS:39CD */
+/* DRAWBUFFERS:3CD */
 }

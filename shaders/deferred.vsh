@@ -120,7 +120,7 @@ void main() {
 	ambientF = vec3(0.0);
 	avgSky = vec3(0.0);
 	//Integrate sky light for each block side
-	int maxIT = 20;
+	int maxIT = 10;
 	for (int i = 0; i < maxIT; i++) {
 			vec2 ij = R2_samples((frameCounter%1000)*maxIT+i);
 			vec3 pos = normalize(rodSample(ij));
@@ -216,7 +216,7 @@ void main() {
 	float avgExp = 0.0;
 	float avgB = 0.0;
 	vec2 resScale = vec2(1920.,1080.)/clampedRes*BLOOM_QUALITY;
-	const int maxITexp = 50;
+	const int maxITexp = 25;
 	float w = 0.0;
 	for (int i = 0; i < maxITexp; i++){
 			vec2 ij = R2_samples((frameCounter%2000)*maxITexp+i);

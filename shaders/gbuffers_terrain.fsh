@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 
-#define SPEC
+//#define SPEC
 
 //#define POM
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
@@ -52,9 +52,11 @@ varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
 #endif
+
 #ifdef SPEC
 uniform sampler2D specular;
 #endif
+
 #ifdef POM
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
@@ -255,16 +257,20 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	vec4 data1 = clamp(noise*exp2(-8.)+encode(normal, lm),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+
 	#ifdef SPEC
 	gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
 	gl_FragData[1].a = 0.0;
 	#endif
+
 	#else
 
 	vec4 data0 = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias);
+
 	#ifdef SPEC
 	gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
 	#endif
+
 	data0.rgb*=color.rgb;
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);

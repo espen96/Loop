@@ -12,22 +12,13 @@ Read the terms of modification and sharing before changing something below pleas
 #define WAVY_SPEED 1.0 //[0.001 0.01 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0 1.25 1.5 2.0 3.0 4.0]
 #include "/lib/Shadow_Params.glsl"
 
-#define SHADOW_MAP_BIAS 0.8
-const float PI = 3.1415927;
+
 varying vec2 texcoord;
-uniform mat4 shadowProjectionInverse;
-uniform mat4 shadowProjection;
+
 uniform mat4 shadowModelViewInverse;
 uniform mat4 shadowModelView;
-uniform mat4 gbufferModelView;
-uniform mat4 gbufferModelViewInverse;
-uniform mat4 gbufferProjection;
 uniform vec3 cameraPosition;
 uniform float frameTimeCounter;
-uniform vec3 sunVec;
-uniform float aspectRatio;
-uniform float sunElevation;
-uniform float lightSign;
 uniform float cosFov;
 uniform vec3 shadowViewDir;
 uniform vec3 shadowCamera;

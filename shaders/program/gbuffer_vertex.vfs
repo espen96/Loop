@@ -77,11 +77,10 @@ void main() {
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
 	
 #ifdef weather	
+	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
 	lmtexcoord.zw = lmcoord*lmcoord;	
 #else
-#ifdef water
-	lmtexcoord.xy = (gl_MultiTexCoord0).xy;	
-#else
+
 #ifdef glint 
 	lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;	
 	lmtexcoord.zw = lmcoord*lmcoord;	
@@ -90,8 +89,7 @@ void main() {
 	lmtexcoord.zw = lmcoord;
 #endif
 #endif
-#endif
-		
+
 
 	
 

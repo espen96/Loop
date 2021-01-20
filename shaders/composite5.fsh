@@ -27,15 +27,15 @@ const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
 const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
 const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
 const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
-const int colortex8Format = R11F_G11F_B10F;	
-const int colortex9Format = RGBA16F;	
+//const int colortex8Format = R11F_G11F_B10F;	
+//const int colortex9Format = RGBA16F;	
 				
-const int colortexAFormat = RG8F;			
-const int colortexBFormat = R11F_G11F_B10F;			
+//const int colortexAFormat = RG8F;			
+//const int colortexBFormat = R11F_G11F_B10F;			
 const int colortexCFormat = R11F_G11F_B10F;		
 const int colortexDFormat = R11F_G11F_B10F;		
-const int colortexEFormat = RGB16F;		
-const int colortexFFormat = R11F_G11F_B10F;			
+//const int colortexEFormat = RGB16F;		
+//const int colortexFFormat = R11F_G11F_B10F;			
 		
 */
 //no need to clear the buffers, saves a few fps
@@ -54,6 +54,7 @@ const bool colortexBClear = false;
 const bool colortexCClear = false;
 const bool colortexDClear = false;
 const bool colortexEClear = false;
+const bool colortexFClear = false;
 */
 varying vec2 texcoord;
 flat varying float exposureA;
@@ -505,18 +506,20 @@ vec3 TAA4_hq(){
 
 void main() {
 
-/* DRAWBUFFERS:5E8 */
+/* DRAWBUFFERS:5E */
 
 	#ifdef TAA
 	vec3 color = TAA_hq();
 	vec3 color2 = TAA2_hq();
-	float frametime2 =  (mix(texture2D(colortex8,texcoord).r,frameTime*100-1.1,0.009));
+//	float frametime2 =  (mix(texture2D(colortex8,texcoord).r,frameTime*100-1.1,0.009));
 
 
 
 	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(R2_dither())),6.11*1e-5,65000.0);
 	gl_FragData[1].rgb = color2;
-	gl_FragData[2].r = frametime2;
+//	gl_FragData[2].r = frametime2;
+
+
 
 
 

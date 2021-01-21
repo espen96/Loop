@@ -171,7 +171,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			float densityVol = cloudVol(progressW);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
-				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
+				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
 				sh = shadow2D( shadow, pos).x;
 				#ifdef VL_Clouds_Shadows
 				float cloudShadow = 0.0;
@@ -209,7 +209,7 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
 	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
-	pos = pos*0.5+vec2(1.74*frameTimeCounter) ;
+	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
 		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
@@ -247,7 +247,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
-				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
+				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
 				sh =  shadow2D( shadow, pos).x;
 			}
 			vec3 ambientMul = exp(-max(estEyeDepth - dY * d,0.0) * waterCoefs);

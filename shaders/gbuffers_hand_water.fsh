@@ -182,7 +182,7 @@ void main() {
 			projectedShadowPosition.xy *= distortFactor;
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-				const float threshMul = sqrt(2048.0/shadowMapResolution*shadowDistance*0.0078125);
+				const float threshMul = sqrt(2048.0/shadowMapResolution*shadowDistance/128.0);
 				float distortThresh = 1.0/(distortFactor*distortFactor);
 				float diffthresh = facos(diffuseSun)*distortThresh/800*threshMul;
 

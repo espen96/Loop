@@ -61,10 +61,10 @@ vec3 decode (vec2 enc)
 {
     vec2 fenc = enc*4-2;
     float f = dot(fenc,fenc);
-    float g = sqrt(1-f*0.25);
+    float g = sqrt(1-f/4.0);
     vec3 n;
     n.xy = fenc*g;
-    n.z = 1-f*0.5;
+    n.z = 1-f/2;
     return n;
 }
 vec2 decodeVec2(float a){
@@ -113,7 +113,7 @@ void main() {
 				projectedShadowPosition.xy *= distortFactor;
 				//do shadows only if on shadow map
 				if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance*0.0078125,0.95);
+					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 					float distortThresh = (sqrt(1.0-NdotL*NdotL)/NdotL+0.7)/distortFactor;
 					float diffthresh = distortThresh/6000.0*threshMul;
 					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
@@ -127,9 +127,9 @@ void main() {
 					float avgDepth = 0.0;
 					for(int i = 0; i < VPS_Search_Samples; i++){
 						vec2 offsetS = tapLocation(i,VPS_Search_Samples, 84.0, noise,0.0);
-						float weight = 3.0 + (i+noise) *rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution*distortFactor*0.37;
+						float weight = 3.0 + (i+noise) *rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution*distortFactor/2.7;
 						float d = texelFetch2D( shadow, ivec2((projectedShadowPosition.xy+offsetS*rdMul)*shadowMapResolution),0).x;
-						float b = smoothstep(weight*diffthresh*0.5, weight*diffthresh, projectedShadowPosition.z - d);
+						float b = smoothstep(weight*diffthresh/2.0, weight*diffthresh, projectedShadowPosition.z - d);
 
 						blockerCount += b;
 						avgDepth += max(projectedShadowPosition.z - d, 0.0)*1000.;

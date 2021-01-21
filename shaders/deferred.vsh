@@ -183,7 +183,7 @@ void main() {
 	sunColor *= (1.0-rainStrength*vec3(0.96));
 	moonColor *= (1.0-rainStrength*vec3(0.96));
 	#endif
-	lightSourceColor = sunVis >= 1e-5 ? sunColor * sunVis : moonColor * moonVis;
+	lightSourceColor = vec3(0.0);
 
 	float lightDir = float( sunVis >= 1e-5)*2.0-1.0;
 

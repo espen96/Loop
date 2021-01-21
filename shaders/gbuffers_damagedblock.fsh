@@ -28,7 +28,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 #include "/lib/res_params.glsl"
-#include "lib/Shadow_Params.glsl"
+#include "/lib/Shadow_Params.glsl"
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){
 	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);

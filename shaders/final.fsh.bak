@@ -18,8 +18,8 @@ uniform float viewHeight;
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform int isEyeInWater;
-#include "lib/color_transforms.glsl"
-#include "lib/color_dither.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/color_dither.glsl"
 #include "/lib/res_params.glsl"
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {

@@ -383,8 +383,8 @@ uniform float rainStrength;
 uniform float near;
 uniform float aspectRatio;
 uniform float far;
-#include "lib/color_transforms.glsl"
-#include "lib/color_dither.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/color_dither.glsl"
 float cdist(vec2 coord) {
 	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
 }

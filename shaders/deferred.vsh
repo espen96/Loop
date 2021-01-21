@@ -10,7 +10,7 @@
 #define CLOUDY_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0]
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
-#include "lib/res_params.glsl"
+#include "/lib/res_params.glsl"
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;
@@ -55,7 +55,7 @@ vec3 sunVec = normalize(mat3(gbufferModelViewInverse) *sunPosition);
 
 
 
-#include "lib/sky_gradient.glsl"
+#include "/lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
 vec3 rodSample(vec2 Xi)

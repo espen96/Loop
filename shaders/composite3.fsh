@@ -23,7 +23,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec2 texelSize;
 uniform vec3 cameraPosition;
-#include "lib/waterOptions.glsl"
+#include "/lib/waterOptions.glsl"
 #include "/lib/res_params.glsl"
 
 #define clamp01(x) clamp(x, 0.0, 1.0)

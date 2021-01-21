@@ -57,11 +57,11 @@ uniform vec3 cameraPosition;
 uniform float far;
 uniform ivec2 eyeBrightnessSmooth;
 
-#include "lib/Shadow_Params.glsl"
+#include "/lib/Shadow_Params.glsl"
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
-#include "lib/sky_gradient.glsl"
-#include "lib/volumetricClouds.glsl"
+#include "/lib/sky_gradient.glsl"
+#include "/lib/volumetricClouds.glsl"
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -77,7 +77,7 @@ float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 vec4 lightCol = vec4(lightSourceColor, float(sunElevation > 1e-5)*2-1.);
-#include "lib/volumetricFog.glsl"
+#include "/lib/volumetricFog.glsl"
 const float[17] Slightmap = float[17](14.0,17.,19.0,22.0,24.0,28.0,31.0,40.0,60.0,79.0,93.0,110.0,132.0,160.0,197.0,249.0,249.0);
 
 void main() {

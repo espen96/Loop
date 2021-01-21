@@ -9,7 +9,7 @@
 flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 #include "/lib/res_params.glsl"
-#include "lib/Shadow_Params.glsl"
+#include "/lib/Shadow_Params.glsl"
 uniform sampler2D depthtex1;
 uniform sampler2D colortex1;
 uniform sampler2D shadow;

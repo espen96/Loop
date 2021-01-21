@@ -6,7 +6,7 @@ uniform vec2 texelSize;
 uniform float viewWidth;
 uniform float viewHeight;
 
-#include "lib/res_params.glsl"
+#include "/lib/res_params.glsl"
 
 void main() {
 /* DRAWBUFFERS:3 */

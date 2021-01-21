@@ -46,13 +46,13 @@ uniform vec3 previousCameraPosition;
 uniform int framemod8;
 uniform int frameCounter;
 uniform int isEyeInWater;
-#include "lib/Shadow_Params.glsl"
-#include "lib/color_transforms.glsl"
-#include "lib/projections.glsl"
-#include "lib/sky_gradient.glsl"
-#include "lib/waterBump.glsl"
-#include "lib/clouds.glsl"
-#include "lib/stars.glsl"
+#include "/lib/Shadow_Params.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/projections.glsl"
+#include "/lib/sky_gradient.glsl"
+#include "/lib/waterBump.glsl"
+#include "/lib/clouds.glsl"
+#include "/lib/stars.glsl"
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 									vec2(-1.,3.)/8.,
 									vec2(5.0,1.)/8.,

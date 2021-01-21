@@ -1,5 +1,5 @@
 #version 120
-#include "lib/res_params.glsl"
+#include "/lib/res_params.glsl"
 uniform float viewWidth;
 uniform float viewHeight;
 //////////////////////////////VOID MAIN//////////////////////////////

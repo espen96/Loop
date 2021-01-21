@@ -1,6 +1,6 @@
 #version 120
 //6 Vertical gaussian blurs and vertical downsampling
-#include "lib/res_params.glsl"
+#include "/lib/res_params.glsl"
 
 
 uniform sampler2D colortex6;

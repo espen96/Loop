@@ -96,13 +96,13 @@ vec3 toScreenSpacePrev(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 
-#include "lib/res_params.glsl"
-#include "lib/waterOptions.glsl"
-#include "lib/Shadow_Params.glsl"
-#include "lib/color_transforms.glsl"
-#include "lib/sky_gradient.glsl"
-#include "lib/stars.glsl"
-#include "lib/volumetricClouds.glsl"
+#include "/lib/res_params.glsl"
+#include "/lib/waterOptions.glsl"
+#include "/lib/Shadow_Params.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/sky_gradient.glsl"
+#include "/lib/stars.glsl"
+#include "/lib/volumetricClouds.glsl"
 
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
@@ -111,7 +111,7 @@ float ld(float dist) {
 uniform sampler2D colortexD;
 #endif
 
-#include "lib/specular.glsl"
+#include "/lib/specular.glsl"
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
 }
@@ -750,7 +750,7 @@ void main() {
 			
 			
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
-	//		gl_FragData[0].rgb = ambientLight;
+	//		gl_FragData[0].rgb = vec3(1.0);
 			
 			#ifndef SSGI
 			#ifdef SSAO

@@ -15,8 +15,8 @@ uniform float viewHeight;
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform int isEyeInWater;
-#include "lib/color_transforms.glsl"
-#include "lib/color_dither.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/color_dither.glsl"
 #include "/lib/res_params.glsl"
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {
@@ -97,4 +97,6 @@ void main() {
   //col = -vec3(-lum*CROSSFADING + SATURATION);
 	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
   //gl_FragColor.rgb = vec3(contrast);
+  //gl_FragColor.rgb = vec3(contrast);
+  
 }

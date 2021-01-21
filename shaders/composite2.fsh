@@ -51,14 +51,14 @@ uniform int isEyeInWater;
 uniform vec2 texelSize;
 
 
-#include "lib/waterOptions.glsl"
-#include "lib/Shadow_Params.glsl"
-#include "lib/color_transforms.glsl"
-#include "lib/color_dither.glsl"
-#include "lib/projections.glsl"
-#include "lib/sky_gradient.glsl"
+#include "/lib/waterOptions.glsl"
+#include "/lib/Shadow_Params.glsl"
+#include "/lib/color_transforms.glsl"
+#include "/lib/color_dither.glsl"
+#include "/lib/projections.glsl"
+#include "/lib/sky_gradient.glsl"
 #include "/lib/res_params.glsl"
-#include "lib/volumetricClouds.glsl"
+#include "/lib/volumetricClouds.glsl"
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
 float interleaved_gradientNoise(){

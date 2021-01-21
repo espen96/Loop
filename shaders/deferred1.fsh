@@ -32,9 +32,9 @@ vec3 toScreenSpace(vec3 p) {
     return fragposition.xyz / fragposition.w;
 }
 
-#include "lib/sky_gradient.glsl"
+#include "/lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
-#include "lib/volumetricClouds.glsl"
+#include "/lib/volumetricClouds.glsl"
 #include "/lib/res_params.glsl"
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,

@@ -3,7 +3,7 @@
 
 #extension GL_EXT_gpu_shader4 : enable
 
-#include "lib/res_params.glsl"
+#include "/lib/res_params.glsl"
 
 
 //TAA OPTIONS
@@ -85,7 +85,7 @@ uniform int framemod8;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
-#include "lib/projections.glsl"
+#include "/lib/projections.glsl"
 
 
 float luma(vec3 color) {

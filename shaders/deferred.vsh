@@ -154,10 +154,10 @@ void main() {
 	float sunVis = clamp(sunElevation,0.0,0.05)/0.05*clamp(sunElevation,0.0,0.05)/0.05;
 	float moonVis = clamp(-sunElevation,0.0,0.05)/0.05*clamp(-sunElevation,0.0,0.05)/0.05;
 
-	zenithColor = calculateAtmosphere(vec3(0.0), vec3(0.0,1.0,0.0), vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,tempOffsets.x);
+	zenithColor = calculateAtmosphere(vec3(0.0), vec3(0.0,1.0,0.0), vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 20,tempOffsets.x);
 	skyAbsorb = vec3(0.0);
 	vec3 absorb = vec3(0.0);
-	sunColor = calculateAtmosphere(vec3(0.0), sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.0);
+	sunColor = calculateAtmosphere(vec3(0.0), sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 20,0.0);
 	sunColor = sunColorBase/4000. * skyAbsorb;
 
 	skyAbsorb = vec3(1.0);
@@ -165,18 +165,18 @@ void main() {
 	vec3 modSunVec = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
 	vec3 modSunVec2 = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
 	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
-	sunColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.);
+	sunColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 20,0.);
 	sunColorCloud = sunColorBase/4000. * skyAbsorb ;
 
 	skyAbsorb = vec3(1.0);
-	moonColor = calculateAtmosphere(vec3(0.0), -sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
+	moonColor = calculateAtmosphere(vec3(0.0), -sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 20,0.5);
 	moonColor = moonColorBase/4000.0*skyAbsorb;
 
 	skyAbsorb = vec3(1.0);
 	modSunVec = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
 	modSunVec2 = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
 	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
-	moonColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
+	moonColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 20,0.5);
 
 	moonColorCloud = moonColorBase/4000.0*0.55;
 	#ifndef CLOUDS_SHADOWS

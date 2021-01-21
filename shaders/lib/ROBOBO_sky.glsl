@@ -40,18 +40,16 @@ const mat3   sky_coefficientsAttenuation = mat3(sky_coefficientRayleigh, sky_coe
 #define moon_illuminance 125.0 //[0.0 10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0 1000.0 10000.0 100000.0]
 
 #define sunColorR 1.0 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
-#define sunColorG 0.82 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
-#define sunColorB 0.85 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
+#define sunColorG 0.91 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
+#define sunColorB 0.81 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
 
 #define sunColorBase (vec3(sunColorR,sunColorG,sunColorB) * sun_illuminance)
 //#define sunColorBase blackbody(5778) * sun_illuminance
-#define moonColorR 0.9 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
-#define moonColorG 0.9 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
-#define moonColorB 0.9 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
+#define moonColorR 0.9080 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
+#define moonColorG 0.9121 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
+#define moonColorB 0.8948 //[0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0 ]
 
 #define moonColorBase (vec3(moonColorR, moonColorG, moonColorB) * moon_illuminance )    //Fake Purkinje effect
-
-
 
 float sky_rayleighPhase(float cosTheta) {
 	const vec2 mul_add = vec2(0.1, 0.28) * rPI;
@@ -76,31 +74,30 @@ vec3 sky_density(float centerDistance) {
 	return vec3(rayleighMie, ozone);
 }
 
-// Seb Lagarde Approx
-float ATanPos(float x)
-{
-    float t0 = (x < 1.0f) ? x : 1.0f / x;
-    float t1 = (-0.218891 * t0 + 1.01991) * t0; // p(x)
-    return (x < 1.0f) ? t1: PI/2.0 - t1; // undo range reduction
+vec3 sky_airmass(vec3 position, vec3 direction, float rayLength, const float steps) {
+	float stepSize  = rayLength * (1.0 / steps);
+	vec3  increment = direction * stepSize;
+	position += increment * 0.5;
+
+	vec3 airmass = vec3(0.0);
+	for (int i = 0; i < steps && airmass.g < 50.0; ++i, position += increment) {
+		airmass += sky_density(length(position));
+	}
+
+	return airmass * stepSize;
 }
-
-float ATan(float x)
-{
-    float t0 = ATanPos(abs(x));
-    return (x < 0.0f) ? -t0: t0; // undo range reduction
-}
-
-
 vec3 sky_airmass(vec3 position, vec3 direction, const float steps) {
-	float l = length(position);
-	vec2 rayLeighMie = exp(sky_scaledPlanetRadius - l * sky_inverseScaleHeights)  / sky_inverseScaleHeights;
-	// Integral of the lorentzian approximation of ozone distribution : 1/(1+((x-40000)/5000)^2)
-	float l2 = (l - 40000 - sky_planetRadius)/7000.;
-	float ozone =  0.5 * PI *7000. - ATan(l2)*7000.;
-	// The integral path is longer near the horizon, it is "streching" the vertical path
-	return vec3(rayLeighMie, ozone) / clamp(direction.y*0.82+0.18*(position.y-sky_planetRadius)/110e3,1e-10,1.0);
+	float rayLength = dot(position, direction);
+	      rayLength = rayLength * rayLength + sky_atmosphereRadiusSquared - dot(position, position);
+		  if (rayLength < 0.0) return vec3(0.0);
+	      rayLength = sqrt(rayLength) - dot(position, direction);
+
+	return sky_airmass(position, direction, rayLength, steps);
 }
 
+vec3 sky_opticalDepth(vec3 position, vec3 direction, float rayLength, const float steps) {
+	return sky_coefficientsAttenuation * sky_airmass(position, direction, rayLength, steps);
+}
 vec3 sky_opticalDepth(vec3 position, vec3 direction, const float steps) {
 	return sky_coefficientsAttenuation * sky_airmass(position, direction, steps);
 }
@@ -114,7 +111,7 @@ vec3 sky_transmittance(vec3 position, vec3 direction, const float steps) {
 vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 sunVector, vec3 moonVector, out vec2 pid, out vec3 transmittance, const int iSteps, float noise) {
 	const int jSteps = 4;
 
-	vec3 viewPosition = vec3(0.0,sky_planetRadius + eyeAltitude,0.0);
+	vec3 viewPosition = (sky_planetRadius + eyeAltitude) * upVector;
 
 	vec2 aid = rsi(viewPosition, viewVector, sky_atmosphereRadius);
 	if (aid.y < 0.0) {transmittance = vec3(1.0); return vec3(0.0);}
@@ -126,10 +123,10 @@ vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 s
 
 	float stepSize  = (sd.y - sd.x) * (1.0 / iSteps);
 	vec3  increment = viewVector * stepSize;
-	vec3  position  = viewPosition + increment * (0.34*noise);
-	float SdotV = dot(viewVector, sunVector );
-	vec2 phaseSun  = sky_phase(SdotV, sky_mieg);
-	vec2 phaseMoon = sky_phase(-SdotV, sky_mieg);
+	vec3  position  = viewVector * sd.x + viewPosition;
+	position += increment * (0.34*noise);
+	vec2 phaseSun  = sky_phase(dot(viewVector, sunVector ), sky_mieg);
+	vec2 phaseMoon = sky_phase(dot(viewVector, moonVector), sky_mieg);
 
 	vec3 scatteringSun     = vec3(0.0);
 	vec3 scatteringMoon    = vec3(0.0);
@@ -143,11 +140,15 @@ vec3 calculateAtmosphere(vec3 background, vec3 viewVector, vec3 upVector, vec3 s
 		vec3 stepOpticalDepth = sky_coefficientsAttenuation * stepAirmass;
 
 		vec3 stepTransmittance       = exp2(-stepOpticalDepth * rLOG2);
-		vec3 stepTransmittedFraction = (stepTransmittance - 1.0) / -stepOpticalDepth;
+		vec3 stepTransmittedFraction = clamp01((stepTransmittance - 1.0) / -stepOpticalDepth);
 		vec3 stepScatteringVisible   = transmittance * stepTransmittedFraction;
+		vec3 sunContribution = sky_coefficientsScattering * (stepAirmass.xy * phaseSun ) * stepScatteringVisible;
 
-		scatteringSun  += sky_coefficientsScattering * (stepAirmass.xy * phaseSun ) * stepScatteringVisible * sky_transmittance(position, sunVector,  jSteps);
-		scatteringMoon += sky_coefficientsScattering * (stepAirmass.xy * phaseMoon) * stepScatteringVisible * sky_transmittance(position, moonVector, jSteps);
+		if (sunContribution.g > 1e-5)
+			scatteringSun  += sunContribution * sky_transmittance(position, sunVector,  jSteps);
+		vec3 moonContribution = sky_coefficientsScattering * (stepAirmass.xy * phaseMoon) * stepScatteringVisible;
+		if (moonContribution.g > 1e-5)
+			scatteringMoon += moonContribution* sky_transmittance(position, moonVector, jSteps);
 		// Nice way to fake multiple scattering.
 		scatteringAmbient += sky_coefficientsScattering * stepAirmass.xy * stepScatteringVisible;
 

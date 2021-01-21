@@ -109,7 +109,7 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
     for (int i = 0; i <= int(quality); i++) {
 			#ifdef USE_QUARTER_RES_DEPTH
 			// decode depth buffer
-			float sp = sqrt(texelFetch2D(gaux1,ivec2(spos.xy/texelSize/4),0).w/65000.0);
+			float sp = sqrt(texelFetch2D(gaux1,ivec2(spos.xy/texelSize*0.25),0).w/65000.0);
 			sp = invLinZ(sp);
           if(sp <= max(maxZ,minZ) && sp >= min(maxZ,minZ)){
 						return vec3(spos.xy/RENDER_SCALE,sp);
@@ -293,11 +293,11 @@ void main() {
 				projectedShadowPosition.xy *= distortFactor;
 				//do shadows only if on shadow map
 				if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution){
-					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
+					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance*0.0078125,0.95);
 					float distortThresh = (sqrt(1.0-diffuseSun*diffuseSun)/diffuseSun+0.7)/distortFactor;
 					float diffthresh = distortThresh/6000.0*threshMul;
 
-					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
+					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5*0.166) + vec3(0.5,0.5,0.5);
 
 					shading = 0.0;
 					float noise = blueNoise();
@@ -306,7 +306,7 @@ void main() {
 						vec2 offsetS = tapLocation(i,9, 2.0,noise,0.0);
 
 						float weight = 1.0+(i+noise)*rdMul/9.0*shadowMapResolution;
-						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x/9.0;
+						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x*0.111;
 						}
 					direct *= shading;
 				}

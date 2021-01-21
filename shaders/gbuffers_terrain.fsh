@@ -275,7 +275,7 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
   //data0.rgb = vec3(avgBlockLum);
-  //data0.rgb = clamp(data0.rgb*pow((0.55+avgBlockLum),-(1.0/2.233)),0.0,1.0);
+  //data0.rgb = clamp(data0.rgb*pow((0.55+avgBlockLum),-(1.0*0.42)),0.0,1.0);
   //if (toLinear(data0.rgb).g > 0.25) data0.rgb=vec3(1.,0.,0.);
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;

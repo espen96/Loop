@@ -88,22 +88,22 @@ uniform int framecouter;
 
 float w0(float a)
 {
-    return (1.0/6.0)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
+    return (0.1666)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
 }
 
 float w1(float a)
 {
-    return (1.0/6.0)*(a*a*(3.0*a - 6.0) + 4.0);
+    return (0.1666)*(a*a*(3.0*a - 6.0) + 4.0);
 }
 
 float w2(float a)
 {
-    return (1.0/6.0)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
+    return (0.1666)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
 }
 
 float w3(float a)
 {
-    return (1.0/6.0)*(a*a*a);
+    return (0.1666)*(a*a*a);
 }
 
 float g0(float a)
@@ -213,7 +213,7 @@ void main() {
 	vec3 diffuseLight = direct*lmtexcoord.w + ambient;
 
 
-	gl_FragData[0].rgb = diffuseLight*albedo*8./3.0/150.*0.1;
+	gl_FragData[0].rgb = diffuseLight*albedo*8.*0.333*0.0066*0.1;
 	gl_FragData[1].rgba = vec4(0.0);
 
 

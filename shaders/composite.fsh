@@ -144,10 +144,10 @@ vec3 decode (vec2 enc)
 {
     vec2 fenc = enc*4-2;
     float f = dot(fenc,fenc);
-    float g = sqrt(1-f/4.0);
+    float g = sqrt(1-f*0.25);
     vec3 n;
     n.xy = fenc*g;
-    n.z = 1-f/2;
+    n.z = 1-f*0.5;
     return n;
 }
 
@@ -256,7 +256,7 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
 	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
-	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
+	pos = pos*0.5+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
 		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
@@ -294,7 +294,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
-				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
+				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
 				sh =  shadow2D( shadow, pos).x;
 			}
 			vec3 ambientMul = exp(-estEndDepth * d * waterCoefs * 1.1);
@@ -420,7 +420,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 #endif
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
-    float alpha = (float(sampleNumber*1.0f + r0) * (1.0 / (nb)));
+    float alpha = (float(sampleNumber + r0) * (1.0 / (nb)));
     float angle = alpha * (nbRot * 6.28) + spinAngle*6.28;
 
     float ssR = alpha;
@@ -607,7 +607,7 @@ void main() {
 				#endif
 				#ifdef POM
 				#ifdef Depth_Write_POM
-					diffthresh += POM_DEPTH/128./4./6.0;
+					diffthresh += POM_DEPTH*0.0078125*0.25*0.166;
 				#endif
 				#endif
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
@@ -629,7 +629,7 @@ void main() {
 			vec3 extinction = 1.0 - albedo*0.85;
 			// Should be somewhat energy conserving
 			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
-			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.5/4.0*sssAmount,0.0,1.0);
+			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.5*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
 			diffuseSun *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
@@ -640,7 +640,7 @@ void main() {
 			vec3 extinction = 1.0 - albedo*0.85;
 			// Should be somewhat energy conserving
 			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
-			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26/4.0*sssAmount,0.0,1.0);
+			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
 			diffuseSun *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
@@ -675,12 +675,12 @@ void main() {
 		#endif
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
-		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 1.0/6.0, sssAmount);
-		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 1.0/6.0, sssAmount);
-		ambientLight += ambientRight*mix(clamp(ambientCoefs.x,0.,1.), 1.0/6.0, sssAmount);
-		ambientLight += ambientLeft*mix(clamp(-ambientCoefs.x,0.,1.), 1.0/6.0, sssAmount);
-		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
-		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
+		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
+		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 0.166, sssAmount);
+		ambientLight += ambientRight*mix(clamp(ambientCoefs.x,0.,1.), 0.166, sssAmount);
+		ambientLight += ambientLeft*mix(clamp(-ambientCoefs.x,0.,1.), 0.166, sssAmount);
+		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 0.166, sssAmount);
+		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 0.166, sssAmount);
 
 		vec3 directLightCol = lightCol.rgb;
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;

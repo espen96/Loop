@@ -189,7 +189,7 @@ void main() {
 
 
 	//Fake bounced sunlight
-	vec3 bouncedSun = lightSourceColor*0.1/5.0*0.5*clamp(lightDir*sunVec.y,0.0,1.0)*clamp(lightDir*sunVec.y,0.0,1.0);
+	vec3 bouncedSun = lightSourceColor*0.1*0.2*0.5*clamp(lightDir*sunVec.y,0.0,1.0)*clamp(lightDir*sunVec.y,0.0,1.0);
 	vec3 cloudAmbientSun = (sunColorCloud)*0.007*(1.0-rainStrength*0.5);
 	vec3 cloudAmbientMoon = (moonColorCloud)*0.007*(1.0-rainStrength*0.5);
 	ambientUp += bouncedSun*clamp(-lightDir*sunVec.y+4.,0.,4.0) + cloudAmbientSun*clamp(sunVec.y+2.,0.,4.0) + cloudAmbientMoon*clamp(-sunVec.y+2.,0.,4.0);

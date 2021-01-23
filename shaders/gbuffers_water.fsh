@@ -51,8 +51,8 @@ uniform int isEyeInWater;
 #include "/lib/projections.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/waterBump.glsl"
-#include "/lib/clouds.glsl"
-#include "/lib/stars.glsl"
+
+
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 									vec2(-1.,3.)/8.,
 									vec2(5.0,1.)/8.,
@@ -61,11 +61,7 @@ uniform int isEyeInWater;
 									vec2(-7.,-1.)/8.,
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
-float interleaved_gradientNoise(float temporal){
-	vec2 coord = gl_FragCoord.xy;
-	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y)+temporal);
-	return noise;
-}
+
 float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
@@ -75,13 +71,7 @@ float invLinZ (float lindepth){
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
-vec3 nvec3(vec4 pos){
-    return pos.xyz/pos.w;
-}
 
-vec4 nvec4(vec3 pos){
-    return vec4(pos.xyz, 1.0);
-}
 vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 
     float quality = mix(10,SSR_STEPS,fresnel);
@@ -131,32 +121,12 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float fresnel){
 }
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-    return sx > 0. ? a : pi - a;
-}
 
-
-
-
-	float bayer2(vec2 a){
-	a = floor(a);
-    return fract(dot(a,vec2(0.5,a.y*0.75)));
-}
-
-float cdist(vec2 coord) {
-	return max(abs(coord.s-0.5),abs(coord.t-0.5))*2.0;
-}
 
 	#define PW_DEPTH 1.0 //[0.5 1.0 1.5 2.0 2.5 3.0]
 	#define PW_POINTS 1 //[2 4 6 8 16 32]
-	#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
-#define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
-#define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
-#define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
-#define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
-#define bayer128(a) fract(bayer64(.5*(a))*.25+bayer2(a))
+
+
 vec3 getParallaxDisplacement(vec3 posxz, float iswater,float bumpmult,vec3 viewVec) {
 	float waveZ = mix(20.0,0.25,iswater);
 	float waveM = mix(0.0,4.0,iswater);
@@ -181,25 +151,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 
     return vec2(cos_v, sin_v)*sqrt(alpha);
 }
-//Low discrepancy 2D sequence, integration error is as low as sobol but easier to compute : http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-vec2 R2_samples(int n){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha * n);
-}
-vec4 hash44(vec4 p4)
-{
-	p4 = fract(p4  * vec4(.1031, .1030, .0973, .1099));
-    p4 += dot(p4, p4.wzxy+33.33);
-    return fract((p4.xxyz+p4.yzzw)*p4.zywx);
-}
-vec3 TangentToWorld(vec3 N, vec3 H)
-{
-    vec3 UpVector = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 T = normalize(cross(UpVector, N));
-    vec3 B = cross(N, T);
 
-    return vec3((T * H.x) + (B * H.y) + (N * H.z));
-}
 float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
   r*=r;r*=r;
 
@@ -235,6 +187,7 @@ void main() {
 		float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 		gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 		vec3 albedo = toLinear(gl_FragData[0].rgb);
+		
 		if (iswater > 0.4) {
 			albedo = vec3(0.42,0.6,0.7);
 			gl_FragData[0] = vec4(0.42,0.6,0.7,0.7);
@@ -265,10 +218,7 @@ void main() {
 
 
 				posxz.xyz = getParallaxDisplacement(posxz,iswater,bumpmult,normalize(tbnMatrix*fragpos));
-
 				bump = normalize(getWaveHeight(posxz.xz,iswater));
-
-
 
 				bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
 
@@ -276,7 +226,7 @@ void main() {
 			}
 
 			float NdotL = lightSign*dot(normal,sunVec);
-			float NdotU = dot(upVec,normal);
+	
 			float diffuseSun = clamp(NdotL,0.0f,1.0f);
 
 			vec3 direct = texelFetch2D(gaux1,ivec2(6,37),0).rgb/3.1415;
@@ -323,13 +273,12 @@ void main() {
 
 			float roughness = 0.02;
 
-			float emissive = 0.0;
-			float F0 = f0;
+
 
 			vec3 reflectedVector = reflect(normalize(fragpos), normal);
 			float normalDotEye = dot(normal, normalize(fragpos));
 			float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
-			fresnel = mix(F0,1.0,fresnel);
+			fresnel = mix(f0,1.0,fresnel);
 			if (iswater > 0.4){
 				roughness = 0.1;
 			}

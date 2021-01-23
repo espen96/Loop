@@ -1,1 +1,3 @@
 IGNORE/
+shaders/shadow.vsh.bak
+shaders/lib/clouds.glsl.bak

@@ -6,7 +6,7 @@
 #define cloud_LevelOfDetailLQ -1	// Number of fbm noise iterations for reflected clouds (-1 is no fbm)	[-1 0 1 2 3 4 5 6 7 8]
 #define cloud_ShadowLevelOfDetailLQ -1	// Number of fbm noise iterations for the shadowing of reflected clouds (-1 is no fbm)	[-1 0 1 2 3 4 5 6 7 8]
 #define minRayMarchSteps 25		// Number of ray march steps towards zenith for on-screen clouds	[20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125 130 135 140 145 150 155 160 165 170 175 180 185 190 195 200]
-#define maxRayMarchSteps 50		// Number of ray march steps towards horizon for on-screen clouds	[20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125 130 135 140 145 150 155 160 165 170 175 180 185 190 195 200]
+#define maxRayMarchSteps 80		// Number of ray march steps towards horizon for on-screen clouds	[20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125 130 135 140 145 150 155 160 165 170 175 180 185 190 195 200]
 #define minRayMarchStepsLQ 5	// Number of ray march steps towards zenith for reflected clouds	[5  10  15  20  25  30  35  40  45  50  55  60  65  70  75  80  85  90 95 100]
 #define maxRayMarchStepsLQ 20		// Number of ray march steps towards horizon for reflected clouds	[  5  10  15  20  25  30  35  40  45  50  55  60  65  70  75  80  85  90 95 100]
 
@@ -139,22 +139,7 @@ float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
 	return cloud;
 }
 
-float cloudVol2(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
-	float noise = 0.0;
-	float totalWeights = 0.0;
-	float pw = log(fbmPower1);
-	float pw2 = log(fbmPower2);
-	for (int i = 0; i <= LoD; i++){
-	  float	weight = exp(-i*pw2);
-		noise += weight - densityAtPos(samplePos*exp(i*pw))*weight;
-		totalWeights += weight;
-	}
-	noise /= totalWeights;
-	noise = noise*noise;
-	float cloud = max(cov-noise*noise*(1.1+rainStrength)*fbmAmount,0.0);
-	//float cloud = clamp(cov-0.1*(0.2+mult2),0.0,1.0);
-	return cloud;
-}
+
 
 
 
@@ -184,18 +169,6 @@ float getCloudDensity(in vec3 pos, in int LoD){
 
 
 
-float getCloudDensity2(in vec3 pos, in int LoD){
-	vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4 + cloudSpeed2;
-	float coverageSP = cloudCov(pos,samplePos);
-	if (coverageSP > 0.001) {
-		if (LoD < 0)
-			return max(coverageSP - 0.27*(fbmAmount+rainStrength),0.0);
-		return cloudVol2(pos,samplePos,coverageSP, LoD);
-	}
-	else
-		return 0.0;
-}
-
 
 //Mie phase function
 float phaseg(float x, float g){
@@ -203,35 +176,12 @@ float phaseg(float x, float g){
     return (gg * -0.25 /3.14 + 0.25 /3.14) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5);
 }
 
-float calcShadow(vec3 pos, vec3 ray){
-	float shadowStep = length(ray);
-	float d = 0.0;
-	for (int j=1;j<6;j++){
-		float cloudS=1.0;
-		d += cloudS*cloudDensity;
 
-		}
-	return max(exp(-shadowStep*d),exp(-0.25*shadowStep*d)*0.7);
-}
-float cirrusClouds(vec3 pos){
-	vec2 pos2D = pos.xz/50000.0 + cloudSpeed/200.;
-	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
-	float cloud = texture2D(noisetex, pos2D).r;
-	float weights = 1.0;
-	vec2 posMult = vec2(2.0,1.5);
-	for (int i = 1; i < 4; i++){
-		pos2D *= posMult;
-		float weight =exp2(-i*1.0);
-		cloud += texture2D(noisetex, pos2D).r*weight;
-
-		weights += weight;
-	}
-	cloud = clamp(cloud*cirrusMap*0.25,0.0,1.0);
-	return cloud/weights * float(abs(pos.y - 5500.0) < 200.0);
-}							 
 
 
 vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 moonColor,vec3 avgAmbient) {
+
+
 		#ifndef VOLUMETRIC_CLOUDS
 			return vec4(0.0,0.0,0.0,1.0);
 		#endif
@@ -291,12 +241,16 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		//fake multiple scattering approx 1 (from horizon zero down clouds)
 
 		float mieDay = max(phaseg(SdotV, cloudMieG),phaseg(SdotV, cloudMieG2)*cloudMie2Multiplier);
+		float mieDayMulti = phaseg(SdotV, 0.2);										 
 		float mieNight = max(phaseg(-SdotV, cloudMieG),phaseg(-SdotV, cloudMieG2)*cloudMie2Multiplier);
+		float mieNightMulti = phaseg(-SdotV, 0.2);											
 		
 		
 		
 		vec3 sunContribution = mieDay*sunColor*2.14;
+		vec3 sunContributionMulti = mieDayMulti*sunColor;												   
 		vec3 moonContribution = mieNight*moonColor*10.14;
+		vec3 moonContributionMulti = mieNightMulti*moonColor;													   
 		float ambientMult = exp(-(cloudCoverage+0.24+0.8*rainStrength)*cloudDensity*75.0);
 		vec3 skyCol0 = avgAmbient * ambientMult;
 
@@ -311,7 +265,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					float muEshD = 0.0;
 					if (sunContribution.g > 1e-5){
 	
-						for (int j=1;j<8;j++){
+						for (int j=1;j<6;j++){
 				
 						
 							vec3 shadowSamplePos = progress_view+dV_Sun*j;
@@ -324,7 +278,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					}
 					float muEshN = 0.0;
 					if (moonContribution.g > 1e-5){
-						for (int j=1;j<8;j++){
+						for (int j=1;j<6;j++){
 							vec3 shadowSamplePos = progress_view-dV_Sun*j;
 							if (shadowSamplePos.y < maxHeight)
 							{
@@ -336,10 +290,15 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					//fake multiple scattering approx 2  (from horizon zero down clouds)
 					float h = 0.5-0.5*clamp(progress_view.y/4000.-1500./4000.,0.0,1.0);
 					float powder = 1.0-exp(-muE*mult);
-					float sunShadow = max(exp(-muEshD),0.7*exp(-0.25*muEshD))*mix(1.0, powder,  h);
-					float moonShadow = max(exp2(-muEshN),0.7*exp(-0.25*muEshN))*mix(1.0, powder,  h);
+//					float sunShadow = max(exp(-muEshD),0.1*exp(-0.25*muEshD))*mix(1.0, powder,  h);
+//					float moonShadow = max(exp(-muEshN),0.1*exp(-0.25*muEshN))*mix(1.0, powder,  h);
+					float sunShadow = exp(-muEshD);
+					float moonShadow = exp(-muEshN);
+					float moonShadowMulti = exp(-log(muEshN*0.15+0.5)) * powder;			
+					float sunShadowMulti = exp(-log(muEshD*0.15+0.5)) * powder;					
 					float ambientPowder = mix(1.0,powder,h * ambientMult);
 					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
+//						 S = vec3(sunContribution*sunShadow + sunShadowMulti*sunContributionMulti + moonShadowMulti*moonContributionMulti +  moonShadow*moonContribution+skyCol0*ambientPowder);
 
 
 					vec3 Sint=(S - S * exp(-mult*muE)) / (muE);
@@ -353,9 +312,28 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 
 
 
-		float cosY = normalize(dV_view).y;
+		vec3 normView = normalize(dV_view);
+		// Assume fog color = sky gradient at long distance
+		vec3 fogColor = skyFromTex(normView, colortex4)/150.;
+		float dist = (cloud_height - cameraPosition.y)/normalize(dV_view).y;
+		float fog = exp(-dist/40000.0*(1.0+rainStrength*2.));
 
+		return mix(vec4(fogColor,0.0), vec4(color,clamp(total_extinction,0.0,1.0)), fog);
 
-		return mix(vec4(color,clamp(total_extinction,0.0,1.0)),vec4(0.0,0.0,0.0,1.0),1-smoothstep(0.02,0.15,cosY));
+}
+float cirrusClouds(vec3 pos){
+	vec2 pos2D = pos.xz/50000.0 + frameTimeCounter/200.;
+	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
+	float cloud = texture2D(noisetex, pos2D).r*100;
+	float weights = 1.0;
+	vec2 posMult = vec2(2.0,1.5);
+	for (int i = 1; i < 1; i++){
+		pos2D *= posMult;
+		float weight =exp2(-i*1.0);
+		cloud += texture2D(noisetex, pos2D).r*weight;
 
+		weights += weight;
+	}
+	cloud = clamp(cloud*cirrusMap*0.25,0.0,1.0);
+	return cloud/weights * float(abs(pos.y - 5500.0) < 200.0);
 }

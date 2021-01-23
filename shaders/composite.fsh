@@ -6,7 +6,7 @@
 
 #define SSAO
 #define SPEC
-//#define SPEC_REF
+//#define ROUGHREF
 
 
 
@@ -886,8 +886,11 @@ void main() {
 			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
 			roughness = mix(roughness, 0.01, rainMult);
 			f0 = mix(f0, vec3(0.02), rainMult);
-			//f0 = vec3(0.5);
-			//roughness = 0.01;
+			
+
+
+
+			
 
 			// Energy conservation between diffuse and specular
 			vec3 fresnelDiffuse = vec3(0.0);
@@ -899,12 +902,21 @@ void main() {
 			const int nSpecularSamples = 3;
 			
 			mat3 basis = CoordBase(normal);
-			vec3 normSpaceView = -np3*basis;								
+			vec3 normSpaceView = -np3*basis;	
 
+			
+		#ifndef ROUGHREF
+			roughness = 0.0;
+		if(trpData.y > 0.1) {		
+		#endif			
+			
 			for (int i = 0; i < nSpecularSamples; i++){
 				// Generate ray
 				int seed = frameCounter*nSpecularSamples + i;
 				vec2 ij = fract(R2_samples(seed) + blueNoise(gl_FragCoord.xy).rg);
+								
+
+				
 				vec3 H = sampleGGXVNDF(normSpaceView, roughness, roughness, ij.x, ij.y);
 				vec3 Ln = reflect(-normSpaceView, H);
 				vec3 L = basis * Ln;
@@ -915,9 +927,12 @@ void main() {
 				vec3 rayContrib = F * g1;
 
 				// Skip calculations if ray does not contribute much to the lighting
+				
+
 				if (luma(rayContrib) > 0.02 && roughness <=0.9 && !hand && !iswater){
+
 					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
-					#ifdef SPEC_REF	
+		
 					// Scale quality with ray contribution
 					float rayQuality = 35*sqrt(luma(rayContrib));
 					
@@ -947,7 +962,7 @@ void main() {
 							}
 						}
 					}
-	#endif
+
 
 					// Sample skybox
 					if (reflection.a < 0.9){
@@ -967,6 +982,12 @@ void main() {
 				}
 
 			}
+			
+		#ifndef ROUGHREF
+			}
+		#endif					
+			
+			
 		vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) ;
 			vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
 			vec3 previousPosition = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -979,14 +1000,14 @@ void main() {
 		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
 		}
 		else{			 
-	
+	if(roughness <0.1) roughness = 0.5;
 		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(0.1+(roughness),0,1));	}	
+//		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,1.0);	}	
 			
 		gl_FragData[2].rgb = speculars.rgb;	
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
 			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/nSpecularSamples) *  gl_FragData[0].rgb;
-
 
 		#endif
 
@@ -996,6 +1017,6 @@ void main() {
 	}
 
 
-//		gl_FragData[0].rgb = vec3(texture2D(colortexE,texcoord).rg,0);	
+
 /* DRAWBUFFERS:3CD */
 }

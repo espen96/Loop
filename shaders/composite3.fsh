@@ -121,10 +121,10 @@ void main() {
 
   }
   vec3 color = texture2D(colortex3,refractedCoord).rgb;
-  vec3 color2 = texture2D(colortexA,refractedCoord).rgb;
+
   if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
     color = color*(1.0-transparencies.a)+transparencies.rgb*10.;
-    color2 = color2*(1.0-transparencies.a)+transparencies.rgb*10.;
+
 
   float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -132,19 +132,19 @@ void main() {
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 
   color *= vl.a;
-  color2 *= vl.a;
+
   if (isEyeInWater == 1){
     vec3 fragpos = toScreenSpace(vec3(texcoord,z));
     color.rgb *= exp(-length(fragpos)*totEpsilon);
-    color2.rgb *= exp(-length(fragpos)*totEpsilon);
+
     vl.a *= dot(exp(-length(fragpos)*totEpsilon),vec3(0.2,0.7,0.1))*0.5+0.5;
   }
   if (isEyeInWater == 2){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
     color.rgb *= exp(-length(fragpos)*vec3(0.2,0.7,4.0)*4.);
-    color2.rgb *= exp(-length(fragpos)*vec3(0.2,0.7,4.0)*4.);
+   
     color.rgb += vec3(4.0,0.5,0.1)*0.5;
-    color2.rgb += vec3(4.0,0.5,0.1)*0.5;
+
     vl.a = 0.0;
   }
   else
@@ -152,8 +152,7 @@ void main() {
   gl_FragData[0].r = vl.a;
   gl_FragData[0].a = trpData.a;
   gl_FragData[1].rgb = clamp(color,6.11*1e-5,65000.0);
-  gl_FragData[2].rgb = clamp(color2,6.11*1e-5,65000.0);
-  gl_FragData[3].rgb = clamp((abs(color.rgb-color2.rgb)),0,1);
+
 
 
 }

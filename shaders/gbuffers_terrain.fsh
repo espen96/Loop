@@ -1,9 +1,8 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
+#define SPEC
 
-
-//#define SPEC
 
 //#define POM
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
@@ -261,6 +260,8 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 	#ifdef SPEC
 	gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
 	gl_FragData[1].a = 0.0;
+	#else 
+	gl_FragData[1] = vec4(0.0);	
 	#endif
 
 	#else
@@ -269,14 +270,15 @@ if (dist < MAX_OCCLUSION_DISTANCE) {
 
 	#ifdef SPEC
 	gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
+	#else
+	gl_FragData[1] = vec4(0.0);
 	#endif
 
 	data0.rgb*=color.rgb;
   float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
   data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
-  //data0.rgb = vec3(avgBlockLum);
-  //data0.rgb = clamp(data0.rgb*pow((0.55+avgBlockLum),-(1.0*0.42)),0.0,1.0);
-  //if (toLinear(data0.rgb).g > 0.25) data0.rgb=vec3(1.,0.,0.);
+
+  
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;
   #endif

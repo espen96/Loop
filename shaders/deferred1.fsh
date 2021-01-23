@@ -5,6 +5,7 @@
 #define HQ_CLOUDS	//Renders detailled clouds for viewport
 #define CLOUDS_QUALITY 0.35 //[0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.9 1.0]
 #define TAA
+#define VOLUMETRIC_CLOUDS
 
 flat varying vec3 sunColor;
 flat varying vec3 moonColor;
@@ -34,7 +35,11 @@ vec3 toScreenSpace(vec3 p) {
 
 #include "/lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
+
+
+#ifdef VOLUMETRIC_CLOUDS
 #include "/lib/volumetricClouds.glsl"
+#endif
 #include "/lib/res_params.glsl"
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-1.,3.)/8.,
@@ -63,7 +68,9 @@ void main() {
 	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
 
 	vec3 fragpos = toScreenSpace(vec3(halfResTC*texelSize,1.0));
+
 	vec4 currentClouds = renderClouds(fragpos,vec3(0.), blueNoise(),sunColor/150.,moonColor/150.,avgAmbient/150.);
+	 
 	gl_FragData[0] = currentClouds;
 
 

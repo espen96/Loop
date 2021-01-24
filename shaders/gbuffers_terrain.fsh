@@ -176,7 +176,11 @@ void main() {
 						     	  tangent.z, tangent2.z, normal.z);
 	#endif
 
-	
+vec2 lm = lmtexcoord.zw;
+	#ifdef SPEC	
+		lm = clamp(lm+((1- texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias).a)),0,1);
+
+	#endif	
 //////////////////////////////POM//////////////////////////////		
 #ifdef POM
 
@@ -255,7 +259,7 @@ void main() {
 		  else data0.a = 0.0;
 
 			vec3 normalTex = texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz;
-			vec2 lm = lmtexcoord.zw*normalTex.b;
+			  lm *= normalTex.b;
 			normalTex.xy = normalTex.xy*2.0-1.0;
 
 			
@@ -267,7 +271,7 @@ void main() {
 			data0.rgb*=color.rgb;
 			vec4 data1 = clamp(noise*exp2(-8.)+encode(normal, lm),0.,1.0);
 
-			gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+	
 
 			#ifdef SPEC
 			gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
@@ -302,7 +306,7 @@ void main() {
 
 	if (data0.a > 0.1) data0.a = normalMat.a;
   else data0.a = 0.0;
-	vec2 lm = lmtexcoord.zw;
+
 
 		
 	#ifdef MC_NORMAL_MAP
@@ -315,14 +319,13 @@ void main() {
 		normal = applyBump(tbnMatrix,normalTex);
 
 	#endif
-		#ifdef SPEC	
-		lm += (1- texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias).a);
-	#endif	
+
 //	vec4 data1 = clamp(noise/256.+encode(normal, lm),0.,1.0);
 	vec4 data1 = encode(normal, lm);
 
-	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-	gl_FragData[1].a = 0.0;
-	#endif
 
+	gl_FragData[1].a = 0.0;
+	#endif	
+
+	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 }

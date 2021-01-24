@@ -178,7 +178,12 @@ void main() {
 
 vec2 lm = lmtexcoord.zw;
 	#ifdef SPEC	
-		lm = clamp(lm+((1- texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias).a)),0,1);
+		float labemissive = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias).a;
+
+		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
+		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
+		lm.x = clamp(lm.x + clamp(emissive2,0.0,1.0),0,1);		
+	
 
 	#endif	
 //////////////////////////////POM//////////////////////////////		

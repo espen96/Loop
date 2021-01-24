@@ -903,11 +903,13 @@ void main() {
 			
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;	
+			float specstrength = SPECSTRENGTH;
 
 			
 		#ifndef ROUGHREF
-			roughness = 0.0;
-		if(trpData.y > 0.1) {		
+		specstrength = SPECSTRENGTH*(1-unpackRoughness(trpData.x));
+		if(roughness < 0.1) {	
+		roughness = 0.0;		
 		#endif			
 			
 			for (int i = 0; i < nSpecularSamples; i++){
@@ -974,9 +976,9 @@ void main() {
 					}			
 			
 				
-					
-					indirectSpecular += reflection.rgb*  SPECSTRENGTH * rayContrib;		
-					
+
+					indirectSpecular += reflection.rgb*  specstrength * rayContrib;	
+
 
 					fresnelDiffuse += rayContrib;
 				}
@@ -1000,7 +1002,7 @@ void main() {
 		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
 		}
 		else{			 
-	if(roughness <0.1) roughness = 0.5;
+	if(roughness <0.1) roughness = 0.75;
 		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(0.1+(roughness),0,1));	}	
 //		speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,1.0);	}	
 			
@@ -1008,6 +1010,7 @@ void main() {
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
 			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/nSpecularSamples) *  gl_FragData[0].rgb;
+//			if (!hand) gl_FragData[0].rgb = vec3(unpackRoughness(trpData.x));
 
 		#endif
 

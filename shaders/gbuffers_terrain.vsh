@@ -61,7 +61,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 vec4 toClipSpace3(vec3 viewSpacePosition) {
     return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
-
+	#ifdef WAVY_PLANTS
 vec2 calcWave(in vec3 pos) {
 
     float magnitude = abs(sin(dot(vec4(frameTimeCounter, pos),vec4(1.0,0.005,0.005,0.005)))*0.5+0.72)*0.013;
@@ -88,6 +88,7 @@ vec3 calcMoveLeaves(in vec3 pos, in float f0, in float f1, in float f2, in float
     vec3 move1 = calcWaveLeaves(pos      , 0.0054, 0.0400, 0.0400, 0.0127, 0.0089, 0.0114, 0.0063, 0.0224, 0.0015) * amp1;
     return move1*5.*WAVY_STRENGTH;
 }
+#endif
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////

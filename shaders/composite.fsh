@@ -737,6 +737,7 @@ void main() {
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.5*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
 			diffuseSun *= 1.0 - sssAmount;
+//			shading *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
 		}
 
@@ -748,19 +749,24 @@ void main() {
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
 			diffuseSun *= 1.0 - sssAmount;
+//			shading *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
 		}
 		#endif
 
-		if ((diffuseSun*shading > 0.001 || abs(filtered.y-0.1) < 0.0004) && !hand){
-			#ifdef SCREENSPACE_CONTACT_SHADOWS
+//		if ((diffuseSun*shading > 0.001 || abs(filtered.y-0.1) < 0.0004) && !hand){
+		if ((diffuseSun*shading > 0.001 || abs(filtered.y-0.1) < 0.0004)){
+
+		if(!hand){	
+		#ifdef SCREENSPACE_CONTACT_SHADOWS
 				vec3 vec = lightCol.a*sunVec;
 				float screenShadow = rayTraceShadow(vec,fragpos,noise);
 				shading = min(screenShadow, shading);
 				// Out of shadow map
 				if (abs(filtered.y-0.1) < 0.0004)
 					SSS *= screenShadow;
-			#endif
+			#endif 
+			}
 
 		#ifdef CAVE_LIGHT_LEAK_FIX
 			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
@@ -854,9 +860,8 @@ void main() {
 			//combine all light sources
 			
 			
-			
 			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
-	//		gl_FragData[0].rgb = vec3(1.0);
+
 			
 			#ifndef SSGI
 			#ifdef SSAO
@@ -1010,16 +1015,17 @@ void main() {
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
 			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/nSpecularSamples) *  gl_FragData[0].rgb;
-//			if (!hand) gl_FragData[0].rgb = vec3(unpackRoughness(trpData.x));
+
 
 		#endif
 
 
 			//waterVolumetrics(gl_FragData[0].rgb, vec3(0.0), fragpos, 0.0, 0.0, length(fragpos), noise, waterEpsilon, ambientUp*8./150./3. + custom_lightmap.z, lightCol.rgb);
 		}
+
 	}
 
-
+		
 
 /* DRAWBUFFERS:3CD */
 }

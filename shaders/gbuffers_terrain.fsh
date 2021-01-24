@@ -282,7 +282,7 @@ void main() {
 	
 	
 	vec4 data0 = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias);
-
+	
 
 	#ifdef SPEC
 		gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
@@ -303,6 +303,8 @@ void main() {
 	if (data0.a > 0.1) data0.a = normalMat.a;
   else data0.a = 0.0;
 	vec2 lm = lmtexcoord.zw;
+
+		
 	#ifdef MC_NORMAL_MAP
 		vec3 normalTex = texture2D(normals, lmtexcoord.xy, Texture_MipMap_Bias).rgb;
 		lm *= normalTex.b;
@@ -313,6 +315,9 @@ void main() {
 		normal = applyBump(tbnMatrix,normalTex);
 
 	#endif
+		#ifdef SPEC	
+		lm += (1- texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias).a);
+	#endif	
 //	vec4 data1 = clamp(noise/256.+encode(normal, lm),0.,1.0);
 	vec4 data1 = encode(normal, lm);
 

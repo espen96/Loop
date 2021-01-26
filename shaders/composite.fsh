@@ -451,12 +451,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 			 previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			 previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
 			 vec2 velocity = previousPosition.xy - closestToCamera.xy;
-			 previousPosition.xy = texcoord + velocity;
+			vec2 previousPosition2 = texcoord + velocity;
 			 
 
 
 		intRadiance.rgb = clamp(intRadiance/nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient,mixer),0,10);			
-	vec3 albedoPrev = texture2D(colortexC, previousPosition.xy*RENDER_SCALE).xyz;
+	vec3 albedoPrev = texture2D(colortexC, previousPosition2.xy*RENDER_SCALE).xyz;
 
 	
 	
@@ -799,12 +799,12 @@ void main() {
 			}
 			ambientLight *= mix(caustics,1.0,0.85);
 			ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
-	//		#ifndef SSGI
+			#ifndef SSGI
 				float ao = 1.0;
 				if (!hand)
 					ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
 				ambientLight *= ao;
-	//		#endif
+			#endif
 			//combine all light sources
 			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill

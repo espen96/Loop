@@ -472,7 +472,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 		}
 		else{
-	//	if(mask.r >0.9)	rej += 0.1;
+		if(mask.r >0.9)	rej += 0.5;
 		intRadiance.rgb = mix(texture2D(colortexC,previousPosition.xy*RENDER_SCALE).rgb,intRadiance.rgb,clamp(0.1 + rej, 0.0,0.9)  );
 		}		
 	

@@ -476,12 +476,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		 
 
 
-	 rej = (0.12+isclamped)*clamp(length(velocity/texelSize)*0.25,0.0,0.9)+isclamped2;
+	 rej = (isclamped)*clamp(length(velocity/texelSize)*0.1,0.0,0.9)+isclamped2;
 
 	 float weight = ((rej));
 	 
 
-		intRadiance.rgb = mix(intRadiance,mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1) ,clamp(weight*0.1 ,0.0,1.0));
+		intRadiance.rgb = mix(intRadiance,mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1) ,clamp((weight*0.1) + isclamped2*0.1 ,0.0,0.8));
 		
 		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
 		weight = 1;
@@ -491,12 +491,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 		
-		intRadiance.rgb = mix(texture2D(colortexC,previousPosition.xy).rgb,intRadiance.rgb, clamp(0.1+weight, 0.1,1.0)  );
+		intRadiance.rgb = mix(texture2D(colortexC,previousPosition.xy).rgb,intRadiance.rgb, clamp(0.025 +weight, 0.0,0.9)  );
 
 		}		
 	
 		gl_FragData[1].rgb = abs(intRadiance.rgb);	
-		gl_FragData[2].rgb = vec3(weight);	
+		gl_FragData[2].rgb = vec3(occlusion);	
 		
 //	return vec3(clamp(0.01 +rej,0.0,1)).rgb;
 	return vec3(intRadiance).rgb;

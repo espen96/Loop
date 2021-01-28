@@ -413,7 +413,7 @@ vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
     return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, vec3 amb){
 
 	int nrays = RAY_COUNT;
 	float mixer = SSPTMIX1;
@@ -438,7 +438,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 1 + ambient*albedo*translucent);
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 1.5 + ambient*albedo*translucent);
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
 				occlusion += 1.25;
@@ -451,7 +451,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		}
 	}
 			vec2 texcoord = gl_FragCoord.xy*texelSize;
-			vec4 mask = texture2D(colortex9,texcoord);
+			
 
 			vec3 closestToCamera = vec3(texcoord/RENDER_SCALE,texture2D(depthtex0,texcoord).x);
 			vec3 fragposition = toScreenSpace(closestToCamera);			
@@ -461,7 +461,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	previousPosition = toClipSpace3Prev(previousPosition);
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 	previousPosition.xy = texcoord + velocity;
-			 mask += texture2D(colortex9,previousPosition.xy*RENDER_SCALE);
+	vec4 mask = texture2D(colortex9,previousPosition.xy);
 
 
 	intRadiance.rgb = clamp(intRadiance/nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient,mixer),0.0,10);			
@@ -471,17 +471,20 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	
 
 	float isclamped = distance(albedoPrev,intRadiance)/luma(albedoPrev);			 
+	float isclamped2 = (distance(mask.rgb,amb)/luma(mask.rgb));	
+		  isclamped2 = clamp((isclamped2)*10-10,0,1);
+		 
 
 
-	 rej = (0.12+isclamped)*clamp(length(velocity/texelSize)*0.25,0.0,0.9);
+	 rej = (0.12+isclamped)*clamp(length(velocity/texelSize)*0.25,0.0,0.9)+isclamped2;
 
-	 float weight = (rej);
+	 float weight = ((rej));
 	 
-		if(mask.r >0.1) rej = 1;
-		intRadiance.rgb = mix(intRadiance,mix(vec3(0.0),torch+ambient,1),clamp(weight*0.1 ,0.0,1.0));
+
+		intRadiance.rgb = mix(intRadiance,mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1) ,clamp(weight*0.1 ,0.0,1.0));
 		
 		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
-		rej = 1;
+		weight = 1;
 
 		}
 		else{
@@ -493,7 +496,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		}		
 	
 		gl_FragData[1].rgb = abs(intRadiance.rgb);	
-//		gl_FragData[2].rgb = vec3(weight);	
+		gl_FragData[2].rgb = vec3(weight);	
 		
 //	return vec3(clamp(0.01 +rej,0.0,1)).rgb;
 	return vec3(intRadiance).rgb;
@@ -654,7 +657,7 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
-		
+	
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotLGeom = dot(normal, WsunVec);
 		float NdotL = NdotLGeom;
@@ -834,12 +837,12 @@ void main() {
 		//	gl_FragData[0].rgb = vec3(caustics);
 		}
 		else {
-		 filter.rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + (ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B)) + emitting)*albedo;;
+
 			#ifdef SSGI
-			
-				if (!hand && !entity)
+					gl_FragData[3].rgb = mix((texture2D(colortex9,texcoord).rgb),texture2D(colortex5,texcoord/RENDER_SCALE).rgb,0.25);		
+				if (!hand)
 				
-					ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B), normalize(albedo+1e-5)*0.7);
+					ambientLight = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B), normalize(albedo+1e-5)*0.7,texture2D(colortex5,texcoord/RENDER_SCALE).rgb);
 				else
 					
 					ambientLight = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
@@ -1004,7 +1007,7 @@ void main() {
 		speculars.rgb = clamp(mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(  (0.1+(roughness)),0.1,1)),0,20);	}	
 
 			
-//		gl_FragData[2].rgb = speculars.rgb;	
+		gl_FragData[2].rgb = speculars.rgb;	
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
 			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/(nSpecularSamples*2)) *  gl_FragData[0].rgb;
@@ -1019,7 +1022,7 @@ void main() {
 
 	}
 
-		
+	
 
-/* DRAWBUFFERS:3CD */
+/* DRAWBUFFERS:3CD9 */
 }

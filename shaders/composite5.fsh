@@ -27,7 +27,7 @@ const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
 const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
 const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
 const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
-const int colortex9Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
+const int colortex9Format = R11F_G11F_B10F;			//Final output, transparencies id (gbuffer->composite4)
 
 
 
@@ -55,7 +55,7 @@ const bool colortex5Clear = false;
 const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 const bool colortex8Clear = false;
-const bool colortex9Clear = true;
+const bool colortex9Clear = false;
 const bool colortexBClear = false;
 const bool colortexCClear = false;
 const bool colortexDClear = false;
@@ -71,7 +71,7 @@ uniform sampler2D colortex0;
 uniform sampler2D colortex6;
 
 
-uniform sampler2D colortex9;
+
 uniform sampler2D colortexA;
 
 uniform sampler2D colortexC;
@@ -326,6 +326,7 @@ vec3 TAA_hq(){
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 	float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
+		
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
 	vec3 supersampled = invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR + movementRejection,0.,1.)));
 	#endif

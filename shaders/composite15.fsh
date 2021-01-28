@@ -370,6 +370,8 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex3;
 uniform sampler2D colortex6;
 uniform sampler2D colortex7;
+uniform sampler2D colortexC;
+uniform sampler2D colortexD;
 uniform sampler2D depthtex0;
 uniform sampler2D noisetex;
 uniform vec2 texelSize;
@@ -430,6 +432,7 @@ void main() {
   /* DRAWBUFFERS:7 */
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
 	vec3 col = texture2D(colortex5,texcoord).rgb;
+//	vec3 col = texture2D(colortexD,texcoord*RENDER_SCALE).rgb;
 	#ifdef DOF
 		/*--------------------------------*/
 		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;

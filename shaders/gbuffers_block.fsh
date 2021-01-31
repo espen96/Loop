@@ -96,6 +96,7 @@ void main() {
 
 	
 	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
+		gl_FragData[1] = texture2D(specular, lmtexcoord.xy, 0);		
 	#endif	
 
 	float noise = interleaved_gradientNoise();

@@ -22,6 +22,7 @@ uniform int frameCounter;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
@@ -57,15 +58,14 @@ float interleaved_gradientNoise(){
 	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y));
 	return noise;
 }
-vec3 decode (vec2 enc)
+vec3 decode (vec2 encn)
 {
-    vec2 fenc = enc*4-2;
-    float f = dot(fenc,fenc);
-    float g = sqrt(1-f*0.25);
-    vec3 n;
-    n.xy = fenc*g;
-    n.z = 1-f*0.5;
-    return n;
+    vec3 unenc = vec3(0.0);
+    encn = encn * 2.0 - 1.0;
+    unenc.xy = abs(encn);
+    unenc.z = 1.0 - unenc.x - unenc.y;
+    unenc.xy = unenc.z <= 0.0 ? (1.0 - unenc.yx) * sign(encn) : encn;
+    return normalize(unenc.xyz);
 }
 vec2 decodeVec2(float a){
     const vec2 constant1 = 65535. / vec2( 256., 65536.);
@@ -79,6 +79,23 @@ float R2_dither(){
 float blueNoise(vec2 coord){
   return texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a;
 }
+vec3 worldToView(vec3 worldPos) {
+
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
 void main() {
 /* DRAWBUFFERS:3 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
@@ -91,7 +108,7 @@ void main() {
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-		vec3 normal = mat3(gbufferModelViewInverse) * decode(dataUnpacked0.yw);
+		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency

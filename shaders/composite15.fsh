@@ -370,6 +370,7 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex3;
 uniform sampler2D colortex6;
 uniform sampler2D colortex7;
+uniform sampler2D colortex8;
 uniform sampler2D colortexC;
 uniform sampler2D colortexD;
 uniform sampler2D colortex9;
@@ -433,7 +434,7 @@ void main() {
   /* DRAWBUFFERS:7 */
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
 	vec3 col = texture2D(colortex5,texcoord).rgb;
-//	vec3 col = texture2D(colortexC,texcoord*RENDER_SCALE).rgb;
+
 	#ifdef DOF
 		/*--------------------------------*/
 		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
@@ -506,6 +507,7 @@ void main() {
 	#endif
 	//col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
+//	gl_FragData[0].rgb = texture2D(colortexC,texcoord*RENDER_SCALE).rgb;
 	//if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
 
 }

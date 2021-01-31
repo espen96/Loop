@@ -68,14 +68,41 @@ uniform sampler2D texture;
 uniform float frameTimeCounter;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferProjection;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 
+vec3 worldToView(vec3 worldPos) {
+
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
+
+vec3 toWorldSpace(vec3 p3){
+    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
+    return p3;
+}
 
 
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 n, vec2 lightmaps)
+vec4 encode (vec3 unenc, vec2 lightmaps)
 {
-
-    return vec4(n.xy*inversesqrt(n.z*8.0+8.0) + 0.5,vec2(lightmaps.x,lightmaps.y));
+	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
+	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
+    vec2 encn = unenc.xy * 0.5 + 0.5;
+	
+    return vec4((encn),vec2(lightmaps.x,lightmaps.y));
 }
 
 #ifdef MC_NORMAL_MAP
@@ -101,11 +128,11 @@ float encodeVec2(float x,float y){
 }
 
 
-
-#ifdef POM
 float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
+#ifdef POM
+
 
 #ifdef Depth_Write_POM
 mat3 inverse(mat3 m) {
@@ -165,7 +192,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17 */
+/* DRAWBUFFERS:17A */
 void main() {
 
 	vec3 normal = normalMat.xyz;
@@ -186,10 +213,12 @@ vec2 lm = lmtexcoord.zw;
 	
 
 	#endif	
-//////////////////////////////POM//////////////////////////////		
+//////////////////////////////POM//////////////////////////////	
+		float noise = interleaved_gradientNoise();
+	
 #ifdef POM
 
-		float noise = interleaved_gradientNoise();
+
 		vec2 tempOffset=offsets[framemod8];
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
@@ -274,7 +303,7 @@ vec2 lm = lmtexcoord.zw;
 
 
 			data0.rgb*=color.rgb;
-			vec4 data1 = clamp(noise*exp2(-8.)+encode(normal, lm),0.,1.0);
+			vec4 data1 = encode(viewToWorld(normal), lm);
 
 	
 
@@ -325,12 +354,14 @@ vec2 lm = lmtexcoord.zw;
 
 	#endif
 
-//	vec4 data1 = clamp(noise/256.+encode(normal, lm),0.,1.0);
-	vec4 data1 = encode(normal, lm);
+
+	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
+//	vec4 data1 = encode(viewToWorld(normal), lm);
 
 
 	gl_FragData[1].a = 0.0;
 	#endif	
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+
 }

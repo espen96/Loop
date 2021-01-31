@@ -7,7 +7,26 @@ varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 
+vec3 worldToView(vec3 worldPos) {
+
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
 uniform sampler2D texture;
 uniform float frameTimeCounter;
 uniform mat4 gbufferProjectionInverse;
@@ -17,12 +36,14 @@ float interleaved_gradientNoise(){
 }
 
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 n)
-{
-
-    return vec4(n.xy*inversesqrt(n.z*8.0+8.0) + 0.5,vec2(lmtexcoord.z,lmtexcoord.w));
+vec4 encode (vec3 unenc)
+{    
+	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
+	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
+    vec2 encn = unenc.xy * 0.5 + 0.5;
+	
+    return vec4((encn),vec2(lmtexcoord.z,lmtexcoord.w));
 }
-
 
 //encoding by jodie
 float encodeVec2(vec2 a){
@@ -58,7 +79,7 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:179 */
+/* DRAWBUFFERS:17 */
 void main() {
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
@@ -71,7 +92,7 @@ void main() {
 	else data0.a = 0.0;
 
 
-	vec4 data1 = clamp(encode(normal),0.,1.0);
+	vec4 data1 = clamp(encode(viewToWorld(normal)),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1].a = 0.0;

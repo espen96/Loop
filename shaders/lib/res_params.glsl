@@ -6,7 +6,7 @@
 
 uniform float frameTime;
 
-
+#define ssptfilter
 
 //uniform sampler2D colortex8;
 

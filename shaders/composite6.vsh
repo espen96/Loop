@@ -2,7 +2,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 //#define VL_Clouds_Shadows // Casts shadows from clouds on VL (slow)
-#define BASE_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
+#define BASE_FOG_AMOUNT 2.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
 #define CLOUDY_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0]
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
@@ -33,6 +33,20 @@ uniform mat4 gbufferModelViewInverse;
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
+uniform vec2 texelSize;
+
+uniform int framemod8;
+		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
+									vec2(-1.,3.)/8.,
+									vec2(5.0,1.)/8.,
+									vec2(-3,-5.)/8.,
+									vec2(-5.,5.)/8.,
+									vec2(-7.,-1.)/8.,
+									vec2(3,7.)/8.,
+									vec2(7.,-7.)/8.);
+
+
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -43,6 +57,11 @@ void main() {
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	gl_Position = ftransform();
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
+		
+	#ifdef TAA
+		gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
+	#endif
+	
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif

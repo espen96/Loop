@@ -60,8 +60,7 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
 vec3 rayTrace(vec3 dir,vec3 position,float dither, float quality){
 
     vec3 clipPosition = toClipSpace3(position);
-  	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
-                      (-near -position.z) / dir.z : far*sqrt(3.);
+  	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);
     vec3 direction = normalize(toClipSpace3(position+dir*rayLength)-clipPosition);  //convert to clip space
     direction.xy = normalize(direction.xy);
 

@@ -22,7 +22,26 @@ vec4 encode (vec3 n)
     return vec4(n.xy*inversesqrt(n.z*8.0+8.0) + 0.5,vec2(lmtexcoord.z,lmtexcoord.w));
 }
 
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 
+vec3 worldToView(vec3 worldPos) {
+
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
 //encoding by jodie
 float encodeVec2(vec2 a){
     const vec2 constant1 = vec2( 1., 256.) / 65535.;
@@ -70,7 +89,7 @@ void main() {
 	else data0.a = 0.0;
 
 
-	vec4 data1 = clamp(encode(normal),0.,1.0);
+	vec4 data1 = clamp(encode(viewToWorld(normal)),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1] = vec4(1.0);

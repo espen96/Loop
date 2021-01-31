@@ -579,7 +579,7 @@ void main() {
 				shading = min(screenShadow, shading);
 				// Out of shadow map
 				if (abs(filtered.y-0.1) < 0.0004)
-					SSS *= screenShadow;
+					SSS *= 1;
 			#endif 
 			}
 
@@ -599,7 +599,7 @@ void main() {
 			shading *= cloudShadow;
 			SSS *= cloudShadow;
 		#endif
-			SSS *= shading;
+
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
 		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 0.166, sssAmount);

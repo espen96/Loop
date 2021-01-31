@@ -165,10 +165,10 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
  
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2  + ambient*albedo*translucent);
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2.2  + ambient*albedo*translucent);
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
-				occlusion += 1.5;
+				occlusion += 1.25;
 				
 		}		
 		else {
@@ -255,7 +255,7 @@ void ssao2(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 nor
 	occlusion = 0.0;
 	
 	int samples = 2;
-//	if(z < 0.5) samples = 2;
+
 
 	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
 	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;

@@ -27,22 +27,19 @@ const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
 const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
 const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
 const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
-const int colortex8Format = RGBA16F;			//Final output, transparencies id (gbuffer->composite4)
-const int colortex9Format = R16F;			//Final output, transparencies id (gbuffer->composite4)
-const int colortexAFormat = RGBA8F;			//Final output, transparencies id (gbuffer->composite4)
 
 
 
+const int colortex8Format = R11F_G11F_B10F;		
+const int colortex9Format = RGB8_SNORM;			
+const int colortexAFormat = RGBA8_SNORM;	
 
-
-
-				
-		
-const int colortexBFormat = R11F_G11F_B10F;		
+	
 const int colortexCFormat = R11F_G11F_B10F;		
 const int colortexDFormat = R11F_G11F_B10F;		
+const int colortexEFormat = R11F_G11F_B10F;		
 
-const int colortexFFormat = R11F_G11F_B10F;		
+
 	
 		
 */
@@ -59,11 +56,11 @@ const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
 const bool colortexAClear = true;
-const bool colortexBClear = false;
+
 const bool colortexCClear = false;
 const bool colortexDClear = false;
+const bool colortexEClear = false;
 
-const bool colortexFClear = false;
 */
 varying vec2 texcoord;
 flat varying float exposureA;

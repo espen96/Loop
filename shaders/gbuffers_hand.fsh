@@ -3,7 +3,10 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 
-
+#define SPEC
+#ifdef SPEC
+uniform sampler2D specular;
+#endif
 
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -83,11 +86,19 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17 */
+/* DRAWBUFFERS:17A */
 void main() {
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
+	#ifdef SPEC	
+		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
 
+		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
+		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
+
+	
+	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
+	#endif	
 	vec4 data0 = texture2D(texture, lmtexcoord.xy);
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;

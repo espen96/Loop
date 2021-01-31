@@ -37,13 +37,7 @@ const float goldenAngle = 137.5077640500378546463487;
 
 #define lumCoeff vec3(0.2125, 0.7154, 0.0721)
 
-float facos(const float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    float a = sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-    return sx > 0. ? a : PI - a;
-    //float c = clamp(-sx * 1e35, 0., 1.);
-    //return c * pi + a * -(c * 2. - 1.); //no conditional version
-}
+
 
 
 vec2 sincos(float x){
@@ -194,3 +188,33 @@ float HaltonSeq2(int index)
         }
         return r;
     }
+
+
+// Faster alternative to acos when exact results are not needed.
+
+float facos(float x) {
+
+	float r = sqrt(1.0 - abs(x)) * (-0.175394 * abs(x) + hPI);
+	return x < 0.0 ? PI - r : r;
+}
+// One sub slower than facos but aside from that has the same properties.
+float asin(float x) {
+	return hPI - facos(x);
+}
+
+// Fast(-er) pow() for certain powers (mostly integers)
+float Pow2(float x) { return x * x; }
+vec2  Pow2(vec2  x) { return x * x; }
+vec3  Pow2(vec3  x) { return x * x; }
+vec4  Pow2(vec4  x) { return x * x; }
+float Pow3(float x) { return x * x * x; }
+float Pow4(float x) { x *= x; return x * x; }
+vec2  Pow4(vec2  x) { x *= x; return x * x; }
+vec3  Pow4(vec3  x) { x *= x; return x * x; }
+float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
+float Pow6(float x) { x *= x; return x * x * x; }
+float Pow8(float x) { x *= x; x *= x; return x * x; }
+float Pow12(float x) { x *= x; x *= x; return x * x * x; }
+float Pow16(float x) { x *= x; x *= x; x *= x; return x * x; }
+
+

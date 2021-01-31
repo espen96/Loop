@@ -30,6 +30,7 @@ uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/res_params.glsl"
+#include "/lib/misc.glsl"
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){
 	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
@@ -56,10 +57,6 @@ vec2( -0.0000,  0.3750 ),
 vec2(  0.3536, -0.3536 )
 );
 #endif
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-}
 
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot)
 {

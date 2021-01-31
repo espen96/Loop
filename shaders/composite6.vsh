@@ -58,10 +58,7 @@ void main() {
 	gl_Position = ftransform();
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
 		
-	#ifdef TAA
-		gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
-	#endif
-	
+
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif

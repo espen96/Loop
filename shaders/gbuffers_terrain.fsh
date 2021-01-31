@@ -201,6 +201,7 @@ void main() {
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
 								  tangent.y, tangent2.y, normal.y,
 						     	  tangent.z, tangent2.z, normal.z);
+							
 	#endif
 
 vec2 lm = lmtexcoord.zw;
@@ -209,9 +210,9 @@ vec2 lm = lmtexcoord.zw;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
-		lm.x = clamp(lm.x + clamp(emissive2,0.0,1.0),0,1);		
-	
 
+	
+	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
 	#endif	
 //////////////////////////////POM//////////////////////////////	
 		float noise = interleaved_gradientNoise();
@@ -355,8 +356,8 @@ vec2 lm = lmtexcoord.zw;
 	#endif
 
 
-	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
-//	vec4 data1 = encode(viewToWorld(normal), lm);
+//	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
+	vec4 data1 = encode(viewToWorld(normal), lm);
 
 
 	gl_FragData[1].a = 0.0;

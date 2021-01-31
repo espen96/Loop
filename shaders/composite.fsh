@@ -50,6 +50,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex9;
+uniform sampler2D colortexA;
 
 
 uniform sampler2D colortexC;
@@ -477,168 +478,9 @@ void main() {
 
 			gl_FragData[0].rgb = ambientLight;
 
-	#ifdef SPEC2
-			// Speculars
-			// Unpack labpbr
-			float roughness = unpackRoughness(trpData.x);
-			float porosity = trpData.z;
-			if (porosity > 64.5/255.0)
-				porosity = 0.0;
-			porosity = porosity*255.0/64.0;
-			vec3 f0 = vec3(trpData.y);
 
+				#ifndef SSGI
 
-			if (f0.y > 229.5/255.0){
-				f0 = albedo;
-			}
-
-			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
-			roughness = mix(roughness, 0.01, rainMult);
-			f0 = mix(f0, vec3(0.02), rainMult);
-			
-
-
-
-			
-
-			// Energy conservation between diffuse and specular
-			vec3 fresnelDiffuse = vec3(0.0);
-
-			// Sun specular
-			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 32./150./3.;
-
-			vec3 indirectSpecular = vec3(0.0);
-			const int nSpecularSamples = 3;
-			
-			mat3 basis = CoordBase(normal);
-			vec3 normSpaceView = -np3*basis;	
-			float specstrength = SPECSTRENGTH;
-
-			
-		#ifndef ROUGHREF
-		specstrength = SPECSTRENGTH*(1-unpackRoughness(trpData.x));
-		if(roughness < 0.1) {	
-		roughness = 0.0;		
-		#endif			
-			
-			for (int i = 0; i < nSpecularSamples; i++){
-				// Generate ray
-				int seed = frameCounter*nSpecularSamples + i;
-				vec2 ij = fract(R2_samples(seed) + blueNoise(gl_FragCoord.xy).rg);
-								
-
-				
-				vec3 H = sampleGGXVNDF(normSpaceView, roughness, roughness, ij.x, ij.y);
-				vec3 Ln = reflect(-normSpaceView, H);
-				vec3 L = basis * Ln;
-
-				// Ray contribution
-				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
-				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
-				vec3 rayContrib = F * g1;
-			//		 rayContrib *= 2.0;	
-	
-				// Skip calculations if ray does not contribute much to the lighting
-				
-
-				if (luma(rayContrib) > 0.02 && roughness <=0.9 && !hand && !iswater){
-
-					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
-		
-					// Scale quality with ray contribution
-					float rayQuality = 35*sqrt(luma(rayContrib));
-					
-					
-					
-					// Skip SSR if ray contribution is low
-					if (rayQuality > 5.0) {
-						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
-						// Reproject on previous frame
-						if (rtPos.z < 1.){
-							vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
-							previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
-							previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
-							if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
-								reflection.a = 1.0;
-								reflection.rgb = clamp(texture2D(colortex5,previousPosition.xy).rgb,0,100);			
-
-							}
-						}
-					}
-
-
-					// Sample skybox
-					if (reflection.a < 0.9){
-						reflection.rgb = skyCloudsFromTex(L, colortex4).rgb*2.0-1.0;
-						reflection.rgb *= sqrt(lightmap.y)/150.*16./3.;
-						
-
-
-					}			
-			
-				
-
-					indirectSpecular += reflection.rgb*  specstrength * rayContrib;
-					
-
-
-					fresnelDiffuse += rayContrib;
-				}
-
-			}
-			
-		#ifndef ROUGHREF
-			}
-		#endif					
-			
-			
-		vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) ;
-			vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
-			vec3 previousPosition = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
-			 previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
-			 previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
-			 vec2 velocity = previousPosition.xy - closestToCamera.xy;
-			 previousPosition.xy = texcoord + velocity;
-			 
-	vec3 albedoPrev = texture2D(colortexD, previousPosition.xy*RENDER_SCALE).xyz;
-	
-	
-	float lumDiff2 = distance(albedoPrev,speculars)/luma(albedoPrev);
-	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*2;			 
-	float isclamped = distance(albedoPrev,speculars)/luma(albedoPrev);			 
-	vec2 d = 0.5-abs(fract(previousPosition.xy*vec2(viewWidth,viewHeight)-texcoord*vec2(viewWidth,viewHeight))-0.5);
-	float mixFactor = dot(d,d);
-	float rej = mixFactor*0.9;
-			 
-		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
-		speculars = speculars;
-		}
-		else{			 
-	if(roughness <0.1) roughness = 0.75;
-	//	speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(  (0.1+(roughness))*lumDiff2+rej+isclamped*0.5 ,0.2,1));	}	
-	//	speculars.rgb = clamp(mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(  (0.1+(roughness)),0.1,1)),0,20);	
-		
-		}	
-
-			
-	//	gl_FragData[3].rgb = speculars.rgb;	
-		if(hand) speculars.rgb = vec3(0.0);
-		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
-		
-		//	if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/(nSpecularSamples*2)) *  gl_FragData[0].rgb;
-			if (!hand) gl_FragData[0].rgb = indirectSpecular/nSpecularSamples + specTerm  + (1.0-fresnelDiffuse/(nSpecularSamples*2)) *  gl_FragData[0].rgb*albedo;
-	
-
-
-		#endif
-
-				#ifdef SSGI
-
-				float ao = 1.0;
-				if (!hand)
-					ssao2(ao,fragpos,1.0,noise,worldToView(decode(dataUnpacked0.yw)),z);
-				gl_FragData[0] *= ao;
-			#else
 				float ao = 1.0;
 				if (!hand)
 					ssao(ao,fragpos,1.0,noise,worldToView(decode(dataUnpacked0.yw)),z);
@@ -647,7 +489,8 @@ void main() {
 		//	gl_FragData[3].rgb = normal2.rgb ;
 		}
 		
-		//		gl_FragData[0].rgb = normal2 ;
+				gl_FragData[3].rgb = normal2 ;
+				gl_FragData[3].a = texture2D(colortexA,texcoord).a ;
 
 		
 
@@ -658,5 +501,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8C9 */
+/* DRAWBUFFERS:8C9A */
 }

@@ -89,9 +89,8 @@ uniform vec2 texelSize;
 uniform vec3 cameraPosition;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
+#include "/lib/util.glsl"
 
-#define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 p3 = p * 2. - 1.;
@@ -113,6 +112,7 @@ vec3 toScreenSpacePrev(vec3 p) {
 #include "/lib/stars.glsl"
 #include "/lib/volumetricClouds.glsl"
 
+
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
@@ -127,7 +127,7 @@ vec3 normVec (vec3 vec){
 float lengthVec (vec3 vec){
 	return sqrt(dot(vec,vec));
 }
-#define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
+
 float triangularize(float dither)
 {
     float center = dither*2.0-1.0;
@@ -145,10 +145,7 @@ vec3 fp10Dither(vec3 color,float dither){
 
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-}
+
 vec3 decode (vec2 encn)
 {
     vec3 unenc = vec3(0.0);
@@ -175,7 +172,7 @@ float linZ(float depth) {
 
 float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
-    const float quality = 8.;
+    const float quality = 32.;
     vec3 clipPosition = toClipSpace3(position);
 	//prevents the ray from going behind the camera
 	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ?
@@ -267,7 +264,7 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	pos = pos*0.5+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
-		caustic += pow(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5,6.0)*exp2(-0.8*i)/1.41;
+		caustic += Pow6(0.5+sin(dot(pos * exp2(0.8*i)+ displ*3.1415,vec2(0.5)))*0.5)*exp2(-0.8*i)/1.41;
 		weightSum += exp2(-0.8*i);
 	}
 	return caustic * weightSum;
@@ -349,6 +346,58 @@ vec3 viewToWorld(vec3 viewPos) {
     return pos.xyz;
 }
 
+vec3 closestToCamera5taps(vec2 texcoord)
+{
+	vec2 du = vec2(texelSize.x*2., 0.0);
+	vec2 dv = vec2(0.0, texelSize.y*2.);
+
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+
+	vec3 dmin = dmc;
+	dmin = dmin.z > dtr.z? dtr : dmin;
+	dmin = dmin.z > dtl.z? dtl : dmin;
+	dmin = dmin.z > dbl.z? dbl : dmin;
+	dmin = dmin.z > dbr.z? dbr : dmin;
+	#ifdef TAA_UPSCALING
+	dmin.xy = dmin.xy/RENDER_SCALE;
+	#endif
+	return dmin;
+}
+vec3 toClipSpace3Prev(vec3 viewSpacePosition) {
+    return projMAD(gbufferPreviousProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
+}
+vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float sharpenAmount)
+{
+    vec2 position = rtMetrics.zw * texcoord;
+    vec2 centerPosition = floor(position - 0.5) + 0.5;
+    vec2 f = position - centerPosition;
+    vec2 f2 = f * f;
+    vec2 f3 = f * f2;
+
+    float c = sharpenAmount;
+    vec2 w0 =        -c  * f3 +  2.0 * c         * f2 - c * f;
+    vec2 w1 =  (2.0 - c) * f3 - (3.0 - c)        * f2         + 1.0;
+    vec2 w2 = -(2.0 - c) * f3 + (3.0 -  2.0 * c) * f2 + c * f;
+    vec2 w3 =         c  * f3 -                c * f2;
+
+    vec2 w12 = w1 + w2;
+    vec2 tc12 = rtMetrics.xy * (centerPosition + w2 / w12);
+    vec3 centerColor = texture2D(colorTex, vec2(tc12.x, tc12.y)).rgb;
+
+    vec2 tc0 = rtMetrics.xy * (centerPosition - 1.0);
+    vec2 tc3 = rtMetrics.xy * (centerPosition + 2.0);
+    vec4 color = vec4(texture2D(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
+                   vec4(texture2D(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
+                   vec4(centerColor,                                      1.0) * (w12.x * w12.y) +
+                   vec4(texture2D(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
+                   vec4(texture2D(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
+	return color.rgb/color.a;
+
+}
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 	float dirtAmount = Dirt_Amount;
@@ -387,7 +436,7 @@ void main() {
 			float estimatedDepth = Vdiff * abs(VdotU);	//assuming water plane
 			float estimatedSunDepth = estimatedDepth/abs(refractedSunVec.y); //assuming water plane
 
-			vec3 lightColVol = lightCol.rgb * (1.0-pow(1.0-WsunVec.y,5.0));	//fresnel
+			vec3 lightColVol = lightCol.rgb * (1.0-Pow5(1.0-WsunVec.y));	//fresnel
 			vec3 ambientColVol = ambientUp*8./150./3.*0.5 * eyeBrightnessSmooth.y / 240.0;
 			if (isEyeInWater == 0)
 				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
@@ -406,7 +455,7 @@ void main() {
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-		vec3 filter = vec3(0.0);
+
 		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
 
 
@@ -544,7 +593,7 @@ void main() {
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-			emitting = luma(albedo)*4.0*Emissive_Strength;
+			emitting = luma(albedo)*8.0*Emissive_Strength;
 			custom_lightmap.y = 0.0;
 		}
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater == 1)){
@@ -561,7 +610,7 @@ void main() {
 				#endif
 			}
 			float estimatedSunDepth = estimatedDepth/abs(refractedSunVec.y); //assuming water plane
-			directLightCol *= exp(-totEpsilon*estimatedSunDepth)*(1.0-pow(1.0-WsunVec.y,5.0));
+			directLightCol *= exp(-totEpsilon*estimatedSunDepth)*(1.0-Pow5(1.0-WsunVec.y));
 			float caustics = waterCaustics(mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition, refractedSunVec);
 			directLightCol *= mix(caustics*0.5+0.5,1.0,exp(-estimatedSunDepth/3.0));
 
@@ -579,7 +628,7 @@ void main() {
 			//combine all light sources
 			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill
-			vec3 lightColVol = lightCol.rgb * (1.0-pow(1.0-WsunVec.y,5.0));	//fresnel
+			vec3 lightColVol = lightCol.rgb * (1.0-Pow5(1.0-WsunVec.y));	//fresnel
 			vec3 ambientColVol =  ambientUp*8./150./3.*0.5 / 240.0 * eyeBrightnessSmooth.y;
 			if (isEyeInWater == 0)
 				waterVolumetrics(gl_FragData[0].rgb, fragpos0, fragpos, estimatedDepth, estimatedSunDepth, Vdiff, noise, totEpsilon, scatterCoef, ambientColVol, lightColVol, dot(np3, WsunVec));
@@ -592,6 +641,17 @@ void main() {
 
 				
 					ambientLight = texture2D(colortex8,texcoord).rgb;
+					
+					
+
+		float labemissive = texture2D(colortexA, texcoord).a;
+		ambientLight += vec3(labemissive);
+		
+	
+
+
+					
+					
 
 			//combine all light sources
 			
@@ -610,6 +670,7 @@ void main() {
 				porosity = 0.0;
 			porosity = porosity*255.0/64.0;
 			vec3 f0 = vec3(trpData.y);
+			float rej = 1;
 
 
 			if (f0.y > 229.5/255.0){
@@ -632,7 +693,7 @@ void main() {
 			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
 
 			vec3 indirectSpecular = vec3(0.0);
-			const int nSpecularSamples = 3;
+			const int nSpecularSamples = 2;
 			
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;	
@@ -658,7 +719,7 @@ void main() {
 
 				// Ray contribution
 				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
-				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
+				vec3 F = f0 + (1.0 - f0) * Pow5(clamp(1.0 + dot(-Ln, H),0.0,1.0));
 				vec3 rayContrib = F * g1;
 
 				// Skip calculations if ray does not contribute much to the lighting
@@ -717,50 +778,66 @@ void main() {
 			
 			
 		vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) ;
-			vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,texcoord).x);
-			vec3 previousPosition = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
-			 previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
-			 previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
-			 vec2 velocity = previousPosition.xy - closestToCamera.xy;
-			 previousPosition.xy = texcoord + velocity;
-			 
-	vec3 albedoPrev = texture2D(colortexD, previousPosition.xy*RENDER_SCALE).xyz;
+	vec3 closestToCamera = closestToCamera5taps(texcoord);
+	vec3 fragposition = toScreenSpace(closestToCamera);			
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+	previousPosition.xy = texcoord + velocity;
+
+	vec3 albedoCurrent0 = texture2D(colortexD, texcoord).rgb;
+	vec3 albedoCurrent1 = texture2D(colortexD, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortexD, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortexD, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortexD, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortexD, texcoord + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortexD, texcoord + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortexD, texcoord + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture2D(colortexD, texcoord + vec2(texelSize.x,0.0)).rgb;
+
+	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
+	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
+	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+
 	
-	
-	float lumDiff2 = distance(albedoPrev,speculars)/luma(albedoPrev);
-	lumDiff2 = 1.0-clamp(lumDiff2*lumDiff2,0.,1.)*2;			 
-	float isclamped = distance(albedoPrev,speculars)/luma(albedoPrev);			 
-	vec2 d = 0.5-abs(fract(previousPosition.xy*vec2(viewWidth,viewHeight)-texcoord*vec2(viewWidth,viewHeight))-0.5);
-	float mixFactor = dot(d,d);
-	float rej = mixFactor*0.9;
 			 
-		if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0){
-		speculars = speculars;
-		}
-		else{			 
+	vec3 albedoPrev = max(FastCatmulRom(colortexE, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);			
+	
+	float isclamped = clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10);	 
+
+	 
+	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,1.0) + (isclamped);
+
+	 float weight = clamp((rej),0,1);
+			 
+		 
 	if(roughness <0.1) roughness = 0.75;
-	//	speculars.rgb = mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,0.0001);
-	//	speculars.rgb = clamp(mix(texture2D(colortexD,previousPosition.xy*RENDER_SCALE).rgb,speculars.rgb,clamp(  (0.01+(roughness)),0.0,1)),0,20);	
-		speculars.rgb = speculars.rgb;	
+
 	
-	}	
+		speculars.rgb = clamp(mix(texture2D(colortexD,previousPosition.xy).rgb,speculars.rgb,clamp( 0.25 + weight, 0.1 ,1.0) ),0.0,10);	
+
+	vec3 mask = clamp(mix(texture2D(colortexE,gl_FragCoord.xy*texelSize).rgb,speculars,0.9),0,10);	 
+	gl_FragData[2].rgb = mask;			
+	gl_FragData[3].rgb = vec3(isclamped);			
 
 			
 		gl_FragData[1].rgb = speculars.rgb;	
 		if(hand) speculars.rgb = vec3(0.0);
 		if(roughness >=0.9 && hand && iswater) speculars.rgb = vec3(0.0);
-			if (!hand) gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) + (1.0-fresnelDiffuse/(nSpecularSamples*2)) *  gl_FragData[0].rgb;
+			if (!hand) gl_FragData[0].rgb = speculars + (1.0-fresnelDiffuse/(nSpecularSamples*2)) *  gl_FragData[0].rgb;
 
 	
 
 
 		#endif
-
+//	gl_FragData[0].rgb = ambientLight.rgb;	
 		}
 
 	}
 
 	
 
-/* DRAWBUFFERS:3D */
+/* DRAWBUFFERS:3DE */
 }

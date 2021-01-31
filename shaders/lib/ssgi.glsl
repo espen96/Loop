@@ -165,10 +165,10 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
  
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2.2  + ambient*albedo*translucent);
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2  + ambient*albedo*translucent);
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
-				occlusion += 1;
+				occlusion += 1.5;
 				
 		}		
 		else {
@@ -207,45 +207,30 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
-	
 
 
 	intRadiance.rgb = intRadiance/nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient,mixer);			
-//	vec3 albedoPrev = texture2D(colortex9, previousPosition.xy).xyz;
 	vec3 albedoPrev = max(FastCatmulRom(colortex9, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
 
 
-	
-	
-
-	float isclamped = clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))*0.25),0,10)*2-1,0,1);	 
+	float isclamped = clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))*0.25),0,10)*2,0,10);	 
 	float isclamped2 = distance(albedoPrev,finalcAcc)/luma(albedoPrev);	 
 	 
-
-		 
-		 
-
-		 
-
-
-	 rej = (isclamped*0.1)*clamp(length(velocity/texelSize),0.0,0.9) + (isclamped);
+	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,0.9) + (isclamped);
 
 	 float weight = clamp((rej),0,1);
 		
-	 
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1)),clamp( ((weight*0.01) +abs(z)) ,0.0,1.0)));	 
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb),tonemap(intRadiance.rgb), clamp( 0.5 + weight, 0.25 ,1.0)  )),0.001,10);
 
-	//	intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1)),clamp( ((weight*0.01) +abs(z)) ,0.0,1.0)));
-		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb),tonemap(intRadiance.rgb), clamp( 0.25 + weight, 0.25 ,1.0)  )),0.001,10);
-
-	vec3 mask = clamp(mix(texture2D(colortex9,gl_FragCoord.xy*texelSize).rgb,intRadiance,0.7),0,10);	 
+	vec3 mask = clamp(mix(texture2D(colortex9,gl_FragCoord.xy*texelSize).rgb,intRadiance,0.75),0,10);	 
 	gl_FragData[2].rgb = mask;			
 	
 	gl_FragData[1].rgb = (intRadiance.rgb);	
-//	gl_FragData[3].rgb = vec3(isclamped);	
+	
 		
-//	return vec3(clamp(0.01 +rej,0.0,1)).rgb;
 	return vec3(intRadiance).rgb;
 
 
@@ -269,7 +254,7 @@ void ssao2(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 nor
 
 	occlusion = 0.0;
 	
-	int samples = 6;
+	int samples = 2;
 //	if(z < 0.5) samples = 2;
 
 	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;

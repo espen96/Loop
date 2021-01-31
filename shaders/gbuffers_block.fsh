@@ -2,7 +2,10 @@
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
 
-
+#define SPEC
+#ifdef SPEC
+uniform sampler2D specular;
+#endif
 
 
 varying vec4 lmtexcoord;
@@ -82,8 +85,19 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17 */
+/* DRAWBUFFERS:17A */
 void main() {
+
+	#ifdef SPEC	
+		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
+
+		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
+		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
+
+	
+	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
+	#endif	
+
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
 

@@ -531,6 +531,7 @@ void main() {
 
 		//custom shading model for translucent objects
 		#ifdef Variable_Penumbra_Shadows
+		#ifndef SPEC
 		if (translucent) {
 			sssAmount = 0.5;
 			vec3 extinction = 1.0 - albedo*0.85;
@@ -553,7 +554,7 @@ void main() {
 			SSS *= sqrt(lightmap.y);
 		}
 		
-		
+		#else
 			if (labsss > 0.0) {
 			sssAmount = labsss;
 			vec3 extinction = 1.0 - albedo*0.85;
@@ -562,9 +563,10 @@ void main() {
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
 			diffuseSun *= 1.0 - sssAmount;
-			SSS *= sqrt(lightmap.y);
+			SSS *= clamp(sqrt(lightmap.y*2-1.5),0,1);
+			SSS *= shading;
 		}	
-		
+		#endif
 		#endif
 
 
@@ -597,7 +599,7 @@ void main() {
 			shading *= cloudShadow;
 			SSS *= cloudShadow;
 		#endif
-
+			SSS *= shading;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
 		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 0.166, sssAmount);
@@ -643,6 +645,7 @@ void main() {
 			ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
 
 			//combine all light sources
+
 			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (1.0-Pow5(1.0-WsunVec.y));	//fresnel
@@ -849,7 +852,7 @@ void main() {
 
 
 		#endif
-//	gl_FragData[0].rgb = vec3(SSS);	
+	
 		}
 
 	}

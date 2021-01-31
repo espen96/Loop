@@ -464,11 +464,7 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
-		float labsss = trpData.z;
-
-			if (labsss < 64.5/255.0)
-				labsss = 0.0;
-
+	
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		float NdotLGeom = dot(normal, WsunVec);
 		float NdotL = NdotLGeom;
@@ -552,19 +548,6 @@ void main() {
 			diffuseSun *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
 		}
-		
-		
-			if (labsss > 0.0) {
-			sssAmount = labsss;
-			vec3 extinction = 1.0 - albedo*0.85;
-			// Should be somewhat energy conserving
-			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
-			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
-			SSS *= scattering;
-			diffuseSun *= 1.0 - sssAmount;
-			SSS *= sqrt(lightmap.y);
-		}	
-		
 		#endif
 
 
@@ -849,7 +832,7 @@ void main() {
 
 
 		#endif
-//	gl_FragData[0].rgb = vec3(SSS);	
+//	gl_FragData[0].rgb = ambientLight.rgb;	
 		}
 
 	}

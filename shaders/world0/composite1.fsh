@@ -217,9 +217,11 @@ float z = texture2D(depthtex1,texcoord).x;
 
 
 #ifdef ssptfilter
+#ifdef filerpass_0
 	if (z <1) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,24,colortex8,0.0).rgb,0,10);
 
 
+#endif
 #endif
 
 //	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.5);

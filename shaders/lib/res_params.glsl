@@ -9,6 +9,14 @@ uniform float averageFrameTime;
 
 
 //#define ssptfilter
+
+#define filerpass_0
+#define filerpass_1
+#define filerpass_2
+//#define filerpass_3
+
+
+
 //#define SPEC
 #define TAA_DS // Lowers render resolution dynamically on the Y axis. X is locked to RENDER_SCALE_MAX.
 

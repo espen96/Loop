@@ -113,6 +113,34 @@ float blueNoise(){
   return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 
+
+
+
+
+struct TapKey {
+    float csZ;
+    vec3 csPosition;
+    vec3 normal;
+    float glossy;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
     float denoiseStrength = ((DENOISE_RANGE1.x + (DENOISE_RANGE1.y-DENOISE_RANGE1.x)*hash1(641.128752*gl_FragCoord.x + 312.321374*gl_FragCoord.y+1.92357812*frameCounter)));
 	int size2 = int(denoiseStrength);
@@ -218,7 +246,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
         totalWeight += weight;
 
-		
+	
 	}
 
     totalColor.rgb *= rcp(max(totalWeight, 1e-25));
@@ -226,6 +254,17 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
     return totalColor.rgb;
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	

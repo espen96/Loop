@@ -114,9 +114,12 @@ float z = texture2D(depthtex1,texcoord).x;
 
 
 #ifdef ssptfilter
+#ifdef filerpass_1
+
 	if (z <1) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,12,colortex8,0.0).rgb,0,10);
 
 
+#endif
 #endif
 
 

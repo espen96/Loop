@@ -583,7 +583,13 @@ void main() {
 
 
 			vec3 indirectSpecular = vec3(0.0);
+			
+			
 			const int nSpecularSamples = 3;
+			
+			
+			
+			
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;	
 			float specstrength = SPECSTRENGTH;
@@ -679,10 +685,10 @@ void main() {
 	
 
 	 
-	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,1.0) ;
+	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,1.0) +isclamped ;
 
 
-	 float weight = clamp( (rej+edgemask)  ,0.5,1.0);
+	 float weight = clamp( (rej*10+edgemask)  ,0.25,1.0);
 
 		gl_FragData[5].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), weight );			
 		

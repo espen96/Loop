@@ -93,10 +93,71 @@ vec3 closestToCamera5taps(vec2 texcoord)
 
 
 
+#define comp(a, b, c) (v[a].c > v[b].c)
+#define swap(a, b, c) temp = v[b].c; v[b].c = v[a].c; v[a].c = temp;
+#define cmpswap(x, y) if (comp(x, y, r)){ swap(x, y, r)}; if (comp(x, y, g)){ swap(x, y, g)}; if (comp(x, y, b)){ swap(x, y, b)};
+
+vec3 medianSub(in vec3[9] v){
+    float temp;  
+        
+    cmpswap(0, 1); 
+    cmpswap(3, 4); 
+    cmpswap(6, 7); 
+    
+    cmpswap(1, 2); 
+    cmpswap(4, 5); 
+    cmpswap(7, 8); 
+    
+    cmpswap(0, 1); 
+    cmpswap(3, 4); 
+    cmpswap(6, 7); 
+    cmpswap(2, 5); 
+    
+    cmpswap(0, 3); 
+    cmpswap(1, 4); 
+    cmpswap(5, 8); 
+    
+    cmpswap(3, 6); 
+    cmpswap(4, 7); 
+    cmpswap(2, 5); 
+    
+    cmpswap(0, 3); 
+    cmpswap(1, 4); 
+    cmpswap(5, 7); 
+    cmpswap(2, 6); 
+    
+    cmpswap(1, 3); 
+    cmpswap(4, 6); 
+    
+    cmpswap(2, 4); 
+    cmpswap(5, 6); 
+    
+    cmpswap(2, 3); 
+    
+    return (v[4]);
+}
+
+
+vec3 median(sampler2D tex1,vec2 uv){
+	vec2 pixel = 1. / vec2(viewWidth,viewHeight).xy;
+    vec4 o = vec4(pixel.x, 0., pixel.y, -pixel.y); 
+    vec3 n[9];
+    n[0] = texture(tex1, uv - o.xz).rgb;  
+    n[1] = texture(tex1, uv - o.yz).rgb;
+    n[2] = texture(tex1, uv + o.xw).rgb;
+    n[3] = texture(tex1, uv - o.xy).rgb;
+    n[4] = texture(tex1, uv + o.xy).rgb;
+    n[5] = texture(tex1, uv - o.xw).rgb;
+    n[6] = texture(tex1, uv + o.yz).rgb;
+    n[7] = texture(tex1, uv + o.xz).rgb;     
+    n[8] = texture(tex1, uv).rgb;  
+    return medianSub(n);
+}
+
 
 void main() {
 
-/* DRAWBUFFERS:8 */
+/* DRAWBUFFERS:8E */
 
 	vec3	 color = texture2D(colortex8,texcoord).rgb;		
 		
@@ -117,6 +178,8 @@ float z = texture2D(depthtex1,texcoord).x;
 
 
 	gl_FragData[0].rgb = color;
+
+	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.75);
 
 
 

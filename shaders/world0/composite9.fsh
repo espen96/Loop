@@ -59,6 +59,7 @@ const bool colortex9Clear = false;
 const bool colortexAClear = false;
 
 const bool colortexCClear = false;
+const bool colortexEClear = false;
 const bool colortexFClear = false;
 
 

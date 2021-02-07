@@ -521,11 +521,126 @@ vec3 worldToView(vec3 worldPos) {
 
     return pos.xyz;
 }
+
+
+
+
+
+vec2 pV[4];
+// |0  |1
+//
+// |2  |3
+
+vec2 pH[3];
+//	- 2
+//	- 1
+//	- 0
+
+vec2 uv;
+vec2 pixel;
+int SIZE = 8;
+vec2 SEGMENT;
+float KERNING = 1.3;
+const ivec2 DIGITS = ivec2(2, 4);
+
+void globalInit(){
+    pixel = 2.0/vec2(viewWidth,viewHeight);
+    SEGMENT = pixel * vec2(SIZE, 1.0);
+	}
+
+void fillNumbers(){
+    pV[0] = vec2(0, SIZE);  pV[1] = vec2(SIZE - 1, SIZE);
+    pV[2] = vec2(0, 0); 	pV[3] = vec2(SIZE - 1, 0);
+    
+    for (int i = 0; i < 3; i++)
+    	pH[i] = vec2(0, SIZE * i);
+    
+	}
+
+vec2 digitSegments(int d){
+    vec2 v;
+    if (d == 0) v = vec2(.11115, .1015);
+    if (d == 1) v = vec2(.01015, .0005);
+    if (d == 2) v = vec2(.01105, .1115);
+    if (d == 3) v = vec2(.01015, .1115);
+    if (d == 4) v = vec2(.11015, .0105);
+    if (d == 5) v = vec2(.10015, .1115);
+    if (d == 6) v = vec2(.10115, .1115);
+    if (d == 7) v = vec2(.01015, .0015);
+    if (d == 8) v = vec2(.11115, .1115);
+    if (d == 9) v = vec2(.11015, .1115);
+    return v;
+	}
+
+vec2 step2(vec2 edge, vec2 v){
+    return vec2(step(edge.x, v.x), step(edge.y, v.y));
+	}
+
+float segmentH(vec2 pos){
+    vec2 sv = step2(pos, uv) - step2(pos + SEGMENT.xy, uv);
+    return step(1.1, length(sv));
+	}
+
+float segmentV(vec2 pos){
+    vec2 sv = step2(pos, uv) - step2(pos + SEGMENT.yx, uv);
+    return step(1.1, length(sv));
+	}
+
+float nextDigit(inout float f){
+    f = fract(f) * 10.0;
+    return floor(f);
+	}
+
+float drawDigit(int d, vec2 pos){
+    vec4 sv = vec4(1.0, 0.0, 1.0, 0.0);
+    vec3 sh = vec3(1.0);
+    float c = 0.0;
+    
+    vec2 v = digitSegments(d);
+    
+    for (int i = 0; i < 4; i++)
+        c += segmentV(pos + pixel.x * pV[i]) * nextDigit(v.x);
+
+    for (int i = 0; i < 3; i++)
+        c += segmentH(pos + pixel.x * pH[i]) * nextDigit(v.y);
+    
+	return c;
+	}
+
+float printNumber(float f, vec2 pos){
+    float c = 0.0;
+    f /= pow(10.0, float(DIGITS.x));
+        
+    for (int i = 0; i < DIGITS.x; i++){
+        c += drawDigit(int(nextDigit(f)), pos);
+        pos += KERNING * pixel * vec2(SIZE, 0.0);
+    	}
+    
+    for (int i = 0; i < DIGITS.y; i++){
+        pos += KERNING * pixel * vec2(SIZE, 0.0);
+        c += drawDigit(int(nextDigit(f)), pos);
+    	}
+   	return c;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 void main() {
-  /* DRAWBUFFERS:7F */
+  /* DRAWBUFFERS:7 */
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
 	vec3 col = texture2D(colortex5,texcoord).rgb;
-
+globalInit();
+    fillNumbers();
+    uv = gl_FragCoord.xy / vec2(viewWidth,viewHeight).xy;
 	#ifdef DOF
 		/*--------------------------------*/
 		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
@@ -598,9 +713,10 @@ void main() {
 	#endif
 	//col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
-//    gl_FragData[0].rgb = (texture2D(colortex3,texcoord).rgb);
+//    gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
+//   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 //    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
 	//if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
-	gl_FragData[1].r = mix(texture2D(colortexF,texcoord).r,averageFrameTime,0.005);	
+//	gl_FragData[1].r = mix(texture2D(colortexF,texcoord).r,averageFrameTime,0.005);	
 
 }

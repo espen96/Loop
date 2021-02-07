@@ -20,16 +20,16 @@ uniform sampler2D colortexF;
 
 #ifdef TAA_DS
 float drs(){
-	vec2 scale = vec2(1.0);
+
 	
-	return (clamp(  1-  (texture2D(colortexF,vec2(1)).r *1.5), RENDER_SCALE_MIN , RENDER_SCALE_MAX));
+	return   clamp(1-abs(RENDER_SCALE_MIN + (averageFrameTime - 0.20) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (0.35 - 0.20)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)  ;
 
 }
-   #define RENDER_SCALE_X 1*drs() 
-   #define RENDER_SCALE_Y 1*drs()  
+   #define RENDER_SCALE_X drs() 
+   #define RENDER_SCALE_Y drs()  
    
 
-   #define RENDER_SCALE vec2( RENDER_SCALE_X,RENDER_SCALE_MAX)
+   #define RENDER_SCALE vec2( drs() )
 
 #else
 

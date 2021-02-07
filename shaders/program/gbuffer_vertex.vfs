@@ -127,7 +127,7 @@ void main() {
 	color = gl_Color;
 
 #ifdef water
-
+	lumaboost = 0.0;
 	float mat = 0.0;
 	if(mc_Entity.x == 8.0 || mc_Entity.x == 9.0) {
     mat = 1.0;

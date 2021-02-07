@@ -435,7 +435,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 	gl_FragData[1].rgb = (intRadiance.rgb);	
-				gl_FragData[6].rgb = vec3(intRadiance.rgb);	
+		
 
 		
 	

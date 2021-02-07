@@ -249,6 +249,7 @@ vec2 R2_samples(int n){
 
 
 
+
 void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal, float z)
 {
 
@@ -512,8 +513,6 @@ void main() {
 
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*10.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 
-
-		
 
 		
 

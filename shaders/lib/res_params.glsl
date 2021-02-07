@@ -8,7 +8,7 @@ uniform float frameTime;
 uniform float averageFrameTime;
 
 
-//#define ssptfilter
+#define ssptfilter
 
 #define filerpass_0
 #define filerpass_1

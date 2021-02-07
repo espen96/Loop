@@ -57,7 +57,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 
 		float currZ = linZ(spos.z);
-		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);					
+	//	if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);					
 		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
 	
 		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
@@ -440,7 +440,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		
 	
 		
-	return vec3(intRadiance).rgb*(1.0-occlusion/(nrays));
+	return vec3(intRadiance).rgb*(1.0-occlusion/(nrays*2.0));
 //	return vec3(intRadiance).rgb;
 
 

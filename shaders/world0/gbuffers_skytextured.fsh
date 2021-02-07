@@ -21,4 +21,5 @@ void main() {
 
 	gl_FragData[0] = texture2D(texture,texcoord.xy)*color;
 	gl_FragData[0].rgb = gl_FragData[0].rgb*gl_FragData[0].a;
+
 }

@@ -1,28 +1,50 @@
 
-vec3 RT(vec3 dir,vec3 position,float noise, vec3 N){
+
+
+
+
+
+
+vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 	float stepSize = STEP_LENGTH;
 	int maxSteps = STEPS;
+	bool istranparent = transparent > 0.0;
+	
+	
+	
 	vec3 clipPosition = toClipSpace3(position);
 	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?
 	   								(-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+	
+
 	vec3 end = toClipSpace3(position+dir*rayLength);
 	vec3 direction = end-clipPosition;  //convert to clip space
+
 	float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/stepSize;
+
 	//get at which length the ray intersects with the edge of the screen
 	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
 	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 	vec3 stepv = direction/len;
 	int iterations = min(int(min(len, mult*len)-2), maxSteps);
+
+	
+	
+	
 	//Do one iteration for closest texel (good contact shadows)
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*6.0;
+		
 	spos.xy += TAA_Offset*texelSize*0.5*RENDER_SCALE;
 	float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 	float currZ = linZ(spos.z);
-	
+
 	
 	if( sp < currZ) {
 		float dist = abs(sp-currZ)/currZ;
+		
 		if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+
+		
 	}
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
@@ -30,11 +52,16 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N){
   for(int i = 0; i < iterations; i++){
       if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
       return vec3(1.1);
-  
+  		
 		// decode depth buffer
 		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
+
 		float currZ = linZ(spos.z);
+		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);					
 		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
+	
+		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
+		
 			float dist = abs(sp-currZ)/currZ;
 			if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 		}
@@ -134,8 +161,10 @@ vec3 tonemap(vec3 col){
 vec3 invTonemap(vec3 col){
 	return col/(1-luma(col));
 }							
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask){
 
+	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 	int nrays = RAY_COUNT;
 //	if (z > 0.50) nrays = 2;
 //	if (z > 0.75) nrays = 1;
@@ -143,32 +172,42 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	float rej = 1;
 	vec3 intRadiance = vec3(0.0);
 	float occlusion = 0.0;
-	float accLight = 0.0;
-	
+	float depthmask = ((z*z*z)*2);
+	if (depthmask >1) nrays = 1;
 
-	
-	for (int i = 0; i < nrays; i++){       
+	vec2 texcoord = gl_FragCoord.xy*texelSize;	
 
+	if (hand) edgemask = 1.0;
+		vec4 normal2 = (texture2D(colortexA, texcoord));
+		vec3 normal3 =  (texture2D(colortex8, texcoord)).rgb;
+	//	normal = normal +normal3;
+		vec4 transparencies = texture2D(colortex2,texcoord);			
+		
+
+	for (int i = 0; i < nrays; i++){ 
+	
+	
 		int seed = (frameCounter%40000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 		rayDir = TangentToWorld(normal,rayDir);
 
 		
-		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal);
+		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal,luma(transparencies.rgb));
 		vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 		previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 		previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
+		
 
 		
 		if (rayHit.z < 1.0){
  
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
 			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2.2  + ambient*albedo*translucent);
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb   + ambient*albedo*translucent) ;
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
-				occlusion += 1.25;
+				occlusion += 1.5;
 				
 		}		
 		else {
@@ -176,9 +215,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		
 			intRadiance += ambient*SSPTambient;
 		}
+		
+
+		
 	}
-			vec2 texcoord = gl_FragCoord.xy*texelSize;
-			
+
+		
 			
 
 	vec3 closestToCamera = closestToCamera5taps(texcoord);
@@ -188,11 +230,14 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
 	previousPosition = toClipSpace3Prev(previousPosition);
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
-	previousPosition.xy = texcoord + velocity;
-	
 
-	
-	
+	previousPosition.xy = texcoord + velocity;
+	   
+	   
+	   
+
+	   
+
 
 	vec3 albedoCurrent0 = texture2D(colortexC, texcoord).rgb;
 	vec3 albedoCurrent1 = texture2D(colortexC, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
@@ -207,86 +252,52 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
-
+	if (hand) occlusion =0.0;
 
 	intRadiance.rgb = intRadiance/nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient,mixer);			
-	vec3 albedoPrev = max(FastCatmulRom(colortex9, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev = max(FastCatmulRom(colortexC, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
 
 
-	float isclamped = clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))*0.25),0,10)*2,0,10);	 
-	float isclamped2 = distance(albedoPrev,finalcAcc)/luma(albedoPrev);	 
+	float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10));	 
+	float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
+	float isclamped3 = (((distance(luma(albedoPrev2),amb)/luma(albedoPrev2)) *0.9) );	 
+	float clamped = dot(isclamped,isclamped2);
 	 
-	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,0.9) + (isclamped);
+	 float weight = clamp(   (isclamped3+edgemask)   ,0,1);
+	 
 
-	 float weight = clamp((rej),0,1);
+	 
+
+	if (hand) weight =10.0;
+	if (hand) occlusion =0.0;
+	if (emissive) weight =0.0;
+	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a,weight,0.5);	
 		
-		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1)),clamp( ((weight*0.01) +abs(z)) ,0.0,1.0)));	 
-		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb),tonemap(intRadiance.rgb), clamp( 0.5 + weight, 0.25 ,1.0)  )),0.001,10);
+	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask))+(isclamped*0.1)*clamp(length(velocity/texelSize),0.0,2.0)    ,0.0,1);	
+	 gl_FragData[4].rgb = vec3(weight); 
+  
+	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1.0;
+	  
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(mix(vec3(0.0),(torch+ambient)*SSPTMIX1,1)),clamp( ((weight*0.1) +depthmask )  ,0.0,1.0)));	 
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb),tonemap(intRadiance.rgb), weight  )),0.0,100);
+		
 
-	vec3 mask = clamp(mix(texture2D(colortex9,gl_FragCoord.xy*texelSize).rgb,intRadiance,0.75),0,10);	 
-	gl_FragData[2].rgb = mask;			
-	
+
 	gl_FragData[1].rgb = (intRadiance.rgb);	
+				gl_FragData[6].rgb = vec3(intRadiance.rgb);	
+
+		
 	
 		
-	return vec3(intRadiance).rgb;
+	return vec3(intRadiance).rgb*(1.0-occlusion/(nrays*2));
+//	return vec3(intRadiance).rgb;
 
 
 
 }
 
-void ssao2(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal, float z)
-{
-
-	const float tan70 = tan(70.*3.14/180.);
-	float mulfov2 = gbufferProjection[1][1]/tan70;
-
-
-	float maxR2 = fragpos.z*fragpos.z*mulfov2*2.*1.412/50.0;
-
-
-
-	float rd = mulfov2*0.04;	//pre-rotate direction
-	
-	float n = 0.;
-
-	occlusion = 0.0;
-	
-	int samples = 2;
-
-
-	vec2 acc = -vec2(TAA_Offset)*texelSize*0.5;
-	float mult = (dot(normal,normalize(fragpos))+1.0)*0.5+0.5;
-
-	vec2 v = fract(vec2(dither,blueNoise()) + (frameCounter%10000) * vec2(0.75487765, 0.56984026));
-	for (int j = 0; j < samples ;j++) {
-
-			vec2 sp = tapLocation(j,v.x,7,88.,v.y);
-			vec2 sampleOffset = sp*rd;
-			ivec2 offset = ivec2(gl_FragCoord.xy + sampleOffset*vec2(viewWidth,viewHeight*aspectRatio)*RENDER_SCALE);
-			if (offset.x >= 0 && offset.y >= 0 && offset.x < viewWidth*RENDER_SCALE.x && offset.y < viewHeight*RENDER_SCALE.y ) {
-				vec3 t0 = toScreenSpace(vec3(offset*texelSize+acc+0.5*texelSize,texelFetch2D(depthtex1,offset,0).x) * vec3(1.0/RENDER_SCALE, 1.0));
-
-				vec3 vec = t0.xyz - fragpos;
-				float dsquared = dot(vec,vec);
-				if (dsquared > 1e-5){
-					if (dsquared < maxR2){
-						float NdotV = clamp(dot(vec*inversesqrt(dsquared), normalize(normal)),0.,1.);
-						occlusion += NdotV * clamp(1.0-dsquared/maxR2,0.0,1.0);
-					}
-					n += 1.0;
-				}
-			}
-		}
-
-
-
-		occlusion = clamp(1.0-occlusion/n*1.6,0.,1.0);
-		//occlusion = mult;
-
-
-}
 
 

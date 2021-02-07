@@ -8,9 +8,10 @@ varying vec3 binormal;
 varying vec3 tangent;
 varying vec3 viewVector;
 varying float dist;
+varying float lumaboost;
 #include "/lib/res_params.glsl"
 #define SCREENSPACE_REFLECTIONS	//can be really expensive at high resolutions/render quality, especially on ice
-#define SSR_STEPS 20 //[10 15 20 25 30 35 40 50 100 200 400]
+#define SSR_STEPS 10 //[10 15 20 25 30 35 40 50 100 200 400]
 #define SUN_MICROFACET_SPECULAR // If enabled will use realistic rough microfacet model, else will just reflect the sun. No performance impact.
 #define USE_QUARTER_RES_DEPTH // Uses a quarter resolution depth buffer to raymarch screen space reflections, improves performance but may introduce artifacts
 #define saturate(x) clamp(x,0.0,1.0)
@@ -170,13 +171,13 @@ float GGX (vec3 n, vec3 v, vec3 l, float r, float F0) {
 
   return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);
 }
-
+float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:27 */
+/* DRAWBUFFERS:278*/
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 		vec2 tempOffset=offsets[framemod8];
@@ -277,7 +278,7 @@ void main() {
 
 			vec3 reflectedVector = reflect(normalize(fragpos), normal);
 			float normalDotEye = dot(normal, normalize(fragpos));
-			float fresnel = pow(clamp(1.0 + normalDotEye,0.0,1.0), 5.0);
+			float fresnel = Pow5(clamp(1.0 + normalDotEye,0.0,1.0));
 			fresnel = mix(f0,1.0,fresnel);
 			if (iswater > 0.4){
 				roughness = 0.1;
@@ -319,8 +320,10 @@ void main() {
 			if (gl_FragData[0].r > 65000.) gl_FragData[0].rgba = vec4(0.);
 			}
 			else
-			gl_FragData[0].rgb = color*0.1;
+			gl_FragData[0].rgb = (color*(1+lumaboost))*0.1;
 
 			gl_FragData[1] = vec4(0.1, 0.02, 0.0,iswater);
-		}
+		gl_FragData[2].rgba = vec4(normal,1);
 }
+		}			
+

@@ -79,7 +79,7 @@ vec3 srgbToLinear(vec3 srgb){
 vec3 linearToSRGB(vec3 linear){
     return mix(
         linear * 12.92,
-        pow(linear, vec3(1./2.4) ) * 1.055 - .055,
+        pow(linear, vec3(0.4166) ) * 1.055 - .055,
         step( .0031308, linear )
     );
 }

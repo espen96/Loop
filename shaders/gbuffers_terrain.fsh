@@ -1,10 +1,12 @@
-#version 120
+#version 130
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
-#define SPEC
+
+#include "/lib/res_params.glsl"
 
 
 //#define POM
+#define labspec
 
 
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
@@ -49,28 +51,30 @@ vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 #endif
 
+varying vec2 taajitter;
 
-
-#include "/lib/res_params.glsl"
 
 #ifdef MC_NORMAL_MAP
 varying vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
 #endif
-
-
+uniform sampler2D noisetex;//depth
+uniform float far;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 uniform vec2 texelSize;
 uniform sampler2D texture;
 uniform float frameTimeCounter;
+uniform float frameCounter;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
-
+varying vec4 hspec;
+uniform float viewWidth;
+uniform float viewHeight;
 vec3 worldToView(vec3 worldPos) {
 
     vec4 pos = vec4(worldPos, 0.0);
@@ -116,7 +120,10 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 		return normalize(bump*tbnMatrix);
 }
 #endif
-
+float R2_dither(){
+	vec2 alpha = vec2(0.75487765, 0.56984026);
+	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
+}
 //encoding by jodie
 float encodeVec2(vec2 a){
     const vec2 constant1 = vec2( 1., 256.) / 65535.;
@@ -176,6 +183,9 @@ vec4 readTexture(in vec2 coord)
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
+float blueNoise(){
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+}
 
 
 
@@ -187,6 +197,57 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 									vec2(-7.,-1.)/8.,
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
+	vec3 ToNDC(vec3 pos) {
+	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x,
+						  gbufferProjectionInverse[1].y,
+						  gbufferProjectionInverse[2].zw);
+    vec3 p3 = pos * 2.0 - 1.0;
+    vec4 viewPos = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    return viewPos.xyz / viewPos.w;
+}
+
+vec3 decode3x16(float a){
+    int bf = int(a*65535.);
+    return vec3(bf%32, (bf>>5)%64, bf>>11) / vec3(31,63,31);
+}
+
+float encode2x16(vec2 a){
+    ivec2 bf = ivec2(a*255.);
+    return float( bf.x|(bf.y<<8) ) / 65535.;
+}
+
+vec2 decode2x16(float a){
+    int bf = int(a*65535.);
+    return vec2(bf%256, bf>>8) / 255.;
+}
+float encodeNormal3x16(vec3 a){
+    vec3 b  = abs(a);
+    vec2 p  = a.xy / (b.x + b.y + b.z);
+    vec2 sp = vec2(greaterThanEqual(p, vec2(0.0))) * 2.0 - 1.0;
+
+    vec2 encoded = a.z <= 0.0 ? (1.0 - abs(p.yx)) * sp : p;
+
+    encoded = encoded * 0.5 + 0.5;
+
+    return encode2x16(encoded);
+}
+
+vec3 decodeNormal3x16(float encoded){
+    vec2 a = decode2x16(encoded);
+
+    a = a * 2.0 - 1.0;
+    vec2 b = abs(a);
+    float z = 1.0 - b.x - b.y;
+    vec2 sa = vec2(greaterThanEqual(a, vec2(0.0))) * 2.0 - 1.0;
+
+    vec3 decoded = normalize(vec3(
+        z < 0.0 ? (1.0 - b.yx) * sa : a.xy,
+        z
+    ));
+
+    return decoded;
+}
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -194,7 +255,16 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 //////////////////////////////VOID MAIN//////////////////////////////
 /* DRAWBUFFERS:17A */
 void main() {
-
+		vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
+		vec3 viewPos = ToNDC(screenPos);
+		float dither = blueNoise();
+			  dither = fract(frameTimeCounter * 16.0 + dither);
+		vec3 worldPos = toWorldSpace(viewPos);				
+		float fogFactorAbs = 1.0 - clamp(((length(worldPos)-2) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
+		//if (fogFactorAbs < dither) discard;
+		
+		
+	vec3 albedo = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
 	vec3 normal = normalMat.xyz;
 	#ifdef MC_NORMAL_MAP
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
@@ -223,6 +293,10 @@ vec2 lm = lmtexcoord.zw;
 		vec2 tempOffset=offsets[framemod8];
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+		
+
+
+		
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
 		float dist = length(fragpos);
 		#ifdef Depth_Write_POM
@@ -310,6 +384,7 @@ vec2 lm = lmtexcoord.zw;
 
 			#ifdef SPEC
 			gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
+
 			gl_FragData[1].a = 0.0;
 			#else 
 			gl_FragData[1] = vec4(0.0);	
@@ -324,7 +399,11 @@ vec2 lm = lmtexcoord.zw;
 	
 
 	#ifdef SPEC
+	#ifdef labspec
 		gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
+	#else	
+		gl_FragData[1] = vec4(hspec.rg,hspec.b,hspec.a)/255;
+	#endif	
 		#else
 		gl_FragData[1] = vec4(0.0);
 	#endif
@@ -345,13 +424,16 @@ vec2 lm = lmtexcoord.zw;
 
 		
 	#ifdef MC_NORMAL_MAP
-		vec3 normalTex = texture2D(normals, lmtexcoord.xy, Texture_MipMap_Bias).rgb;
+		vec3 normalTex = texture2D(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
+
 		lm *= normalTex.b;
+
 		normalTex.xy = normalTex.xy*2.0-1.0;
 
 		normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 		normalTex.z = clamp(normalTex.z,0,1);			
 		normal = applyBump(tbnMatrix,normalTex);
+
 
 	#endif
 
@@ -362,7 +444,8 @@ vec2 lm = lmtexcoord.zw;
 
 	gl_FragData[1].a = 0.0;
 	#endif	
-
+	gl_FragData[2].rgb = normal;
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
+	
 
 }

@@ -1,7 +1,7 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
-#define SPEC
+#include "/lib/res_params.glsl"
 #ifdef SPEC
 uniform sampler2D specular;
 #endif
@@ -82,7 +82,7 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A */
+/* DRAWBUFFERS:17 */
 void main() {
 	#ifdef SPEC	
 		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;

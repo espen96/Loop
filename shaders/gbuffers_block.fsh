@@ -2,7 +2,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_ARB_shader_texture_lod : enable
 
-#define SPEC
+#include "/lib/res_params.glsl"
 #ifdef SPEC
 uniform sampler2D specular;
 #endif
@@ -85,7 +85,7 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A */
+/* DRAWBUFFERS:17 */
 void main() {
 
 	#ifdef SPEC	

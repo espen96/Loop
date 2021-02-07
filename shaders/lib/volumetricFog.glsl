@@ -31,7 +31,7 @@ float cloudVol2(in vec3 pos){
 	float noise = densityAtPos(samplePos*12.);
 	float unifCov = exp2(-max(pos.y-SEA_LEVEL,0.0)/50.);
 
-	float cloud = pow(clamp(coverage-noise-0.76,0.0,1.0),2.)*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount;
+	float cloud = Pow2(clamp(coverage-noise-0.76,0.0,1.0))*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount;
 
 return cloud;
 }
@@ -43,7 +43,7 @@ float cloudVol(in vec3 pos){
 	float noise = densityAtPos(samplePos*12.);
 	float unifCov = exp2(-max(pos.y-SEA_LEVEL,0.0)/50.);
 
-	float cloud = pow(clamp(coverage-noise-0.76,0.0,1.0),2.)*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount+rainStrength*2.;
+	float cloud = Pow2(clamp(coverage-noise-0.76,0.0,1.0))*1200./0.23/(coverage+0.01)*VFAmount*600+unifCov*60.*fogAmount+rainStrength*2.;
 
 return cloud;
 }

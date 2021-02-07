@@ -4,7 +4,7 @@ vec3 cloud2D(vec3 fragpos,vec3 col){
 	vec2 intersection = ((2000.0-cameraPosition.y)*wpos.xz*inversesqrt(wpos.y+cameraPosition.y/512.-50./512.) + cameraPosition.xz+wind)/40000.;
 	
 	
-	float phase = pow(clamp(dot(fragpos,sunVec),0.,1.),2.)*0.5+0.5;
+	float phase = Pow2(clamp(dot(fragpos,sunVec),0.,1.))*0.5+0.5;
 	
 	float fbm = clamp((texture2D(noisetex,intersection*vec2(1.,1.5)).a + texture2D(noisetex,intersection*vec2(2.,7.)+wind*0.4).a*0.5)-0.5*(1.0-rainStrength),0.,1.) ;
 

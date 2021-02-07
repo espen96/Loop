@@ -316,7 +316,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		// Assume fog color = sky gradient at long distance
 		vec3 fogColor = skyFromTex(normView, colortex4)/150.;
 		float dist = (cloud_height - cameraPosition.y)/normalize(dV_view).y;
-		float fog = exp(-dist/40000.0*(1.0+rainStrength*2.));
+		float fog = exp(-dist/20000.0*(1.0+rainStrength*2.));
 
 		return mix(vec4(fogColor,0.0), vec4(color,clamp(total_extinction,0.0,1.0)), fog);
 

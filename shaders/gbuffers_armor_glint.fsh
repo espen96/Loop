@@ -51,7 +51,7 @@ float calcDistort(vec2 worlpos){
 	vec2 pos = worlpos * 1.165;
 	vec2 posSQ = pos*pos;
 
-	float distb = pow(posSQ.x*posSQ.x*posSQ.x + posSQ.y*posSQ.y*posSQ.y, 1.0 / 6.0);
+	float distb = pow(posSQ.x*posSQ.x*posSQ.x + posSQ.y*posSQ.y*posSQ.y, 0.166);
 	return 1.08695652/((1.0 - SHADOW_MAP_BIAS) + distb * SHADOW_MAP_BIAS);
 }
 

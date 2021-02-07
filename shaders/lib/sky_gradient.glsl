@@ -2,8 +2,13 @@
 #define SKY_BRIGHTNESS_DAY 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
 #define SKY_BRIGHTNESS_NIGHT 1.0 //[0.0 0.5 0.75 1. 1.2 1.4 1.6 1.8 2.0]
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
+float Pow32(float x) { return x * x * x; }
 vec3 drawSun(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
-	return inColor+nsunlight/0.0008821203*pow(smoothstep(cos(0.0297869339504),cos(0.0167551503471),cosY),3.)*0.62;
+	return inColor+nsunlight/0.0008821203*Pow32(smoothstep(cos(0.0297869339504),cos(0.0167551503471),cosY))*0.62;
+}
+
+vec3 drawMoon(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
+	return inColor+nsunlight/0.0008821203*Pow32(smoothstep(cos(0.0297869339504),cos(0.0167551503471),cosY))*0.62;
 }
 const float pi = 3.141592653589793238462643383279502884197169;
 vec2 sphereToCarte(vec3 dir) {
@@ -79,6 +84,10 @@ vec4 texture2D_bicubic(sampler2D tex, vec2 uv)
                         g1x * texture2D(tex, p3));
 }
 vec4 skyCloudsFromTex(vec3 pos,sampler2D sampler){
+	vec2 p = sphereToCarte(pos);
+	return texture2D(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
+}
+vec4 skyCloudsFromTex2(vec3 pos,sampler2D sampler){
 	vec2 p = sphereToCarte(pos);
 	return texture2D(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
 }

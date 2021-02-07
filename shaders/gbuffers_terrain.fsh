@@ -400,7 +400,7 @@ vec2 lm = lmtexcoord.zw;
 
 	#ifdef SPEC
 	#ifdef labspec
-		gl_FragData[1] = texture2D(specular, lmtexcoord.xy, Texture_MipMap_Bias);
+		gl_FragData[1] = texture2D(specular, lmtexcoord.xy, -400);
 	#else	
 		gl_FragData[1] = vec4(hspec.rg,hspec.b,hspec.a)/255;
 	#endif	

@@ -177,7 +177,7 @@ float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:278*/
+/* DRAWBUFFERS:278A*/
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 		vec2 tempOffset=offsets[framemod8];

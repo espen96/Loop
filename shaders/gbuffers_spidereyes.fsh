@@ -26,7 +26,7 @@ void main() {
 
 	albedo *= color;
 	albedo.rgb = toLinear(albedo.rgb)*0.33;
-/* DRAWBUFFERS:2 */
+/* DRAWBUFFERS:2A */
 	gl_FragData[0] = albedo;
 
 }

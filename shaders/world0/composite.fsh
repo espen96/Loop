@@ -242,10 +242,10 @@ vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
 	return fract(alpha * n);
 }
-#ifdef SSGI
+
 #include "/lib/filter.glsl"
 #include "/lib/ssgi.glsl"
-#endif
+
 
 
 void ssao(inout float occlusion,vec3 fragpos,float mulfov,float dither,vec3 normal, float z)
@@ -381,9 +381,9 @@ void main() {
 	if (z <=1.0) {
 
 		p3 += gbufferModelViewInverse[3].xyz;
-		#ifdef SSGI
+
 		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-		#endif
+
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		vec4 data = texture2D(colortex1,texcoord);

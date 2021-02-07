@@ -37,7 +37,7 @@ const int colortexBFormat = RGBA8_SNORM;
 const int colortexCFormat = R11F_G11F_B10F;	
 	
 const int colortexEFormat = R11F_G11F_B10F;		//spec B
-const int colortexFFormat = R11F_G11F_B10F;		
+const int colortexFFormat = R16F;		
 	
 
 
@@ -349,7 +349,7 @@ vec3 TAA_hq(){
 
 void main() {
 
-/* DRAWBUFFERS:5F */
+/* DRAWBUFFERS:5 */
 
 	#ifdef TAA
 	vec3 color = TAA_hq();
@@ -357,7 +357,8 @@ void main() {
 
 
 	gl_FragData[0].rgb = clamp(fp10Dither(color,triangularize(R2_dither())),6.11*1e-5,65000.0);
-	gl_FragData[0].r = mix(texture2D(colortexF,texcoord).r,frameTime,9);
+
+
 
 	
 	#endif

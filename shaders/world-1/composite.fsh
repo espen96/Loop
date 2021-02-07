@@ -46,7 +46,7 @@ uniform sampler2D colortexB;
 
 uniform sampler2D colortexC;
 uniform sampler2D colortexE;
-uniform sampler2D colortexF;
+
 
 uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
@@ -502,7 +502,9 @@ void main() {
 
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		#ifdef SSGI
 		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+		#endif
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -670,12 +672,7 @@ void main() {
 			}
 			ambientLight *= mix(caustics,1.0,0.85);
 			ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
-			#ifndef SSGI
-				float ao = 1.0;
-				if (!hand)
-					ssao(ao,fragpos,1.0,noise,decode(dataUnpacked0.yw));
-				ambientLight *= ao;
-			#endif
+
 			//combine all light sources
 			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill

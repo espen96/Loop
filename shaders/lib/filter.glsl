@@ -254,21 +254,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
     return totalColor.rgb;
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	
 }
 

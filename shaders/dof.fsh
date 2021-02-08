@@ -718,11 +718,10 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortexE,texcoord*RENDER_SCALE).rgb);
+//  gl_FragData[0].rgb = vec3(texture2D(colortexC,texcoord*RENDER_SCALE).rgb)*0.1;
 
 
 //    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
 	//if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
-//	gl_FragData[1].r = mix(texture2D(colortexF,texcoord).r,averageFrameTime,0.005);	
 
 }

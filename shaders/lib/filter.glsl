@@ -278,20 +278,10 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
 
 
-vec3 edgefilter(vec2 coord, const int size,sampler2D tex1 ) {
+vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 
-
-    float kernel[5];
-    kernel[0] = 1.0f/256.0f;
-    kernel[1] = 1.0f/64.0f;
-    kernel[2] = 3.0f/128.0f;
-    kernel[3] = 1.0f/64.0f;
-    kernel[4] = 1.0f/256.0f;
-
-
-
-
+  
     ivec2 pos     = ivec2(floor(coord * vec2(viewWidth, viewHeight)));
     ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     float sumweight = 0.0;	
@@ -301,46 +291,55 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1 ) {
     float c_depth  = texelFetch(depthtex0, pos2, 0).x;
 
         c_depth    = ld(c_depth) * far;	
-	
-	
-    float blur  = kernel[4];		
 
 	vec3 origNormal =  (texelFetch(colortexA, pos2, 0).rgb);			
 
     float totalWeight   = 1.0;	
+	
 
-        ivec2 delta  = kernelO_3x3[2];	
 
+	
+    for (int i = 0; i<9; i++) {
+
+
+	
+        ivec2 delta  = kernelO_3x3[i] * 4;	
+        if (delta.x == 0 && delta.y == 0) continue;
         ivec2 d_pos  = pos + delta;	
-
+        if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
         ivec2 d_pos2  = pos2 + delta;
+		
+        bool valid          = all(greaterThanEqual(d_pos, ivec2(0))) && all(lessThan(d_pos, ivec2(vec2(viewWidth, viewHeight))));
 
+        if (!valid) continue;		
+		
         float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
 
-		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);
-
-
-		float d_weight = abs(cu_depth - c_depth) * 1;	
-        float depthWeight = expf(-d_weight);	
-
 		
-        float normalWeight = Pow16(clamp(dot(normal, origNormal),0,1));
+		float d_weight = abs(cu_depth - c_depth);	
+        float depthWeight = expf(-d_weight);	
+        if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
+		
+		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);		
+        float normalWeight = Pow16(clamp(dot(normal, origNormal),0,.9));
 
 
-         weight    = normalWeight;			
+        float weight    = normalWeight;			
 
-        weight *= exp(-d_weight);
-
+       
+        weight *= exp(-d_weight );
 
 
         totalWeight += weight;
 
 	
-	totalWeight  =	rcp(totalWeight)-0.5;
+	}
 
+    totalWeight = rcp(totalWeight)-0.4;
+
+
+    return vec3(totalWeight)+0.2;
 
 
 	
-    return vec3(totalWeight);
-
 }

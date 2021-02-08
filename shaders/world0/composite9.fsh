@@ -56,7 +56,7 @@ const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
-const bool colortexAClear = false;
+const bool colortexAClear = true;
 
 const bool colortexCClear = false;
 const bool colortexEClear = false;

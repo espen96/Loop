@@ -64,6 +64,10 @@ const bool colortexFClear = false;
 
 
 
+const bool shadowcolor0Clear = false;     
+const bool shadowcolor1Clear = false;     
+
+
 
 */
 varying vec2 texcoord;

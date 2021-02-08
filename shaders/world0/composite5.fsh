@@ -100,6 +100,7 @@ uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
 #include "/lib/util.glsl"
 
+
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 p3 = p * 2. - 1.;
@@ -572,8 +573,8 @@ void main() {
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
 
-				//	float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-					float isShadow =shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+				//	float isShadow =shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 
 
 		
@@ -596,7 +597,7 @@ void main() {
 						 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyz;
 		
 						shadowCol *= shadow1;
-			shading += luma(shadowCol)/SHADOW_FILTER_SAMPLE_COUNT;
+			shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
 				}
 			}
 		}
@@ -656,6 +657,7 @@ void main() {
 
 		#ifdef CAVE_LIGHT_LEAK_FIX
 			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
+			shadowCol = mix(vec3(0.0), shadowCol, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 		#endif
 		}
 		#ifdef CLOUDS_SHADOWS
@@ -747,8 +749,9 @@ void main() {
 					
 
 			//combine all light sources
-			caustic = clamp(shadowCol*clamp((vec3( caustics  )  ),0,10)*(0.5-shading),0,1);			
-
+			caustic = clamp(shadowCol*clamp((vec3( caustics  )  ),0,10)*(0.5-shading),0,1) ;			
+			
+		gl_FragData[1].rgb = vec3(caustic);
 			gl_FragData[0].rgb = ((shading * diffuseSun + caustic + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
 
 
@@ -832,18 +835,19 @@ void main() {
 		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb );
 
 
+
 		#endif
-	
+
 		}
 
 	}
-	
-	
 
 
 
+
 	
 	
+
 
 /* DRAWBUFFERS:3D */
 }

@@ -537,6 +537,7 @@ void main() {
 			gl_FragData[0].rgb = ambientLight2;
 
 
+
 				#ifndef SSGI
 
 				float ao = 1.0;
@@ -550,6 +551,7 @@ void main() {
 				gl_FragData[3].rgb = normal2 ;
 
 				gl_FragData[3].a = texture2D(colortexA,texcoord).a ;
+
 
 		
 
@@ -691,8 +693,8 @@ void main() {
 
 	 float weight = clamp( (rej+edgemask)  ,0.15,1.0);
 
-		gl_FragData[5].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), weight );			
-//		gl_FragData[5].rgb = (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb));			
+		gl_FragData[4].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), weight );			
+//		gl_FragData[4].rgb = (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb));			
 		
 		
 				
@@ -714,5 +716,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8C9ABE */
+/* DRAWBUFFERS:8C9AE */
 }

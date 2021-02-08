@@ -57,7 +57,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 
 		float currZ = linZ(spos.z);
-		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);					
+			
 		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
 	
 		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
@@ -350,12 +350,21 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		
 		if (rayHit.z < 1.0){
  
-			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
+			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
 			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb * 2.0  + ambient*albedo*translucent) ;
-			else
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent) ;  
+				float lum = luma(intRadiance);
+				vec3 diff = intRadiance-lum;
+				intRadiance = (intRadiance + diff*(0.2))*2.0;
+				}
+				
+			else{
+			
+			
 				intRadiance += ambient + ambient*translucent*albedo;
-				occlusion += 1;
+			
+				}
+					occlusion += 1.5;
 				
 		}		
 		else {
@@ -432,8 +441,8 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
   
 	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1.0;
 	  
-	//	intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight*0.1) +depthmask )  ,0.0,1.0)));	 
-		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.05,1000);
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight*0.1) +depthmask )  ,0.0,1.0)));	 
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 		
 
 
@@ -441,7 +450,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 		
-	
+
 		
 	return vec3(intRadiance).rgb*(1.0-occlusion/(nrays));
 //	return vec3(intRadiance).rgb;

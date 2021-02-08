@@ -338,7 +338,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
     totalWeight = rcp(totalWeight)-0.4;
 
 
-    return vec3(totalWeight)+0.2;
+    return vec3(totalWeight)+0.15;
 
 
 	

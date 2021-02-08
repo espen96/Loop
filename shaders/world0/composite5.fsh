@@ -63,7 +63,14 @@ uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
+
+
+
 uniform sampler2DShadow shadow;
+
+uniform sampler2DShadow shadowtex1;
+uniform sampler2DShadow shadowcolor0;
+
 
 
 uniform int framemod8;
@@ -447,22 +454,16 @@ void main() {
 	
 	//sky
 	if (z >=1.0) {
-
 		vec3 color = vec3(0.0);
 		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
-		if (np3.y > 0.0){
+		if (np3.y > 0.){
 			color += stars(np3);
 			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
 		}
-
-		//	color += drawMoon(dot(lightCol.a*-WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
-		
-		
-		
 		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
 		color = color*cloud.a+cloud.rgb;
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
-
+		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		if (iswater){
@@ -493,7 +494,12 @@ void main() {
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-
+		
+		
+		vec3 shadowCol = vec3(0.0);
+		float caustics = 1;
+		
+		
 		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
 
 
@@ -503,6 +509,7 @@ void main() {
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
 		float labsss = trpData.z;
+
 
 			if (labsss < 64.5/255.0)
 				labsss = 0.0;
@@ -515,8 +522,10 @@ void main() {
 
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		vec3 filtered = vec3(1.412,1.0,0.0);
+		vec3 caustic = vec3(1.412,1.0,0.0);
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
+			caustic = texture2D(colortex3,texcoord).rgb;
 		}
 		float shading = 1.0 - filtered.b;
 		float pShadow = filtered.b*2.0-1.0;
@@ -543,6 +552,7 @@ void main() {
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
 				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
+				float rdMulcaustic = caustic.x*distortFactor*d0*k/shadowMapResolution;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-NdotLGeom*NdotLGeom)/NdotLGeom+0.7)/distortFactor;
 				#ifdef Variable_Penumbra_Shadows
@@ -561,12 +571,35 @@ void main() {
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-					shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
+
+				//	float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+					float isShadow =shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+
+
+		
+	
+
+
+				//	vec2 offsetS = tapLocation(i,2/2, 0.0,noise,0.0);
+
+				//	float weight = 1.0+(i)*rdMul/2*shadowMapResolution;
+					
+					float iscaustic = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMulcaustic*offsetS,-diffthresh*weight))).x;
+
+			
+					caustics -= iscaustic/2;
+					
+				
+			
+				
+						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+						 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyz;
+		
+						shadowCol *= shadow1;
+			shading += luma(shadowCol)/SHADOW_FILTER_SAMPLE_COUNT;
 				}
 			}
 		}
-
 		//custom shading model for translucent objects
 		#ifdef Variable_Penumbra_Shadows
 		#ifndef LABSSS
@@ -714,9 +747,9 @@ void main() {
 					
 
 			//combine all light sources
-			
+			caustic = clamp(shadowCol*clamp((vec3( caustics  )  ),0,10)*(0.5-shading),0,1);			
 
-			gl_FragData[0].rgb = ((shading * diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
+			gl_FragData[0].rgb = ((shading * diffuseSun + caustic + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
 
 
 			
@@ -812,5 +845,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:3D */
 }

@@ -7,9 +7,8 @@ const float hPI 	= 1.57079632679;
 const float rPI 	= 0.31830988618;
 const float rTAU 	= 0.15915494309;
 
-const float PHI		= 1.61803398875;
-const float rLOG2	= 3.32192809489;
-
+const float PHI		= sqrt(5.0) * 0.5 + 0.5;
+const float rLOG2	= 1.0 / log(2.0);
 const float goldenAngle = 137.5077640500378546463487;
 
 #define clamp01(x) clamp(x, 0.0, 1.0)

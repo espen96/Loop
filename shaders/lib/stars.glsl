@@ -2,6 +2,38 @@
 
 
 
+
+
+
+
+float random10(vec2 ab) 
+{
+	float f = (cos(dot(ab ,vec2(21.9898,78.233))) * 43758.5453);
+	return fract(f);
+}
+
+float noise10(in vec2 xy) 
+{
+	vec2 ij = floor(xy);
+	vec2 uv = xy-ij;
+	uv = uv*uv*(3.0-2.0*uv);
+	
+
+	float a = random10(vec2(ij.x, ij.y ));
+	float b = random10(vec2(ij.x+1., ij.y));
+	float c = random10(vec2(ij.x, ij.y+1.));
+	float d = random10(vec2(ij.x+1., ij.y+1.));
+	float k0 = a;
+	float k1 = b-a;
+	float k2 = c-a;
+	float k3 = a-b-c+d;
+	return (k0 + k1*uv.x + k2*uv.y + k3*uv.x*uv.y);
+}
+
+
+
+
+
 // Return random noise in the range [0.0, 1.0], as a function of x.
 float hash12(vec2 p)
 {
@@ -41,8 +73,23 @@ float StableStarField( in vec2 vSamplePos, float fThreshhold )
 
 float stars(vec3 fragpos){
 
+
+
 	float elevation = clamp(fragpos.y,0.,1.);
 	vec2 uv = fragpos.xz/(1.+elevation);
 
-	return StableStarField(uv*700.,0.999)*0.5*(0.3-0.3*rainStrength);
+	return clamp(StableStarField(uv*700.,0.99)*0.5-0.2*(0.3-0.3*rainStrength),0,1)*0.1;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

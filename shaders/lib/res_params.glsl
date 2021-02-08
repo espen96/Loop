@@ -33,7 +33,7 @@ float drs(){
 
 }
    #define RENDER_SCALE_X drs() 
-   #define RENDER_SCALE_Y RENDER_SCALE_MAX  
+   #define RENDER_SCALE_Y drs()  
    
 
    #define RENDER_SCALE vec2( drs(), RENDER_SCALE_MAX )

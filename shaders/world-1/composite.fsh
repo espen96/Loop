@@ -615,18 +615,7 @@ void main() {
 			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 		#endif
 		}
-		#ifdef CLOUDS_SHADOWS
-			vec3 pos = p3 + cameraPosition;
-			const int rayMarchSteps = 6;
-			float cloudShadow = 0.0;
-			for (int i = 0; i < rayMarchSteps; i++){
-				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(1500+(noise+i)/rayMarchSteps*1700-pos.y);
-				cloudShadow += getCloudDensity(cloudPos, 0);
-			}
-			cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
-			shading *= cloudShadow;
-			SSS *= cloudShadow;
-		#endif
+
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 

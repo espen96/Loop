@@ -69,6 +69,7 @@ uniform sampler2D noisetex;//depth
 uniform sampler2DShadow shadow;
 
 uniform sampler2DShadow shadowtex1;
+uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowcolor0;
 
 
@@ -497,7 +498,7 @@ void main() {
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 		
 		
-		vec3 shadowCol = vec3(0.0);
+		vec4 shadowCol = vec4(0.0);
 		float caustics = 1;
 		
 		
@@ -526,7 +527,6 @@ void main() {
 		vec3 caustic = vec3(1.412,1.0,0.0);
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
-			caustic = texture2D(colortex3,texcoord).rgb;
 		}
 		float shading = 1.0 - filtered.b;
 		float pShadow = filtered.b*2.0-1.0;
@@ -553,7 +553,7 @@ void main() {
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
 				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
-				float rdMulcaustic = caustic.x*distortFactor*d0*k/shadowMapResolution;
+				float rdMulcaustic = caustic.x*distortFactor*d0*k/shadowMapResolution*2;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-NdotLGeom*NdotLGeom)/NdotLGeom+0.7)/distortFactor;
 				#ifdef Variable_Penumbra_Shadows
@@ -585,19 +585,19 @@ void main() {
 
 				//	float weight = 1.0+(i)*rdMul/2*shadowMapResolution;
 					
-					float iscaustic = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMulcaustic*offsetS,-diffthresh*weight))).x;
-
-			
-					caustics -= iscaustic/2;
-					
-				
-			
 				
 						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-						 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyz;
+						float shadow0 = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+							 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
+						float transparentshadow = (shadow1-shadow0);	 
+							 shadowCol = shadowCol *transparentshadow;
+							 shadowCol.rgb = (shadowCol.rgb * (1-(shadowCol.a*0.5)))*0.5;
+							transparentshadow -= shadowCol.a;
 		
-						shadowCol *= shadow1;
-			shading += clamp(luma(shadowCol)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
+						shading += clamp((isShadow+transparentshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
+						
+						
+									gl_FragData[1].rgb = vec3(shadowCol);
 				}
 			}
 		}
@@ -657,7 +657,7 @@ void main() {
 
 		#ifdef CAVE_LIGHT_LEAK_FIX
 			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
-			shadowCol = mix(vec3(0.0), shadowCol, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
+			shadowCol.rgb = mix(vec3(0.0), shadowCol.rgb, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 		#endif
 		}
 		#ifdef CLOUDS_SHADOWS
@@ -749,10 +749,10 @@ void main() {
 					
 
 			//combine all light sources
-			caustic = shadowCol ;			
+			caustic = shadowCol.rgb ;			
 			
-			gl_FragData[1].rgb = vec3(caustic);
-			gl_FragData[0].rgb = ((shading * diffuseSun + caustic + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
+
+			gl_FragData[0].rgb = (((shading * diffuseSun  + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo)+ caustic;
 
 
 			

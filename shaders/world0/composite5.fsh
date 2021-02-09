@@ -71,7 +71,7 @@ uniform sampler2DShadow shadow;
 uniform sampler2DShadow shadowtex1;
 uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowcolor0;
-
+#define SPEC_SSR_QUALITY 2 //[1 2 3 4 5 6 7 8 9 10 ]
 
 
 uniform int framemod8;
@@ -787,7 +787,7 @@ void main() {
 			vec3 indirectSpecular = vec3(0.0);
 			
 			
-			const int nSpecularSamples = 1;
+			const int nSpecularSamples = SPEC_SSR_QUALITY;
 			
 
 			mat3 basis = CoordBase(normal);
@@ -832,7 +832,7 @@ void main() {
 			
 
 
-		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb );
+		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples*lightmap.x) * gl_FragData[0].rgb );
 
 
 

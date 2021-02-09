@@ -597,7 +597,7 @@ void main() {
 						 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyz;
 		
 						shadowCol *= shadow1;
-			shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
+			shading += clamp(luma(shadowCol)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
 				}
 			}
 		}
@@ -735,7 +735,7 @@ void main() {
 
 
 
-					ambientLight = texture2D(colortex8,texcoord).rgb;
+			ambientLight = texture2D(colortex8,texcoord).rgb;
 			ambientLight *= (1+clamp(transparent.rgb*10*emitting*2,1,100));					
 					
 
@@ -749,9 +749,9 @@ void main() {
 					
 
 			//combine all light sources
-			caustic = clamp(shadowCol*clamp((vec3( caustics  )  ),0,10)*(0.5-shading),0,1) ;			
+			caustic = shadowCol ;			
 			
-		gl_FragData[1].rgb = vec3(caustic);
+			gl_FragData[1].rgb = vec3(caustic);
 			gl_FragData[0].rgb = ((shading * diffuseSun + caustic + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo;
 
 

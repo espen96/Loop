@@ -718,7 +718,7 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortexD,texcoord*RENDER_SCALE).rgb)*10;
+//  gl_FragData[0].rgb = vec3(texture2D(colortexD,texcoord*RENDER_SCALE).rgb);
 
 
 //    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);

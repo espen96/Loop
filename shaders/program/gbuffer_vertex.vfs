@@ -50,11 +50,6 @@ uniform int framemod8;
 									vec2(3,7.)/8.,
 									vec2(7.,-7.)/8.);
 
-
-
-
-
-
 #ifdef solid1								
 
 #endif		
@@ -77,52 +72,42 @@ void main() {
 											
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
 	
-#ifdef weather	
-	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-	lmtexcoord.zw = lmcoord*lmcoord;	
-#else
+#if defined(weather) || defined(glint)	
+		lmtexcoord.zw = lmcoord*lmcoord;	
+	#else
+		lmtexcoord.zw = lmcoord;
+#endif
+
 
 #ifdef glint 
-	lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;	
-	lmtexcoord.zw = lmcoord*lmcoord;	
-#else	
-	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-	lmtexcoord.zw = lmcoord;
+		lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;	
+	#else	
+		lmtexcoord.xy = (gl_MultiTexCoord0).xy;	
 #endif
-#endif
-
-
-	
-
 
 
 	texcoord = (gl_MultiTexCoord0).xy;
-
 	
-#ifdef solid1
+#if defined(solid1) || defined(water) || defined(hand)			
+	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;	
+#else
+	gl_Position = ftransform();
+#endif	
 	
-	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
+#ifdef solid1	
+	
 	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
 	bool istopv = worldpos.y > cameraPosition.y+5.0;
 	float ft = frameTimeCounter*1.3;
 	if (!istopv) position.xz += vec2(3.0,1.0)+sin(ft)*sin(ft)*sin(ft)*vec2(2.1,0.6);
 	position.xz -= (vec2(3.0,1.0)+sin(ft)*sin(ft)*sin(ft)*vec2(2.1,0.6))*0.5;
 	gl_Position = toClipSpace3(position);	
-#else	
-#ifdef water	
-  vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
+#endif
 
-  gl_Position = toClipSpace3(position);
-#else
-#ifdef hand
-	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
-	gl_Position = toClipSpace3(position);
+#if defined(solid1) || defined(water) || defined(hand)		
+  gl_Position = toClipSpace3(position);	
+#endif  
 	
-#else	
-	gl_Position = ftransform();
-#endif	
-#endif	
-#endif	
 
 	color = gl_Color;
 

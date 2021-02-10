@@ -206,7 +206,7 @@ void main() {
 /* DRAWBUFFERS:8E */
 
 	vec3	 color = texture2D(colortex8,texcoord).rgb;		
-		
+				
 		
 float z = texture2D(depthtex1,texcoord).x;
 
@@ -224,10 +224,13 @@ float z = texture2D(depthtex1,texcoord).x;
 #endif
 #endif
 
-//	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.5);
+
 
 #ifdef SPEC
-	gl_FragData[1].rgb = median2(colortexE);
+	float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+//	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.5);
+	gl_FragData[1].rgb = mix(median2(colortexE),texture2D(colortexE,texcoord).rgb,edgemask);
+//	gl_FragData[1].rgb = median2(colortexE);
 #endif	
 //	gl_FragData[0].rgb = median2(colortexC);
 

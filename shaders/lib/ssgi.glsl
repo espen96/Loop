@@ -309,7 +309,7 @@ vec4 twoLayerReverseReprojection(vec2 currentScreenCoord,  sampler2D depthBuffer
 
 //////////////////////////////SSGI//////////////////////////////
 					
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask, vec3 shadowCol){
 
 	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -361,7 +361,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 			else{
 			
 			
-				intRadiance += ambient + ambient*translucent*albedo;
+				intRadiance += ambient + ambient +shadowCol*translucent*albedo;
 			
 				}
 					occlusion += 1.5;
@@ -370,7 +370,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		else {
 
 		
-			intRadiance += ambient*SSPTambient;
+			intRadiance += ambient+shadowCol;
 		}
 		
 
@@ -411,7 +411,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
 	if (hand) occlusion =0.0;
 
-	intRadiance.rgb = intRadiance/nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient,mixer);	
+	intRadiance.rgb = intRadiance  /nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient+shadowCol,mixer);	
 
 
 	
@@ -436,7 +436,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	if (emissive) weight =0.0;
 	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a ,weight ,0.5);	
 		
-	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask)) +(isclamped*0.5)*clamp(length(velocity/texelSize),0.0,2.0)    ,0.0,1);	
+	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask)) +(isclamped*0.5)*clamp(length(velocity/texelSize),0.0,1.0)    ,0.0,1);	
 	 gl_FragData[4].rgb = vec3(weight); 
   
 	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1.0;

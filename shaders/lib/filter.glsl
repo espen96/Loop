@@ -205,10 +205,8 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 			
 
 	if (var3 < 0.001)  return totalColor.rgb;
-//	if (var3 > 0.0010) gl_FragData[1].rgb = vec3(1);
-	
 
-	
+
     for (int i = 0; i<9; i++) {
 
 
@@ -224,13 +222,13 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         if (!valid) continue;		
 		
         float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
-
-		
+		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);			
 		float d_weight = abs(cu_depth - c_depth);	
         float depthWeight = expf(-d_weight)* kernel[i];	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
-		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);		
+	
         float normalWeight = Pow16(clamp(dot(normal, origNormal),0,1));
 
 
@@ -241,7 +239,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	
 
 
-	  vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+
       totalColor.rgb += color.rgb * weight;
 
         totalWeight += weight;

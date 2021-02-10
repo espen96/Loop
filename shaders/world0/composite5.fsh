@@ -752,7 +752,7 @@ void main() {
 			caustic = shadowCol.rgb ;			
 			
 
-			gl_FragData[0].rgb = (((shading * diffuseSun  + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo)+ caustic;
+			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 
 
 			
@@ -849,5 +849,5 @@ void main() {
 	
 
 
-/* DRAWBUFFERS:3D */
+/* DRAWBUFFERS:3 */
 }

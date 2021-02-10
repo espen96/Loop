@@ -70,7 +70,10 @@ uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
 
-uniform sampler2DShadow shadow;
+uniform sampler2D shadow;
+uniform sampler2D shadowcolor1;
+uniform sampler2D shadowcolor0;
+uniform mat4 shadowProjectionInverse;
 
 uniform int framemod8;
 uniform int heldBlockLightValue;
@@ -124,10 +127,8 @@ vec3 toScreenSpacePrev(vec3 p) {
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
-#ifdef SPEC
-uniform sampler2D colortexD;
-#endif
 
+uniform sampler2D colortexD;
 #include "/lib/specular.glsl"
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
@@ -244,6 +245,7 @@ vec2 R2_samples(int n){
 	return fract(alpha * n);
 }
 
+#include "/lib/rsm.glsl"
 #include "/lib/filter.glsl"
 #include "/lib/ssgi.glsl"
 
@@ -415,7 +417,20 @@ void main() {
 			filtered = texture2D(colortex3,texcoord).rgb;
 		}
 		float shading = 1.0 - filtered.b;
+		
+					vec3 shadowCol = vec3(0.0);
+				//	shadowCol = ((getRSM(normal,false,albedo, lightmap,z)) * 5)*lightmap.y;
+				//	float lum = luma(shadowCol);
+				//	vec3 diff = shadowCol-lum;		
+
+
+  
+				//	#define GISAT 10.0
+				//	#define GICROSS -10.0
 				
+				//	shadowCol = clamp(shadowCol + diff*(-lum*(GICROSS) + GISAT),0,1);
+
+		
 
 
 		vec3 SSS = vec3(0.0);
@@ -459,7 +474,8 @@ void main() {
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+			//		float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+					float isShadow = texture2D(shadow,vec2(projectedShadowPosition.xy)).x;
 					shading += isShadow/SHADOW_FILTER_SAMPLE_COUNT;
 				}
 			}
@@ -512,15 +528,13 @@ void main() {
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 0.166, sssAmount);
 
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*10.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
-
-
 		
 
 			#ifdef SSGI
 			
 			//	if (!hand)
 				
-					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask);
+					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask, shadowCol);
 			//	else
 					
 			if(hand)		ambientLight2 = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
@@ -534,6 +548,7 @@ void main() {
 
 			
 
+		//	gl_FragData[0].rgb = ambientLight2+((rsm*directLightCol.rgb*0.001)*lightmap.y);
 			gl_FragData[0].rgb = ambientLight2;
 
 
@@ -545,7 +560,7 @@ void main() {
 					ssao(ao,fragpos,1.0,noise,worldToView(decode(dataUnpacked0.yw)),z);
 				gl_FragData[0] *= ao;			
 			#endif			
-		//	gl_FragData[3].rgb = normal2.rgb ;
+			gl_FragData[5].rgb = shadowCol.rgb ;
 		
 		
 				gl_FragData[3].rgb = normal2 ;

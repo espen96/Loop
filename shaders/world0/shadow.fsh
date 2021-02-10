@@ -16,13 +16,13 @@ float blueNoise(){
   return texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a;
 }
 void main() {
-	if (blockEntityId == 80) discard;
+//	if (blockEntityId == 80) discard;
 	vec4 albedo = texture2D(tex,texcoord.xy);	
 	#ifdef SHADOW_DISABLE_ALPHA_MIPMAPS
 	 albedo.a = texture2DLod(tex,texcoord.xy,0).a;
 	#endif
 	gl_FragData[0] = albedo;
-	if ( albedo.a < 0.0001) discard;	
+//	if ( albedo.a < 0.0001) discard;	
 	
 
 	

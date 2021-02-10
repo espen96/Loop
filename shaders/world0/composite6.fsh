@@ -289,7 +289,7 @@ void main() {
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
-		float noise=blueNoise();
+		float noise=blueNoise()*VL_RENDER_RESOLUTION;
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
 		float absorbance = dot(vl[1],vec3(0.22,0.71,0.07));
 		gl_FragData[0] = clamp(vec4(vl[0],absorbance),0.000001,65000.);

@@ -1,7 +1,7 @@
 #version 120
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
-//#define SCREENSPACE_CONTACT_SHADOWS	//Raymarch towards the sun in screen-space, in order to cast shadows outside of the shadow map or at the contact of objects. Can get really expensive at high resolutions.
+#define SCREENSPACE_CONTACT_SHADOWS	//Raymarch towards the sun in screen-space, in order to cast shadows outside of the shadow map or at the contact of objects. Can get really expensive at high resolutions.
 
 #define SPEC_REF			
 #define CAVE_LIGHT_LEAK_FIX // Hackish way to remove sunlight incorrectly leaking into the caves. Can inacurrately remove shadows in some places

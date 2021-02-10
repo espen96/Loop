@@ -6,6 +6,72 @@
 
 
 vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
+
+#ifdef PathTracedMode
+	float stepSize = 60;
+	int maxSteps = 24;
+	bool istranparent = transparent > 0.0;
+	
+	
+	
+	vec3 clipPosition = toClipSpace3(position);
+	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?
+	   								(-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
+	
+
+	vec3 end = toClipSpace3(position+dir*rayLength);
+	vec3 direction = end-clipPosition;  //convert to clip space
+
+	float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/stepSize;
+
+	//get at which length the ray intersects with the edge of the screen
+	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
+	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
+	vec3 stepv = direction/len;
+	int iterations = min(int(min(len, mult*len)-2), maxSteps);
+
+	
+	
+	
+	//Do one iteration for closest texel (good contact shadows)
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*6.0;
+		
+	spos.xy += TAA_Offset*texelSize*0.5*RENDER_SCALE;
+	float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
+	float currZ = linZ(spos.z);
+
+	
+	if( sp < currZ) {
+		float dist = abs(sp-currZ)/currZ;
+		
+		if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+
+		
+	}
+	
+	stepv *= vec3(RENDER_SCALE,1.0);
+	spos += stepv*noise;
+  for(int i = 0; i < iterations; i++){
+      if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
+      return vec3(1.1);
+  		
+		// decode depth buffer
+		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
+
+		float currZ = linZ(spos.z);
+			
+		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
+	
+//		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
+		
+			float dist = abs(sp-currZ)/currZ;
+			if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+		}
+			spos += stepv;
+	}
+	return vec3(1.1);
+	
+#else
 	float stepSize = STEP_LENGTH;
 	int maxSteps = STEPS;
 	bool istranparent = transparent > 0.0;
@@ -68,6 +134,9 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 			spos += stepv;
 	}
 	return vec3(1.1);
+
+#endif	
+	
 }
 
 
@@ -309,7 +378,148 @@ vec4 twoLayerReverseReprojection(vec2 currentScreenCoord,  sampler2D depthBuffer
 
 //////////////////////////////SSGI//////////////////////////////
 					
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask, vec3 shadowCol){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask, vec3 shadowCol, vec2 lightmap){
+
+
+#ifdef PathTracedMode
+	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
+	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
+	int nrays = 4;
+//	if (z > 0.50) nrays = 2;
+//	if (z > 0.75) nrays = 1;
+	float mixer = SSPTMIX1;
+	float rej = 1;
+	vec3 intRadiance = vec3(0.0);
+	float occlusion = 0.0;
+	float depthmask = ((z*z*z)*2);
+	if (depthmask >1) nrays = 1;
+
+	vec2 texcoord = gl_FragCoord.xy*texelSize;	
+
+	if (hand) edgemask = 1.0;
+		vec4 normal2 = (texture2D(colortexA, texcoord));
+		vec3 normal3 =  (texture2D(colortex8, texcoord)).rgb;
+	//	normal = mat3(gbufferModelViewInverse) * normal2.rgb;
+		vec4 transparencies = texture2D(colortex2,texcoord);			
+		
+
+	for (int i = 0; i < nrays; i++){ 
+	
+	
+		int seed = (frameCounter%40000)*nrays+i;
+		vec2 ij = fract(R2_samples(seed) + noise.rg);
+		vec3 rayDir = normalize(cosineHemisphereSample(ij));
+		rayDir = TangentToWorld(normal,rayDir);
+
+		
+		vec3 rayHit = RT(mat3(gbufferModelView)*rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal,luma(transparencies.rgb));
+		vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
+		previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
+		previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
+		
+gl_FragData[5].rgb = vec3(rayHit);		
+		
+		if (rayHit.z < 1.0){
+ 
+			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
+			
+				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent) ;  
+				float lum = luma(intRadiance);
+				vec3 diff = intRadiance-lum;
+				intRadiance = (intRadiance + diff*(0.2))*2.0;
+				}
+				
+			else{
+			
+			
+				intRadiance += ambient + ambient *translucent*albedo;
+			
+				}
+					occlusion += 1.5;
+				
+		}		
+		else {
+
+		
+			intRadiance += ambient;
+		}
+		
+
+		
+	}
+
+		
+			
+
+	vec3 closestToCamera = closestToCamera5taps(texcoord);
+	vec3 fragposition = toScreenSpace(closestToCamera);			
+			
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+
+	previousPosition.xy = texcoord + velocity;
+	   
+	   
+	   
+
+	   
+
+
+	vec3 albedoCurrent0 = texture2D(colortexC, texcoord).rgb;
+	vec3 albedoCurrent1 = texture2D(colortexC, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortexC, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortexC, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortexC, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortexC, texcoord + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortexC, texcoord + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortexC, texcoord + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture2D(colortexC, texcoord + vec2(texelSize.x,0.0)).rgb;
+	
+	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
+	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
+	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+	if (hand) occlusion =0.0;
+
+	intRadiance.rgb = intRadiance  /nrays + (1.0-occlusion/nrays)*mix(vec3(0.0),torch+ambient+shadowCol,clamp(lightmap.y,0.1,1));	
+
+
+	
+	vec3 albedoPrev = max(FastCatmulRom(colortexC, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
+
+
+
+	float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10));	 
+	float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
+	float isclamped3 = (((distance(luma(albedoPrev2),amb)/luma(albedoPrev2)) *0.9) );	 
+	float clamped = dot(isclamped,isclamped2);
+	 
+	 float weight = clamp(   (isclamped3)   ,0,1);
+	 
+
+	 
+
+	if (hand) weight =10.0;
+	if (hand) occlusion =0.0;
+	if (emissive) weight =0.0;
+	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a ,weight ,0.5);	
+		
+	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask)) +(isclamped*0.5)*clamp(length(velocity/texelSize),0.0,1.0)    ,0.0,1);	
+	 gl_FragData[4].rgb = vec3(weight); 
+  
+	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1.0;
+	  
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight*0.1) +depthmask )  ,0.0,1.0)));	 
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
+		
+
+
+	gl_FragData[1].rgb = clamp(fp10Dither(intRadiance,triangularize(R2_dither())),6.11*1e-5,65000.0);	
+
+#else
 
 	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -451,6 +661,9 @@ gl_FragData[5].rgb = vec3(rayHit);
 
 
 		
+
+		
+#endif
 
 		
 	return vec3(intRadiance).rgb*(1.0-occlusion/(nrays));

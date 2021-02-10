@@ -192,6 +192,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
 
 
+
     vec4 totalColor     = vec4(colorCenter,1);
     float totalWeight   = 1.0;	
 	
@@ -202,9 +203,11 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	
 	
 	float var3 = abs(variance2.x*1000);		
+//	float var4 = luma(colorCenter.rgb);		
 			
 
 	if (var3 < 0.001)  return totalColor.rgb;
+//	if (var4 < 0.1)  return totalColor.rgb;
 
 
     for (int i = 0; i<9; i++) {
@@ -229,7 +232,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 	
-        float normalWeight = Pow16(clamp(dot(normal, origNormal),0,1));
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),16);
 
 
         float weight    = normalWeight;			

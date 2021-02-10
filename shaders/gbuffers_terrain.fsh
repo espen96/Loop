@@ -73,6 +73,7 @@ uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 varying vec4 hspec;
+uniform ivec2 atlasSize;                        
 uniform float viewWidth;
 uniform float viewHeight;
 vec3 worldToView(vec3 worldPos) {
@@ -308,6 +309,9 @@ vec2 lm = lmtexcoord.zw;
 		  #ifndef AutoGeneratePOMTextures
 			if ( viewVector.z < 0.0 && readNormal(vtexcoord.st).a < 0.9999 && readNormal(vtexcoord.st).a > 0.00001) {
 			  vec3 interval = viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS*POM_DEPTH;
+			  vec2 atlasAspect = vec2(atlasSize.y/float(atlasSize.x),atlasSize.x/float(atlasSize.y));
+				vec2 viewCorrection = max(vec2((vtexcoordam.q)/(vtexcoordam.p)*atlasAspect.x,1.0), vec2(1.0,(vtexcoordam.p)/(vtexcoordam.q)*atlasAspect.y));
+					interval.xy *= viewCorrection;
 			  vec3 coord = vec3(vtexcoord.st, 1.0);
 			  coord += noise*interval;
 					float sumVec = noise;
@@ -325,6 +329,9 @@ vec2 lm = lmtexcoord.zw;
 			  }
 			  adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 
+			  
+			  
+			  
 
 			  #ifdef Depth_Write_POM
 			  vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*interval;	  

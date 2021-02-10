@@ -253,8 +253,9 @@ vec3 decodeNormal3x16(float encoded){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A */
+/* DRAWBUFFERS:17AD */
 void main() {
+
 		vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
 		vec3 viewPos = ToNDC(screenPos);
 		float dither = blueNoise();
@@ -265,6 +266,7 @@ void main() {
 		
 		
 	vec3 albedo = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
+
 	vec3 normal = normalMat.xyz;
 	#ifdef MC_NORMAL_MAP
 		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);

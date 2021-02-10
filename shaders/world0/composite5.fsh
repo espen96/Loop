@@ -852,5 +852,5 @@ void main() {
 	
 
 
-/* DRAWBUFFERS:3D */
+/* DRAWBUFFERS:3 */
 }

@@ -657,7 +657,7 @@ void main() {
 
 					// Sample skybox
 					if (reflection.a < 0.9){
-						reflection.rgb = skyCloudsFromTex(L, colortex4).rgb;
+						reflection.rgb = (skyCloudsFromTex(L, colortex4).rgb)*(shading*diffuseSun);
 						reflection.rgb *= sqrt(lightmap.y)/150.*8./3.;
 					}
 					indirectSpecular += reflection.rgb * rayContrib;

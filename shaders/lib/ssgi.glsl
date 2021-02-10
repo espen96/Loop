@@ -60,7 +60,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 			
 		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
 	
-		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
+//		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
 		
 			float dist = abs(sp-currZ)/currZ;
 			if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
@@ -328,7 +328,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	if (hand) edgemask = 1.0;
 		vec4 normal2 = (texture2D(colortexA, texcoord));
 		vec3 normal3 =  (texture2D(colortex8, texcoord)).rgb;
-		normal = mat3(gbufferModelViewInverse) * normal2.rgb;
+	//	normal = mat3(gbufferModelViewInverse) * normal2.rgb;
 		vec4 transparencies = texture2D(colortex2,texcoord);			
 		
 
@@ -346,7 +346,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 		previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
 		
-
+gl_FragData[5].rgb = vec3(rayHit);		
 		
 		if (rayHit.z < 1.0){
  
@@ -361,7 +361,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 			else{
 			
 			
-				intRadiance += ambient + ambient +shadowCol*translucent*albedo;
+				intRadiance += ambient + ambient *translucent*albedo;
 			
 				}
 					occlusion += 1.5;
@@ -370,7 +370,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		else {
 
 		
-			intRadiance += ambient+shadowCol;
+			intRadiance += ambient;
 		}
 		
 
@@ -447,6 +447,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 	gl_FragData[1].rgb = clamp(fp10Dither(intRadiance,triangularize(R2_dither())),6.11*1e-5,65000.0);	
+
 
 
 		

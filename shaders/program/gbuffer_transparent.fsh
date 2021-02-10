@@ -165,7 +165,10 @@ void main() {
 	if (gl_FragData[0].a>0.1){
 #endif	
 
-#if defined(glint)
+
+
+
+#if defined(glint) || defined(beacon) || defined(spidereyes)
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy);
 
 	vec3 albedo = toLinear(gl_FragData[0].rgb*color.rgb);
@@ -228,7 +231,15 @@ void main() {
 		vec3 diffuseLight = direct + ambient;
 
 
+	#if defined(spidereyes)	
+	albedo.rgb = toLinear(albedo.rgb)*0.33;
+	gl_FragData[0] = albedo;	
+	
+	#else	
 		gl_FragData[0].rgb = diffuseLight*albedo*8./1500.*0.1;
+		
+	#endif	
+		
 #endif		
 #if defined(damagedblock)
 	}

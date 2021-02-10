@@ -685,7 +685,8 @@ void main() {
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-			emitting = (luma(albedo)*8.0*Emissive_Strength)*2-1;
+		if(!hand)	emitting = (luma(albedo)*8.0*Emissive_Strength)*2-1;
+		if (hand)   emitting = (luma(albedo)*Emissive_Strength)*2-1;
 			custom_lightmap.y = 0.0;
 			emitting = clamp(emitting*(1-luma(transparent.rgb*20)),0.0,10);
 		}
@@ -752,7 +753,9 @@ void main() {
 			caustic = shadowCol.rgb ;			
 			
 
+		//	gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
+
 
 
 			
@@ -849,5 +852,5 @@ void main() {
 	
 
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:3D */
 }

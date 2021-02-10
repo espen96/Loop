@@ -73,7 +73,16 @@ uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 varying vec4 hspec;
-uniform ivec2 atlasSize;                        
+
+uniform ivec2 atlasSize;  
+
+
+#ifdef MC_ANISOTROPIC_FILTERING
+atlasSize = vec2(1,1)
+#endif                   
+
+
+
 uniform float viewWidth;
 uniform float viewHeight;
 vec3 worldToView(vec3 worldPos) {

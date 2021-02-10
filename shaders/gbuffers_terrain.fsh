@@ -78,7 +78,7 @@ uniform ivec2 atlasSize;
 
 
 #ifdef MC_ANISOTROPIC_FILTERING
-atlasSize = vec2(1,1)
+atlasSize = vec2(1,1);
 #endif                   
 
 

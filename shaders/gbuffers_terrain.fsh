@@ -438,8 +438,8 @@ vec2 lm = lmtexcoord.zw;
 	#endif
 
 
-//	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
-	vec4 data1 = encode(viewToWorld(normal), lm);
+	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
+//	vec4 data1 = encode(viewToWorld(normal), lm);
 
 
 	gl_FragData[1].a = 0.0;

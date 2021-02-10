@@ -146,7 +146,7 @@ vec3 medianSub(in vec3[9] v){
 
 
 vec3 median(sampler2D tex1,vec2 uv){
-	vec2 pixel = 1. / vec2(viewWidth,viewHeight).xy;
+	vec2 pixel = 0.25 / vec2(viewWidth,viewHeight).xy;
     vec4 o = vec4(pixel.x, 0., pixel.y, -pixel.y); 
     vec3 n[9];
     n[0] = texture(tex1, uv - o.xz).rgb;  
@@ -228,8 +228,8 @@ float z = texture2D(depthtex1,texcoord).x;
 
 #ifdef SPEC
 	float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-//	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.5);
-	gl_FragData[1].rgb = mix(median2(colortexE),texture2D(colortexE,texcoord).rgb,edgemask);
+	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.25+edgemask);
+//	gl_FragData[1].rgb = mix(median2(colortexE),texture2D(colortexE,texcoord).rgb,edgemask);
 //	gl_FragData[1].rgb = median2(colortexE);
 #endif	
 //	gl_FragData[0].rgb = median2(colortexC);

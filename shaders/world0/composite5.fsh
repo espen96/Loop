@@ -71,7 +71,7 @@ uniform sampler2DShadow shadow;
 uniform sampler2DShadow shadowtex1;
 uniform sampler2DShadow shadowtex0;
 uniform sampler2DShadow shadowcolor0;
-#define SPEC_SSR_QUALITY 2 //[1 2 3 4 5 6 7 8 9 10 ]
+#define SPEC_SSR_QUALITY 3 //[1 2 3 4 5 6 7 8 9 10 ]
 
 
 uniform int framemod8;
@@ -816,7 +816,7 @@ void main() {
 				vec3 rayContrib = F * g1;
 
 				// Skip calculations if ray does not contribute much to the lighting
-				if (luma(rayContrib) > 0.02){
+				if (luma(rayContrib) > 0.05){
 
 					fresnelDiffuse += rayContrib;
 				}

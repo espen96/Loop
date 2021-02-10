@@ -319,7 +319,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);		
-        float normalWeight = Pow16(clamp(dot(normal, origNormal),0,.9));
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,.9),32);
 
 
         float weight    = normalWeight;			

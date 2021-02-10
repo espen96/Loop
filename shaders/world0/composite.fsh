@@ -21,7 +21,7 @@
 #define SSPTambient 1.0 // [0.10 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.20 0.22 0.23 0.25 0.27 0.29 0.32 0.34 0.37 0.40 0.43 0.46 0.50 0.54 0.58 0.63 0.68 0.74 0.79 0.86 0.93 1.00 1.08 1.17 1.26 1.36 1.47 1.59 1.71 1.85 2.00 2.16 2.33 2.51 2.72 2.93 3.17 3.42 3.69 3.99 4.30 4.65 5.02 5.42 5.85 6.32 6.82 7.37 7.95 8.59 9.27 10.01 10.81 11.68 12.61 13.61 14.70 15.87 17.14 18.51 19.99 21.58 23.30 25.16 27.17 29.34 31.68 34.21 36.94 39.89 43.07 46.50 50.22 54.22 58.55 63.22 68.27 73.72 79.60 85.95 92.81 100.22 108.21 116.85 126.17 136.24 147.11 158.85 171.53 185.22 200.00]
 
 #define CLOUDS_QUALITY 0.35 //[0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.9 1.0]
-#define SPEC_SSR_QUALITY 2 //[1 2 3 4 5 6 7 8 9 10 ]
+#define SPEC_SSR_QUALITY 3 //[1 2 3 4 5 6 7 8 9 10 ]
 
 
 #define TORCH_R 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
@@ -395,6 +395,7 @@ void main() {
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec4 transparent = texture2D(colortex2,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
+//		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
 		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -585,7 +586,7 @@ void main() {
 			if (f0.y > 229.5/255.0){
 				f0 = albedo;
 			}
-
+		//	normal = texture2D(colortexA,texcoord).rgb;
 			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
 			roughness = mix(roughness, 0.01, rainMult);
 			f0 = mix(f0, vec3(0.02), rainMult);
@@ -628,18 +629,20 @@ void main() {
 				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
 				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
 				vec3 rayContrib = F * g1;
-
+	
 				// Skip calculations if ray does not contribute much to the lighting
-				if (luma(rayContrib) > 0.02){
+			//	if (luma(rayContrib) > 0.02){
+				if (luma(rayContrib) > 0.05){
 					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
 					
 					// Scale quality with ray contribution
 					float rayQuality = 35*sqrt(luma(rayContrib));
-					
+						
 					// Skip SSR if ray contribution is low
+			//		if (rayQuality > 5.0) {
 					if (rayQuality > 5.0) {
 						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
-						
+			
 						// Reproject on previous frame
 						if (rtPos.z < 1.){
 							vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -665,8 +668,8 @@ void main() {
 				}
 
 			}
+		gl_FragData[5].rgb	= vec3(indirectSpecular);	
 
-			
 			
 	vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)  ;
 	vec3 closestToCamera = closestToCamera5taps(texcoord);
@@ -706,7 +709,7 @@ void main() {
 	 rej = (isclamped)*clamp(length(velocity/texelSize),0.0,1.0) +isclamped ;
 
 
-	 float weight = clamp( (rej+edgemask)  ,0.15,1.0);
+	 float weight = clamp( (rej+edgemask)  ,0.1,1.0);
 
 		gl_FragData[4].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), weight );			
 //		gl_FragData[4].rgb = (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb));			
@@ -731,5 +734,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8C9AE */
+/* DRAWBUFFERS:8C9AED */
 }

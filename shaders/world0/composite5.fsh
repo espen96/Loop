@@ -800,11 +800,11 @@ void main() {
 			
 		
 			
-			for (int i = 0; i < nSpecularSamples; i++){
+
 			
 
 				// Generate ray
-				int seed = frameCounter*nSpecularSamples + i;
+				int seed = frameCounter*nSpecularSamples ;
 				vec2 ij = fract(R2_samples(seed) + blueNoise(gl_FragCoord.xy).rg);
 				vec3 H = sampleGGXVNDF(normSpaceView, roughness, roughness, ij.x, ij.y);
 				vec3 Ln = reflect(-normSpaceView, H);
@@ -818,14 +818,10 @@ void main() {
 				// Skip calculations if ray does not contribute much to the lighting
 				if (luma(rayContrib) > 0.02){
 
-
-
-					// Sample skybox
-
 					fresnelDiffuse += rayContrib;
 				}
 
-			}
+			
 
 
 		indirectSpecular.rgb =  texture2D(colortexE,texcoord).rgb;
@@ -835,7 +831,7 @@ void main() {
 			
 
 
-		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples*lightmap.x) * gl_FragData[0].rgb );
+		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb );
 
 
 

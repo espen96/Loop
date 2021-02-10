@@ -261,7 +261,7 @@ vec3 decodeNormal3x16(float encoded){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17AD */
+/* DRAWBUFFERS:17A */
 void main() {
 
 		vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
@@ -394,7 +394,7 @@ vec2 lm = lmtexcoord.zw;
 
 
 			data0.rgb*=color.rgb;
-			vec4 data1 = encode(viewToWorld(normal), lm);
+			vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0,1);
 
 	
 

@@ -1,5 +1,4 @@
-#version 120
-#extension GL_EXT_gpu_shader4 : enable
+
 
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -266,6 +265,7 @@ void main() {
 			direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 
 			vec3 diffuseLight = direct + texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
+			
 			vec3 color = diffuseLight*albedo*8./150./3.;
 
 
@@ -320,7 +320,11 @@ void main() {
 			if (gl_FragData[0].r > 65000.) gl_FragData[0].rgba = vec4(0.);
 			}
 			else
+#ifndef nether
 			gl_FragData[0].rgb = (color*(1+lumaboost))*0.1;
+			
+#endif
+
 
 			gl_FragData[1] = vec4(0.1, 0.02, 0.0,iswater);
 		gl_FragData[2].rgba = vec4(normal,1);

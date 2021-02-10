@@ -543,7 +543,7 @@ void main() {
 			
 			//	if (!hand)
 				
-					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask, shadowCol,lightmap);
+					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask, shadowCol);
 			//	else
 					
 			if(hand)		ambientLight2 = ambientLight * custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
@@ -560,7 +560,7 @@ void main() {
 		//	gl_FragData[0].rgb = ambientLight2+((rsm*directLightCol.rgb*0.001)*lightmap.y);
 			gl_FragData[0].rgb = ambientLight2;
 
-		gl_FragData[5].rgb = vec3(1.0);	
+
 
 				#ifndef SSGI
 
@@ -569,7 +569,7 @@ void main() {
 					ssao(ao,fragpos,1.0,noise,worldToView(decode(dataUnpacked0.yw)),z);
 				gl_FragData[0] *= ao;			
 			#endif			
-			gl_FragData[5].rgb = shadowCol.rgb ;
+		
 		
 		
 				gl_FragData[3].rgb = normal2 ;
@@ -676,7 +676,7 @@ void main() {
 				}
 
 			}
-		gl_FragData[5].rgb	= vec3(indirectSpecular);	
+	//	gl_FragData[5].rgb	= vec3(indirectSpecular);	
 
 			
 	vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)  ;
@@ -743,5 +743,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8C9AE */
+/* DRAWBUFFERS:8C9AED */
 }

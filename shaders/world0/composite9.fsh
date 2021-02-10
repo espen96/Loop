@@ -32,7 +32,7 @@ const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer-
 const int colortex8Format = R11F_G11F_B10F;		
 const int colortex9Format = R11F_G11F_B10F;	
 		
-const int colortexAFormat = RGBA8_SNORM;	
+const int colortexAFormat = RGBA16F;	
 const int colortexBFormat = RGBA8_SNORM;	
 const int colortexCFormat = RGBA16F;	
 	

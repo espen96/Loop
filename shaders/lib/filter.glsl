@@ -227,12 +227,12 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
 		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
 		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);			
-		float d_weight = abs(cu_depth - c_depth);	
+		float d_weight = abs(cu_depth - c_depth)*10;	
         float depthWeight = expf(-d_weight)* kernel[i];	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 	
-        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),16);
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),128);
 
 
         float weight    = normalWeight;			
@@ -247,7 +247,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
         totalWeight += weight;
 
-	
+		gl_FragData[1].rgb = vec3(weight);
 	}
 
     totalColor.rgb *= rcp(max(totalWeight, 1e-25));
@@ -318,7 +318,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 		
 		float d_weight = abs(cu_depth - c_depth);	
-        float depthWeight = expf(-d_weight);	
+        float depthWeight = expf(-d_weight)*100;	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);		
@@ -336,10 +336,10 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 	
 	}
 
-    totalWeight = rcp(totalWeight)-0.4;
+    totalWeight = rcp(totalWeight)*2-1.6;
 
 
-    return vec3(totalWeight)+0.15;
+    return vec3(totalWeight)*2;
 
 
 	

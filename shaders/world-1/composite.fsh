@@ -678,7 +678,7 @@ void main() {
 			
 			//	if (!hand)
 				
-					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask);
+					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, edgemask,vec3(0.0));
 			//	else
 					
 			if(hand)		ambientLight2 = ambientLight* custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);

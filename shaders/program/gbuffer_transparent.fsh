@@ -239,7 +239,7 @@ void main() {
 		gl_FragData[0].rgb = diffuseLight*albedo*8./1500.*0.1;
 		
 	#endif	
-		
+		gl_FragData[1].rgba = vec4(normal,0);		
 #endif		
 #if defined(damagedblock)
 	}

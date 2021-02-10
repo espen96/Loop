@@ -752,7 +752,7 @@ void main() {
 			//combine all light sources
 			caustic = shadowCol.rgb ;			
 			
-
+		
 		//	gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 

@@ -367,6 +367,7 @@ flat varying vec4 exposure;
 flat varying vec2 rodExposureDepth;
 varying vec2 texcoord;
 uniform sampler2D colortex4;
+uniform sampler2D colortex2;
 uniform sampler2D colortex5;
 uniform sampler2D colortex3;
 uniform sampler2D colortex6;
@@ -377,6 +378,7 @@ uniform sampler2D colortexC;
 uniform sampler2D colortexD;
 uniform sampler2D colortexE;
 
+uniform sampler2D colortex0;
 uniform sampler2D colortexB;
 uniform sampler2D colortex9;
 uniform sampler2D depthtex0;
@@ -792,7 +794,7 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortexE,texcoord*RENDER_SCALE).rgb);
+//  gl_FragData[0].rgb = vec3(texture2D(colortexA,texcoord*RENDER_SCALE).aaa);
 
 
 

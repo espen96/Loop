@@ -319,7 +319,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 
 	
-        ivec2 delta  = kernelO_3x3[i] *2;	
+        ivec2 delta  = kernelO_3x3[i];	
         if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos2  = pos2 + delta;

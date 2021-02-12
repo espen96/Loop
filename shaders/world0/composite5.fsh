@@ -750,7 +750,7 @@ gl_FragData[1].rgb = vec3(shading);
 			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 
 
-
+	#define albedotint
 			
 			// Speculars
 	#ifdef SPEC
@@ -767,11 +767,19 @@ gl_FragData[1].rgb = vec3(shading);
 			porosity = porosity*255.0/64.0;
 			vec3 f0 = vec3(trpData.y);
 
-
+	#ifdef albedotint
 			if (f0.y > 229.5/255.0){
 				f0 = albedo;
 			}
+	#else
+			if (f0.y > 229.5/255.0){
+			f0.rgb *= MetalCol(f0.y);	
+	//			else f0 *= albedo.rgb;			
 
+
+			}	
+	#endif
+			
 			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
 			roughness = mix(roughness, 0.01, rainMult);
 			f0 = mix(f0, vec3(0.02), rainMult);
@@ -879,7 +887,7 @@ gl_FragData[1].rgb = vec3(shading);
 
 //		if (!hand)	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
 
-		if (!hand)	gl_FragData[0].rgb =  gl_FragData[1].rgb +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
+		if (!hand)	gl_FragData[0].rgb =  gl_FragData[1].rgb +  (1.0-fresnelDiffuse/nSpecularSamples*lightmap.x) * gl_FragData[0].rgb;
 
 
 		#endif

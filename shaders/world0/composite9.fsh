@@ -34,9 +34,9 @@ const int colortex9Format = R11F_G11F_B10F;
 		
 const int colortexAFormat = RGBA16F;	
 
-const int colortexCFormat = R11F_G11F_B10F_A10F;	
+const int colortexCFormat = RGBA16F;	
 
-const int colortexEFormat = R11F_G11F_B10F_A10F;		//spec a
+const int colortexEFormat = RGBA16F;		//spec a
 	
 	
 

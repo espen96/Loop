@@ -186,7 +186,13 @@ float linZ(float depth) {
 
 
 
-
+float remap_noise_tri_erp( const float v )
+{
+    float r2 = 0.5 * v;
+    float f1 = sqrt( r2 );
+    float f2 = 1.0 - sqrt( r2 - 0.25 );    
+    return (v < 0.5) ? f1 : f2;
+}
 
 
 

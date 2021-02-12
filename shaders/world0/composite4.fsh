@@ -20,6 +20,7 @@ uniform sampler2D colortexD;
 uniform sampler2D colortexE;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
+uniform sampler2D colortex6;
 
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
@@ -63,17 +64,26 @@ float ld(float dist) {
 }
 
 
-
+float remap_noise_tri_erp( const float v )
+{
+    float r2 = 0.5 * v;
+    float f1 = sqrt( r2 );
+    float f2 = 1.0 - sqrt( r2 - 0.25 );    
+    return (v < 0.5) ? f1 : f2;
+}
 
 #define DENOISE_RANGE1 vec2(32, 30)
 
-
+vec4 blueNoise(vec2 coord){
+  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+}
 #include "/lib/filter.glsl"
 void main() {
 
 /* DRAWBUFFERS:8 */
 
-
+			vec3 bn = blueNoise(gl_FragCoord.xy).xyz;
+			vec3 bn_tri = vec3( remap_noise_tri_erp(bn.x), remap_noise_tri_erp(bn.y), remap_noise_tri_erp(bn.z) );
 
 
 	float z = texture2D(depthtex1,texcoord).x;
@@ -94,6 +104,7 @@ void main() {
 
 
 
+//	gl_FragData[0].rgb = color+ (bn_tri*2.0-0.5)/255.0;
 	gl_FragData[0].rgb = color;
 
 

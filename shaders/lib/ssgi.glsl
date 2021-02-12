@@ -319,6 +319,12 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 
+	vec3 bn_tri = vec3( remap_noise_tri_erp(noise.x), 
+						remap_noise_tri_erp(noise.y), 
+						remap_noise_tri_erp(noise.z) );
+
+
+
 
 	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;

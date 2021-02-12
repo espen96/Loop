@@ -6,6 +6,8 @@
 uniform sampler2D specular;
 #endif
 
+
+uniform int entityId;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
@@ -82,8 +84,9 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A */
+/* DRAWBUFFERS:17A2 */
 void main() {
+	float lightningBolt = float(entityId == 58);	
 	#ifdef SPEC	
 		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
 
@@ -103,9 +106,10 @@ void main() {
 	if (data0.a > 0.3) data0.a = normalMat.a;
 	else data0.a = 0.0;
 
-
 	vec4 data1 = clamp(encode(viewToWorld(normal)),0.,1.0);
+	if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
 
+	if (lightningBolt > 0.5) gl_FragData[3] = vec4(1.0);
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifdef SPEC
 		gl_FragData[1] = vec4(texture2D(specular, lmtexcoord.xy, -400).rgb,0);
@@ -113,7 +117,5 @@ void main() {
 		gl_FragData[1] = vec4(0.0);
 	#endif	
 	gl_FragData[2].rgb = normal;
-
-
 
 }

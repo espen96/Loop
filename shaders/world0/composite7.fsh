@@ -14,7 +14,7 @@ uniform sampler2D colortexC;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
-
+uniform float blindness;  
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform float far;
@@ -148,8 +148,19 @@ void main() {
 
     vl.a = 0.0;
   }
+  if (blindness > 0){
+    vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
+    color.rgb *= exp(-length(fragpos)*vec3(1.0)*blindness);
+
+
+    vl.a = 0.0;
+  }  
   else
-    color += vl.rgb;	
+  
+    color += vl.rgb;
+	
+
+	
 	float fogFactorAbs = 1.0 - clamp((length(fragpos) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
    fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(0.0)*texelSize*0.5,z));	
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;

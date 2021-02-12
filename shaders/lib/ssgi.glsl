@@ -455,7 +455,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
   
 	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1;
 	  
-		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight-0.75) +depthmask )  ,0.0,1.0)));	 
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(mix(vec3(0.0),torch+ambient+shadowCol,mixer)),clamp( ((weight-0.75) +depthmask )  ,0.0,1.0)));	 
 		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 		
 

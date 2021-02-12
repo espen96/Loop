@@ -15,6 +15,7 @@ uniform sampler2D colortex7;
 
 
 uniform sampler2D colortexA;
+uniform sampler2D colortexB;
 uniform sampler2D colortexC;
 uniform sampler2D colortexD;
 uniform sampler2D colortexE;
@@ -82,13 +83,16 @@ void main() {
 	bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 	vec3	 color = texture2D(colortex8,texcoord).rgb;		
 	
+	
 #ifdef ssptfilter
 #ifdef filterpass_0
+
 	if (z <1 && !iswater) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,24,colortex8,0.0).rgb,0,10);
 
 
 #endif
 #endif
+
 
 
 

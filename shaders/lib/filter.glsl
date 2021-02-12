@@ -142,6 +142,9 @@ struct TapKey {
 
 uniform sampler2D colortex4;
 
+
+
+
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
     float denoiseStrength = ((DENOISE_RANGE1.x + (DENOISE_RANGE1.y-DENOISE_RANGE1.x)*hash1(641.128752*gl_FragCoord.x + 312.321374*gl_FragCoord.y+1.92357812*frameCounter)));
 	int size2 = int(denoiseStrength);
@@ -179,19 +182,20 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
    
 
   
-    ivec2 pos     = ivec2(floor(coord * vec2(viewWidth, viewHeight)));
+
     ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     float sumweight = 0.0;	
 	float weight = 0.0;
 	
 
-    float c_depth  = texelFetch(depthtex0, pos2, 0).x;
-//    float c_depth  = sqrt(texelFetch2D(colortex4,ivec2(pos2.xy/texelSize/4),0).w/65000.0);
+		vec4 normaldepth = texelFetch(colortexA, pos2, 0).rgba; 
 
-        c_depth    = ld(c_depth) * far;	
 
-	vec3 origNormal =  (texelFetch(colortexA, pos2, 0).rgb);			
+     float   c_depth    = normaldepth.a * far;	
+	vec3 origNormal =  normaldepth.rgb;			
 	vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
+	
+
 
 
 
@@ -205,11 +209,11 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	
 	
 	float var3 = abs(variance2.x*1000);		
-//	float var4 = luma(colorCenter.rgb);		
+	
 			
 
 	if (var3 < 0.001)  return totalColor.rgb;
-//	if (var4 < 0.1)  return totalColor.rgb;
+
 
 
 
@@ -228,22 +232,21 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 #endif
 	
         if (delta.x == 0 && delta.y == 0) continue;
-        ivec2 d_pos  = pos + delta;	
-        if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
+		
         ivec2 d_pos2  = pos2 + delta;
-		
-        bool valid          = all(greaterThanEqual(d_pos, ivec2(0))) && all(lessThan(d_pos, ivec2(vec2(viewWidth, viewHeight))));
-
+        if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
+        bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
-		
-        float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
-//	 	float cu_depth  = sqrt(texelFetch2D(colortex4,ivec2(d_pos2.xy/texelSize/4),0).w/65000.0);		
-		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);			
+
+		vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
+        float cu_depth = (normaldepth2.a) * far;
+	
+		vec3 normal = (normaldepth2.rgb);			
 		
 		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
 		
 		float d_weight = abs(cu_depth - c_depth);	
-        float depthWeight = expf(-d_weight)* kernel[i];	
+        float depthWeight = expf(-d_weight);	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 	
@@ -251,17 +254,15 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
 
         float weight    = normalWeight;			
+		
 
        
-        weight *= exp(-d_weight - var2);
-
-
-
+       weight *= exp(-d_weight - var2);
+	   
       totalColor.rgb += color.rgb * weight;
 
         totalWeight += weight;
-
-		gl_FragData[1].rgb = vec3(weight);
+gl_FragData[1].rgb = vec3(weight);
 	}
 
     totalColor.rgb *= rcp(max(totalWeight, 1e-25));
@@ -318,24 +319,24 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 
 	
-        ivec2 delta  = kernelO_3x3[i] * 4;	
+        ivec2 delta  = kernelO_3x3[i] *2;	
         if (delta.x == 0 && delta.y == 0) continue;
-        ivec2 d_pos  = pos + delta;	
-        if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
-        ivec2 d_pos2  = pos2 + delta;
 		
-        bool valid          = all(greaterThanEqual(d_pos, ivec2(0))) && all(lessThan(d_pos, ivec2(vec2(viewWidth, viewHeight))));
-
+        ivec2 d_pos2  = pos2 + delta;
+        if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
+        bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
 		
-        float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
-
+     		vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
+        float cu_depth = (normaldepth2.a) * far;
+	
+		vec3 normal = (normaldepth2.rgb);			
+		
+		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
 		
 		float d_weight = abs(cu_depth - c_depth);	
-        float depthWeight = expf(-d_weight)*100;	
+        float depthWeight = expf(-d_weight);	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
-		
-		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);		
         float normalWeight = pow(clamp(dot(normal, origNormal),0,.9),32);
 
 
@@ -358,3 +359,5 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 	
 }
+
+

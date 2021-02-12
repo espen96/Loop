@@ -18,7 +18,7 @@
 #define CAVE_LIGHT_LEAK_FIX // Hackish way to remove sunlight incorrectly leaking into the caves. Can inacurrately create shadows in some places
 //#define CLOUDS_SHADOWS
 #define CLOUDS_SHADOWS_STRENGTH 1.0 //[0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.9 1.0]
-#define SPECSTRENGTH 1.0 //[0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.9 1.0]
+
 
 
 
@@ -573,12 +573,14 @@ void main() {
 
 	
 	
-	
+
+	gl_FragData[3].rgba = vec4(texture2D(colortexA,texcoord).rgb,ld(texture2D(depthtex0,texcoord).r));	
+	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
 	
 	
 		
 	
 	
 
-/* DRAWBUFFERS:8C9 */
+/* DRAWBUFFERS:8C9AE */
 }

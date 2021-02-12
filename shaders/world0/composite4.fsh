@@ -13,7 +13,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 
-
+uniform sampler2D colortexB;
 uniform sampler2D colortexA;
 uniform sampler2D colortexC;
 uniform sampler2D colortexD;

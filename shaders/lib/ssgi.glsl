@@ -7,71 +7,7 @@
 
 vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 
-#ifdef PathTracedMode
-	float stepSize = 60;
-	int maxSteps = 24;
-	bool istranparent = transparent > 0.0;
-	
-	
-	
-	vec3 clipPosition = toClipSpace3(position);
-	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?
-	   								(-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
-	
 
-	vec3 end = toClipSpace3(position+dir*rayLength);
-	vec3 direction = end-clipPosition;  //convert to clip space
-
-	float len = max(abs(direction.x)/texelSize.x,abs(direction.y)/texelSize.y)/stepSize;
-
-	//get at which length the ray intersects with the edge of the screen
-	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
-	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
-	vec3 stepv = direction/len;
-	int iterations = min(int(min(len, mult*len)-2), maxSteps);
-
-	
-	
-	
-	//Do one iteration for closest texel (good contact shadows)
-	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*6.0;
-		
-	spos.xy += TAA_Offset*texelSize*0.5*RENDER_SCALE;
-	float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
-	float currZ = linZ(spos.z);
-
-	
-	if( sp < currZ) {
-		float dist = abs(sp-currZ)/currZ;
-		
-		if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
-
-		
-	}
-	
-	stepv *= vec3(RENDER_SCALE,1.0);
-	spos += stepv*noise;
-  for(int i = 0; i < iterations; i++){
-      if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
-      return vec3(1.1);
-  		
-		// decode depth buffer
-		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
-
-		float currZ = linZ(spos.z);
-			
-		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
-	
-//		if(istranparent)  return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);		
-		
-			float dist = abs(sp-currZ)/currZ;
-			if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
-		}
-			spos += stepv;
-	}
-	return vec3(1.1);
-	
-#else
 	float stepSize = STEP_LENGTH;
 	int maxSteps = STEPS;
 	bool istranparent = transparent > 0.0;
@@ -115,6 +51,8 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 	
 	stepv *= vec3(RENDER_SCALE,1.0);
 	spos += stepv*noise;
+	
+	
   for(int i = 0; i < iterations; i++){
       if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
       return vec3(1.1);
@@ -135,7 +73,6 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
 	}
 	return vec3(1.1);
 
-#endif	
 	
 }
 
@@ -508,18 +445,17 @@ gl_FragData[5].rgb = vec3(rayHit);
 	if (emissive) weight =0.0;
 	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a ,weight ,0.5);	
 		
-	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask)) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
+	  weight = clamp( ((texture2D(colortexC,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
 	 gl_FragData[4].rgb = vec3(weight); 
   
-	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1.0;
+	  if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1;
 	  
-		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight*0.1) +depthmask )  ,0.0,1.0)));	 
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(torch+ambient),clamp( ((weight-0.75) +depthmask )  ,0.0,1.0)));	 
 		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 		
 
 
 	gl_FragData[1].rgb = clamp(fp10Dither(intRadiance,triangularize(R2_dither())),6.11*1e-5,65000.0);	
-	gl_FragData[5].rgb = vec3(weight);	
 
 
 		

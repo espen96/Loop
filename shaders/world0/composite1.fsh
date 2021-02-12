@@ -89,7 +89,7 @@ vec3 closestToCamera5taps(vec2 texcoord)
 
 #define DENOISE_RANGE1 vec2(32, 30)
 
-#include "/lib/filter.glsl"
+
 
 #define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
 #define mn3(a, b, c)			s2(a, b); s2(a, c);
@@ -200,15 +200,93 @@ vec3 median2(sampler2D tex1) {
 
 
 
+#define KERNEL_SIZE 9
 
+
+vec2 offset[KERNEL_SIZE];
+
+float depth[KERNEL_SIZE];
+vec4 norm[KERNEL_SIZE];
+
+float g_depth[KERNEL_SIZE];
+float g_norm[KERNEL_SIZE];
+float gdMax, gdMin;
+float gnMax, gnMin;
+
+vec3 rgb2lum = vec3(0.30, 0.59, 0.11);
+
+void loadPixels(vec2 texCoord)
+{
+	vec4 c;
+	for (int i = 0; i < KERNEL_SIZE; i++)
+	{
+		depth[i] = texture2D(depthtex0, texCoord + offset[i]).r*far;
+		norm[i] = texture2D(colortexA, texCoord + offset[i]);
+	}
+}
+
+void findMaxMin()
+{
+	gdMax = 0.0;
+	gdMin = 1.0;
+	gnMax = 0.0;
+	gnMin = 1.0;
+	
+	for (int i = 0; i < KERNEL_SIZE; i++)
+	{
+		if (g_depth[i] > gdMax)
+			gdMax = g_depth[i];
+		if (g_depth[i] < gdMin)
+			gdMin = g_depth[i];
+
+		if (g_norm[i] > gnMax)
+			gnMax = g_norm[i];
+		if (g_norm[i] < gnMin)
+			gnMin = g_norm[i];
+	}
+}
+
+
+
+#define THRESHOLD_N 0.01
+#define THRESHOLD_D 0.01
+#include "/lib/filter.glsl"
 void main() {
 
-/* DRAWBUFFERS:8E */
+/* DRAWBUFFERS:8 */
+
+
+
+
+float z = texture2D(depthtex1,texcoord).x;
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	vec3	 color = texture2D(colortex8,texcoord).rgb;		
 				
 		
-float z = texture2D(depthtex1,texcoord).x;
 
 
 
@@ -227,8 +305,8 @@ float z = texture2D(depthtex1,texcoord).x;
 
 
 #ifdef SPEC
-	float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.25+edgemask);
+//	float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+//	gl_FragData[1].rgb = mix(median(colortexE,gl_FragCoord.xy/vec2(viewWidth,viewHeight).xy),texture2D(colortexE,texcoord).rgb,0.25+edgemask);
 //	gl_FragData[1].rgb = mix(median2(colortexE),texture2D(colortexE,texcoord).rgb,edgemask);
 //	gl_FragData[1].rgb = median2(colortexE);
 #endif	

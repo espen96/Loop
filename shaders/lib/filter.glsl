@@ -140,6 +140,7 @@ struct TapKey {
 
 
 
+uniform sampler2D colortex4;
 
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
     float denoiseStrength = ((DENOISE_RANGE1.x + (DENOISE_RANGE1.y-DENOISE_RANGE1.x)*hash1(641.128752*gl_FragCoord.x + 312.321374*gl_FragCoord.y+1.92357812*frameCounter)));
@@ -185,6 +186,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	
 
     float c_depth  = texelFetch(depthtex0, pos2, 0).x;
+//    float c_depth  = sqrt(texelFetch2D(colortex4,ivec2(pos2.xy/texelSize/4),0).w/65000.0);
 
         c_depth    = ld(c_depth) * far;	
 
@@ -210,11 +212,21 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 //	if (var4 < 0.1)  return totalColor.rgb;
 
 
+
+
+//#define HQ
+
+
+
+#ifdef HQ
+
+    for (int i = 0; i<25; i++) {
+	ivec2 delta  = kernelO_5x5[i] * size;	
+# else 
     for (int i = 0; i<9; i++) {
-
-
+	ivec2 delta  = kernelO_3x3[i] * size;	
+#endif
 	
-        ivec2 delta  = kernelO_3x3[i] * size;	
         if (delta.x == 0 && delta.y == 0) continue;
         ivec2 d_pos  = pos + delta;	
         if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
@@ -225,21 +237,23 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         if (!valid) continue;		
 		
         float cu_depth = ld(texelFetch(depthtex0, d_pos2, 0).x) * far;
-		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+//	 	float cu_depth  = sqrt(texelFetch2D(colortex4,ivec2(d_pos2.xy/texelSize/4),0).w/65000.0);		
 		vec3 normal = (texelFetch(colortexA, d_pos2, 0).rgb);			
-		float d_weight = abs(cu_depth - c_depth)*10;	
+		
+		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+		
+		float d_weight = abs(cu_depth - c_depth);	
         float depthWeight = expf(-d_weight)* kernel[i];	
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 	
-        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),128);
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),64);
 
 
         float weight    = normalWeight;			
 
        
         weight *= exp(-d_weight - var2);
-	
 
 
 

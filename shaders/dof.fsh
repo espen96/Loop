@@ -2,6 +2,7 @@
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #define Fake_purkinje
+#define firefly_supression
 #define BLOOMY_FOG 0.5 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
 #define BLOOM_STRENGTH  1.0 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0]
 #define TONEMAP Tonemap_Loop // Tonemapping operator [ HableTonemap reinhard Tonemap_Lottes ACESFilm ToneMap_Hejl2015]
@@ -628,8 +629,65 @@ float printNumber(float f, vec2 pos){
 
 
 
+vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
+{
+    float alpha = (sampleNumber+jitter)/nb;
+    float angle = jitter*6.28+alpha * nbRot * 6.28;
+    float sin_v, cos_v;
+
+	sin_v = sin(angle);
+	cos_v = cos(angle);
+
+    return vec2(cos_v, sin_v)*alpha;
+}
 
 
+
+#define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
+#define mn3(a, b, c)			s2(a, b); s2(a, c);
+#define mx3(a, b, c)			s2(b, c); s2(a, c);
+
+#define mnmx3(a, b, c)			mx3(a, b, c); s2(a, b);                                   // 3 exchanges
+#define mnmx4(a, b, c, d)		s2(a, b); s2(c, d); s2(a, c); s2(b, d);                   // 4 exchanges
+#define mnmx5(a, b, c, d, e)	s2(a, b); s2(c, d); mn3(a, c, e); mx3(b, d, e);           // 6 exchanges
+#define mnmx6(a, b, c, d, e, f) s2(a, d); s2(b, e); s2(c, f); mn3(a, b, c); mx3(d, e, f); // 7 exchanges
+
+
+#define vec vec3
+#define toVec(x) x.rgb
+vec3 median2(sampler2D tex1) {
+
+    vec v[9];
+    ivec2 ssC = ivec2(gl_FragCoord.xy);
+	
+	
+    // Add the pixels which make up our window to the pixel array.
+	
+	
+    for (int dX = -1; dX <= 1; ++dX) {
+        for (int dY = -1; dY <= 1; ++dY) {
+            ivec2 offset = ivec2(dX, dY);
+
+            // If a pixel in the window is located at (x+dX, y+dY), put it at index (dX + R)(2R + 1) + (dY + R) of the
+            // pixel array. This will fill the pixel array, with the top left pixel of the window at pixel[0] and the
+            // bottom right pixel of the window at pixel[N-1].
+			
+			
+            v[(dX + 1) * 3 + (dY + 1)] = toVec(texelFetch(tex1, ssC + offset, 0));
+        }
+    }
+
+    vec temp;
+    // Starting with a subset of size 6, remove the min and max each time
+    mnmx6(v[0], v[1], v[2], v[3], v[4], v[5]);
+    mnmx5(v[1], v[2], v[3], v[4], v[6]);
+    mnmx4(v[2], v[3], v[4], v[7]);
+    mnmx3(v[3], v[4], v[8]);
+    vec3 result = v[4].rgb;
+	
+	return result;
+
+}
 
 
 
@@ -637,7 +695,14 @@ float printNumber(float f, vec2 pos){
 void main() {
   /* DRAWBUFFERS:7 */
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
+  
+  #ifndef firefly_supression
 	vec3 col = texture2D(colortex5,texcoord).rgb;
+  #else
+	vec3 col =  median2(colortex5);
+  #endif
+	float noise = blueNoise()*6.28318530718;
+	float pcoc = 0;
 globalInit();
     fillNumbers();
     uv = gl_FragCoord.xy / vec2(viewWidth,viewHeight).xy;
@@ -649,11 +714,17 @@ globalInit();
 		#else
 			float focus = MANUAL_FOCUS;
 		#endif
-		float pcoc = min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0);
+		
+
+
+		pcoc = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
+
+		
+		 
 		#ifdef FAR_BLUR_ONLY
 			pcoc *= float(z > focus);
 		#endif
-		float noise = blueNoise()*6.28318530718;
+
 		mat2 noiseM = mat2( cos( noise ), -sin( noise ),
 	                       sin( noise ), cos( noise )
 	                         );
@@ -718,7 +789,7 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortexD,texcoord*RENDER_SCALE).rgb);
+//  gl_FragData[0].rgb = vec3(texture2D(colortex8,texcoord*RENDER_SCALE).rgb)*0.8;
 
 
 //    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);

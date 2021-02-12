@@ -1,4 +1,4 @@
-#version 120
+#version 130
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
@@ -427,7 +427,7 @@ vec4 encode (vec3 unenc, vec2 lightmaps)
 	
     return vec4((encn),vec2(lightmaps.x,lightmaps.y));
 }
-
+#include "/lib/filter.glsl"
 
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
@@ -741,14 +741,12 @@ gl_FragData[1].rgb = vec3(shading);
 	
 
 
-				//	if(hand) shading = 1.0;
+	//		 if(hand) shading = 1.0;
 					
 
 			//combine all light sources
 			caustic = shadowCol.rgb ;			
-			
-		
-		//	gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
+
 			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 
 
@@ -761,11 +759,13 @@ gl_FragData[1].rgb = vec3(shading);
 			// Unpack labpbr
 			float roughness = unpackRoughness(trpData.x);
 			float porosity = trpData.z;
+			float rej = 1;
+			float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+
 			if (porosity > 64.5/255.0)
 				porosity = 0.0;
 			porosity = porosity*255.0/64.0;
 			vec3 f0 = vec3(trpData.y);
-			float rej = 1;
 
 
 			if (f0.y > 229.5/255.0){
@@ -775,31 +775,23 @@ gl_FragData[1].rgb = vec3(shading);
 			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
 			roughness = mix(roughness, 0.01, rainMult);
 			f0 = mix(f0, vec3(0.02), rainMult);
-			
-
+			//f0 = vec3(0.5);
+			//roughness = 0.01;
 
 			// Energy conservation between diffuse and specular
 			vec3 fresnelDiffuse = vec3(0.0);
 
 			// Sun specular
+			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
+
 			vec3 indirectSpecular = vec3(0.0);
-			
-			
 			const int nSpecularSamples = SPEC_SSR_QUALITY;
-			
-
 			mat3 basis = CoordBase(normal);
-			vec3 normSpaceView = -np3*basis;	
-
-
-			
-		
-			
-
-			
-
+			vec3 normSpaceView = -np3*basis;
+			vec3 rayContrib = vec3(0.0);
+			for (int i = 0; i < nSpecularSamples; i++){
 				// Generate ray
-				int seed = frameCounter*nSpecularSamples ;
+				int seed = frameCounter*nSpecularSamples + i;
 				vec2 ij = fract(R2_samples(seed) + blueNoise(gl_FragCoord.xy).rg);
 				vec3 H = sampleGGXVNDF(normSpaceView, roughness, roughness, ij.x, ij.y);
 				vec3 Ln = reflect(-normSpaceView, H);
@@ -808,26 +800,89 @@ gl_FragData[1].rgb = vec3(shading);
 				// Ray contribution
 				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
 				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
-				vec3 rayContrib = F * g1;
+				     rayContrib = F * g1;
 
 				// Skip calculations if ray does not contribute much to the lighting
-				if (luma(rayContrib) > 0.05){
+				
+				if (luma(rayContrib) > 0.02){
+				
+					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
+					// Scale quality with ray contribution
+					float rayQuality = 35*sqrt(luma(rayContrib));
+					// Skip SSR if ray contribution is low
+					if (rayQuality > 5.0) {
+						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
+						// Reproject on previous frame
+						if (rtPos.z < 1.){
+							vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
+							previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
+							previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
+							if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
+								reflection.a = 1.0;
+								reflection.rgb = texture2D(colortex5,previousPosition.xy).rgb;
+							}
+						}
+					}
 
+					// Sample skybox
+					if (reflection.a < 0.9){
+						reflection.rgb = (skyCloudsFromTex(L, colortex4).rgb)*clamp(lightmap.y-0.8,0,1);
+						reflection.rgb *= sqrt(lightmap.y)/150.*8./3.;
+					}
+					indirectSpecular += reflection.rgb * rayContrib;
 					fresnelDiffuse += rayContrib;
 				}
 
+			}
+			gl_FragData[1].rgb = (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb));	
+			
+			if (luma(rayContrib) > 0.05){			
+			vec3 speculars = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)  ;
+			vec3 closestToCamera = closestToCamera5taps(texcoord);
+			vec3 fragposition = toScreenSpace(closestToCamera);			
+			fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+			vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+			previousPosition = toClipSpace3Prev(previousPosition);
+			vec2 velocity = previousPosition.xy - closestToCamera.xy;
+			previousPosition.xy = texcoord + velocity;
+
+			vec3 albedoCurrent0 = texture2D(colortexE, texcoord).rgb;
+			vec3 albedoCurrent1 = texture2D(colortexE, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent2 = texture2D(colortexE, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent3 = texture2D(colortexE, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent4 = texture2D(colortexE, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent5 = texture2D(colortexE, texcoord + vec2(0.0,texelSize.y)).rgb;
+			vec3 albedoCurrent6 = texture2D(colortexE, texcoord + vec2(0.0,-texelSize.y)).rgb;
+			vec3 albedoCurrent7 = texture2D(colortexE, texcoord + vec2(-texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent8 = texture2D(colortexE, texcoord + vec2(texelSize.x,0.0)).rgb;
+
+			//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
+
+			vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
+			vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+
+			
+					 
+			vec3 albedoPrev = max(FastCatmulRom(colortexE, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.0).xyz, 0.0);
+			vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);			
+			
+			float isclamped = clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,100),0,100);	 
+
+
 			
 
-
-		indirectSpecular.rgb =  texture2D(colortexE,texcoord).rgb;
-
-			
-
-			
+			 
+			rej = (isclamped)*clamp(length(velocity/texelSize),0.0,1.0) +isclamped ;
 
 
-		if (!hand) 			gl_FragData[0].rgb = indirectSpecular +  (  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb );
+			float weight = clamp( (rej+edgemask)  ,0.5,1.0);
 
+			gl_FragData[1].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), weight );			
+			}
+
+//		if (!hand)	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb) +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
+
+		if (!hand)	gl_FragData[0].rgb =  gl_FragData[1].rgb +  (1.0-fresnelDiffuse/nSpecularSamples) * gl_FragData[0].rgb;
 
 
 		#endif
@@ -843,5 +898,5 @@ gl_FragData[1].rgb = vec3(shading);
 	
 
 
-/* DRAWBUFFERS:3 */
+/* DRAWBUFFERS:3E */
 }

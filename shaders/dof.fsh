@@ -689,17 +689,20 @@ vec3 median2(sampler2D tex1) {
 
 }
 
-
+#include "/lib/filter.glsl"
 
 
 void main() {
   /* DRAWBUFFERS:7 */
+  
+  			float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE*RENDER_SCALE,2,colortex8).rgb,0,1).r;
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
   
   #ifndef firefly_supression
 	vec3 col = texture2D(colortex5,texcoord).rgb;
   #else
 	vec3 col =  median2(colortex5);
+		col = mix(col, texture2D(colortex5,texcoord).rgb, clamp(edgemask-0.1,0,0.5) );
   #endif
 	float noise = blueNoise()*6.28318530718;
 	float pcoc = 0;
@@ -789,7 +792,7 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortex8,texcoord*RENDER_SCALE).rgb)*0.8;
+//  gl_FragData[0].rgb = vec3(edgemask);
 
 
 //    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);

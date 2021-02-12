@@ -2,7 +2,7 @@
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #define Fake_purkinje
-#define firefly_supression
+
 #define BLOOMY_FOG 0.5 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
 #define BLOOM_STRENGTH  1.0 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0]
 #define TONEMAP Tonemap_Loop // Tonemapping operator [ HableTonemap reinhard Tonemap_Lottes ACESFilm ToneMap_Hejl2015]

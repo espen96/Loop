@@ -10,11 +10,15 @@ uniform float averageFrameTime;
 
 #define ssptfilter
 
-#define filerpass_0
-#define filerpass_1
-#define filerpass_2
-//#define filerpass_3
+#ifdef ssptfilter
+#define firefly_supression
 
+#define filterpass_0
+#define filterpass_1
+#define filterpass_2
+#define filterpass_3
+
+#endif
 
 
 //#define SPEC

@@ -363,6 +363,9 @@ vec2(-0.9466863f , -0.008970681f),
 vec2(-0.596356f , -0.7976127f),
 vec2(-0.8877738f , 0.4569088f));
 #endif
+
+
+
 flat varying vec4 exposure;
 flat varying vec2 rodExposureDepth;
 varying vec2 texcoord;
@@ -627,9 +630,23 @@ float printNumber(float f, vec2 pos){
 	}
 
 
-
-
-
+const vec2 poisson15[15] = vec2[15](
+    vec2( 0.0f, 0.0f ),
+    vec2( 0.5923652544330837f, -0.7985240303990125f ),
+    vec2( 0.8925354689831377f, 0.4478794506585858f ),
+    vec2( -0.8013433749297659f, -0.5967289886693778f ),
+    vec2( -0.8037371285156106f, 0.5946240097661505f ),
+    vec2( 0.2207311415542928f, 0.8911381811813609f ),
+    vec2( -0.09668338919755155f, -0.8024689915285218f ),
+    vec2( 0.9080162758461857f, -0.2774357630935476f ),
+    vec2( -0.7670629067473961f, -0.04812372373480816f ),
+    vec2( -0.3760454460373329f, 0.35430350883371653f ),
+    vec2( 0.5274859914965931f, 0.07055588489480841f ),
+    vec2( -0.33515367563959403f, 0.9334876763704847f ),
+    vec2( -0.3718058921641454f, -0.38988881567435457f ),
+    vec2( 0.1105849708783603f, 0.4628929029286637f ),
+    vec2( 0.2957163783257948f, -0.33453973535023446f )
+);
 
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
 {
@@ -713,18 +730,29 @@ globalInit();
     uv = gl_FragCoord.xy / vec2(viewWidth,viewHeight).xy;
 	#ifdef DOF
 		/*--------------------------------*/
+		
 		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+		
+		
+
+		 
+		 
 		#ifdef AUTOFOCUS
 			float focus = rodExposureDepth.y*far;
 		#else
 			float focus = MANUAL_FOCUS;
 		#endif
+			for ( int i = 0; i < 15; i++) {
+				pcoc += texture2D(colortexB, texcoord.xy + poisson15[i]*0.01).r;
+			}
+			pcoc = pcoc/15.0;		
+
+
+//		pcoc = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
+
+
 		
-
-
-		pcoc = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
-
-		
+		gl_FragData[0].rgb = vec3(pcoc)*100;
 		 
 		#ifdef FAR_BLUR_ONLY
 			pcoc *= float(z > focus);
@@ -794,7 +822,7 @@ globalInit();
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
 
-//  gl_FragData[0].rgb = vec3(texture2D(colortexA,texcoord*RENDER_SCALE).aaa);
+//  gl_FragData[0].rgb = vec3(texture2D(colortexB,texcoord*RENDER_SCALE).rrr);
 
 
 

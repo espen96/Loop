@@ -33,6 +33,7 @@ const int colortex8Format = R11F_G11F_B10F;
 const int colortex9Format = R11F_G11F_B10F;	
 		
 const int colortexAFormat = RGBA16F;	
+const int colortexBFormat = RGBA16F;	
 
 const int colortexCFormat = RGBA16F;	
 
@@ -57,7 +58,7 @@ const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
 const bool colortexAClear = true;
-const bool colortexBClear = false;
+const bool colortexBClear = true;
 
 const bool colortexCClear = false;
 const bool colortexEClear = false;
@@ -79,9 +80,11 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex0;
 uniform sampler2D colortex6;
 
-
+uniform float near;
+uniform float far;
 
 uniform sampler2D colortexA;
+uniform sampler2D colortexB;
 
 uniform sampler2D colortexC;
 uniform sampler2D colortexE;
@@ -100,7 +103,9 @@ uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 #include "/lib/projections.glsl"
 
-
+float ld(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
+}
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
@@ -350,13 +355,17 @@ vec3 TAA_hq(){
 	return supersampled;
 }
 
-
-
-
+#define focal  2.4
+#define aperture  0.8	
+flat varying vec2 rodExposureDepth;
 void main() {
 
-/* DRAWBUFFERS:5 */
+/* DRAWBUFFERS:5B */
 
+
+	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+    float focus = rodExposureDepth.y*far;
+	gl_FragData[1].r = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
 	#ifdef TAA
 	vec3 color = TAA_hq();
 

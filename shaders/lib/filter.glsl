@@ -250,7 +250,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
 		
 	
-        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),64);
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),32);
 
 
         float weight    = normalWeight;			

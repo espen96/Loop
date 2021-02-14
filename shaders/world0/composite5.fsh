@@ -875,6 +875,7 @@ gl_FragData[1].rgb = vec3(shading);
 					// Skip SSR if ray contribution is low
 					if (rayQuality > 5.0) {
 						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
+							gl_FragData[2].rgb = vec3(rtPos);
 						// Reproject on previous frame
 						if (rtPos.z < 1.){
 							vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -946,7 +947,7 @@ gl_FragData[1].rgb = vec3(shading);
 
 //		if (!hand)	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
 
-		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/nSpecularSamples*lightmap.x) * gl_FragData[0].rgb;
+		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
 
 
 		#endif
@@ -962,5 +963,5 @@ gl_FragData[1].rgb = vec3(shading);
 	
 
 
-/* DRAWBUFFERS:3E */
+/* DRAWBUFFERS:3ED */
 }

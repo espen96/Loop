@@ -376,6 +376,30 @@ vec3 decodeNormal3x16(float encoded){
 
     return decoded;
 }
+
+       vec3 FindNormal(sampler2D tex, vec2 uv, vec2 u)
+            {
+                    //u is one uint size, ie 1.0/texture size
+                vec2 offsets[4];
+					 offsets[0] = uv + vec2(-u.x, 0);
+					 offsets[1] = uv + vec2(u.x, 0);
+					 offsets[2] = uv + vec2(0, -u.y);
+					 offsets[3] = uv + vec2(0, u.y);
+               
+                float hts[4];
+                for(int i = 0; i < 4; i++)
+                {
+                    hts[i] = texture2D(tex, offsets[i]).x;
+                }
+               
+                vec2 _step = vec2(0.1, 0.0);
+               
+                vec3 va = normalize( vec3(_step.xy, hts[1]-hts[0]) );
+                vec3 vb = normalize( vec3(_step.yx, hts[3]-hts[2]) );
+               
+               return cross(va,vb).rgb; //you may not need to swizzle the normal
+               
+            }
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 
@@ -412,7 +436,7 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
-	
+		gl_FragData[5].rgb = vec3(lightmap,0);	
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		
 		float NdotLGeom = dot(normal, WsunVec);
@@ -562,6 +586,7 @@ void main() {
 
 
 
+
 				#ifndef SSGI
 
 				float ao = 1.0;
@@ -581,12 +606,14 @@ void main() {
 	
 
 	gl_FragData[3].rgba = vec4(texture2D(colortexA,texcoord).rgb,ld(texture2D(depthtex0,texcoord).r));	
+//	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
 	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
+
 	
 	
 		
 	
 	
 
-/* DRAWBUFFERS:8C9AE */
+/* DRAWBUFFERS:8C9AEB */
 }

@@ -13,7 +13,13 @@ float gSimple(float dp, float roughness){
   k *= k/8.0;
   return dp / (dp * (1.0-k) + k);
 }
-
+float GGXTerm (float NdotH, float roughness)
+{
+    float a2 = roughness * roughness;
+    float d = (NdotH * a2 - NdotH) * NdotH + 1.0f; // 2 mad
+    return 0.31830988618 * a2 / (d * d + 1e-7f); // This function is not intended to be running on Mobile,
+                                            // therefore epsilon is smaller than what can be represented by half
+}
 vec3 GGX2(vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
   float alpha = square(r);
 
@@ -36,6 +42,30 @@ float invLinZ (float lindepth){
 	return -((2.0*near/lindepth)-far-near)/(far-near);
 }
 
+
+float SmithJointGGXVisibilityTerm (float NdotL, float NdotV, float roughness)
+{
+    // This is an approximation
+	float a = roughness * roughness;
+	float gV = NdotL * (NdotV * (1 - a) + a);
+	float gL = NdotV * (NdotL * (1 - a) + a);
+	return (2.0 * NdotL) / (gV + gL + 1e-5); // This function is not intended to be running on Mobile,
+	// therefore epsilon is smaller than can be represented by float
+}
+
+float BRDF_Unity_Weight(vec3 V, vec3 L, vec3 N, float Roughness)
+{
+	vec3 H = normalize(L + V);
+
+	float NdotH = clamp(dot(N,H),0,1);
+	float NdotL = clamp(dot(N,L),0,1);
+	float NdotV = clamp(dot(N,V),0,1);
+
+	mediump float	 G = SmithJointGGXVisibilityTerm (NdotL, NdotV, Roughness);
+	mediump float	 D = GGXTerm (NdotH, Roughness);
+
+	return (D * G) * (3.14159265359 / 4.0);
+}
 vec3 GGX (vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
   r*=r;r*=r;
 

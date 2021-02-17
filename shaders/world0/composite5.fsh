@@ -956,6 +956,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
 
 
+
 		#endif
 
 		

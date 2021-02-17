@@ -474,15 +474,15 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	
 	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a ,weight ,0.5);	
 			
-	weight = clamp( (((texture2D(colortexC,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*5)*clamp(length(velocity/texelSize),0.0,1.0))),SSPTweightmix,1.0);
-	float weight2 = weight-0.7;
+	weight = clamp( (((texture2D(colortexC,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))),0.5,1.0);
+	float weight2 = weight-0.75;
 	if (hand) weight2 =10.0;
   
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1;
 
-	intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(intRadiance2),clamp( ((weight2) +depthmask )  ,0.0,1.0)))*(1.0-(occlusion)/nrays);	
+		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(intRadiance2),clamp( ((weight2) +depthmask )  ,0.0,1.0)))*(1.0-(occlusion)/nrays);	
 		
-	intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 
 
 	gl_FragData[1].rgb = (intRadiance);

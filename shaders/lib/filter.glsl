@@ -319,7 +319,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 
 	
-        ivec2 delta  = kernelO_3x3[i];	
+        ivec2 delta  = kernelO_5x5[i];	
         if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos2  = pos2 + delta;
@@ -327,7 +327,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
         bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
 		
-     		vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
+     	vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
 	
 		vec3 normal = (normaldepth2.rgb);			
@@ -336,14 +336,14 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 		
 		float d_weight = abs(cu_depth - c_depth);	
         float depthWeight = expf(-d_weight);	
-        if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
+    //  if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
         float normalWeight = pow(clamp(dot(normal, origNormal),0,.9),32);
 
 
         float weight    = normalWeight;			
 
        
-        weight *= exp(-d_weight );
+    //   weight *= exp(-d_weight );
 
 
         totalWeight += weight;

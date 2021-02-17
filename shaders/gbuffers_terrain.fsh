@@ -5,8 +5,11 @@
 #include "/lib/res_params.glsl"
 
 
+#define DLM
+
 //#define POM
 #define labspec
+//#define smooth_depth
 
 
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
@@ -30,9 +33,9 @@
 uniform sampler2D specular;
 #endif
 
-#ifdef POM
+#if defined (POM)||  defined (DLM)
 
-
+varying vec4 vertexPos;
 #define MC_NORMAL_MAP
 
 const float mincoord = 1.0/4096.0;
@@ -66,6 +69,8 @@ varying vec4 color;
 varying vec4 normalMat;
 uniform vec2 texelSize;
 uniform sampler2D texture;
+uniform sampler2D gaux1;
+uniform sampler2D depthtex1;
 uniform float frameTimeCounter;
 uniform float frameCounter;
 uniform mat4 gbufferProjectionInverse;
@@ -121,7 +126,7 @@ vec4 encode (vec3 unenc, vec2 lightmaps)
 vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 {
 
-		float bumpmult = 1.0-wetness*0.95;
+		float bumpmult = (1.0-wetness*0.95);
 
 		bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
 
@@ -179,9 +184,37 @@ vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
+
+
+
+
+
+
+float smoothDepth(vec2 coord){
+
+ivec2 tileResolution = ivec2(atlasSize*vtexcoordam.pq+0.5);
+ivec2 tileOffset     = ivec2(atlasSize*vtexcoordam.st+0.5);
+				coord = coord * atlasSize*vtexcoordam.pq;
+				ivec2 i = ivec2(coord);
+				vec2  f = fract(coord);
+
+				float s0 = texture2DGradARB(normals, (mod((i + ivec2(0, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s1 = texture2DGradARB(normals, (mod((i + ivec2(1, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s2 = texture2DGradARB(normals, (mod((i + ivec2(1, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s3 = texture2DGradARB(normals, (mod((i + ivec2(0, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+
+				return mix(mix(s3, s2, f.x), mix(s0, s1, f.x), f.y);
+			}
+
+
 vec4 readNormal(in vec2 coord)
 {
+
+#ifdef smooth_depth
+	return vec4(smoothDepth(coord));
+#else
 	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+#endif	
 }
 vec4 readTexture(in vec2 coord)
 {
@@ -256,6 +289,62 @@ vec3 decodeNormal3x16(float encoded){
     return decoded;
 }
 
+
+
+#ifdef POM
+
+       vec3 FindNormal(sampler2D tex, vec2 uv, vec2 u)
+            {
+                    //u is one uint size, ie 1.0/texture size
+                vec2 offsets[4];
+					 offsets[0] = uv + vec2(-u.x, 0);
+					 offsets[1] = uv + vec2(u.x, 0);
+					 offsets[2] = uv + vec2(0, -u.x);
+					 offsets[3] = uv + vec2(0, u.x);
+               
+                float hts[4];
+                for(int i = 0; i < 4; i++)
+                {
+				
+
+                    hts[i] = length(texture2D(tex, offsets[i]).x); 			
+
+                }
+               
+                vec2 _step = vec2(0.1, 0.0);
+               
+			   
+                vec3 va = normalize( vec3(_step.xy, hts[1]-hts[0]) );
+                vec3 vb = normalize( vec3(_step.yx, hts[3]-hts[2]) );
+				
+	            if (vtexcoord.x > 1.0 - 0.01 || vtexcoord.y > 1.0 - 0.01)  return vec3(0.0);   
+	            if (vtexcoord.x < 0.01 || vtexcoord.y < 0.01)              return vec3(0.0);
+			   
+                return cross(va,vb).rgb; //you may not need to swizzle the normal
+
+               
+            }
+#endif 
+
+
+
+
+
+
+
+
+float lmfaloff(float lm)
+{
+	float falloff = 10.0;
+
+	lm = exp(-(1.0 - lm) * falloff);
+	lm = max(0.0, lm - exp(-falloff));
+
+	return lm;
+}
+
+
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -306,7 +395,7 @@ vec2 lm = lmtexcoord.zw;
 		
 
 
-		
+		  vec3 coord = vec3(vtexcoord.st, 1.0);
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
 		float dist = length(fragpos);
 		#ifdef Depth_Write_POM
@@ -319,7 +408,8 @@ vec2 lm = lmtexcoord.zw;
 			  vec2 atlasAspect = vec2(atlasSize.y/float(atlasSize.x),atlasSize.x/float(atlasSize.y));
 				vec2 viewCorrection = max(vec2((vtexcoordam.q)/(vtexcoordam.p)*atlasAspect.x,1.0), vec2(1.0,(vtexcoordam.p)/(vtexcoordam.q)*atlasAspect.y));
 					interval.xy *= viewCorrection;
-			  vec3 coord = vec3(vtexcoord.st, 1.0);
+			
+			  
 			  coord += noise*interval;
 					float sumVec = noise;
 			  for (int loopCount = 0;
@@ -328,16 +418,21 @@ vec2 lm = lmtexcoord.zw;
 					   coord = coord+interval;
 									 sumVec += 1.0;
 			  }
+			  
+			  
 			  if (coord.t < mincoord) {
 				if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+						
 				  coord.t = mincoord;
+		
 				  discard;
 				}
 			  }
+	
 			  adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 
-			  
-			  
+	  
+			
 			  
 
 			  #ifdef Depth_Write_POM
@@ -345,6 +440,7 @@ vec2 lm = lmtexcoord.zw;
 			  gl_FragDepth = toClipSpace3(truePos).z;
 			  #endif
 			}
+				
 		  #else
 			if ( viewVector.z < 0.0) {
 				vec3 interval = viewVector.xyz/-viewVector.z/MAX_OCCLUSION_POINTS*POM_DEPTH;
@@ -371,11 +467,21 @@ vec2 lm = lmtexcoord.zw;
 				vec3 truePos = fragpos + sumVec*inverse(tbnMatrix)*(interval);		
 				gl_FragDepth = toClipSpace3(truePos).z;
 				#endif
+					
+				
 			}
+
 		  #endif
 
 		  }
-
+		
+		vec3	silhouette = vec3(coord);
+    vec3 clipPosition = toClipSpace3(fragpos);
+    vec3 depth1 = vec3(sqrt(texelFetch2D(gaux1,ivec2(clipPosition.xy/texelSize*0.25),0).w/65000.0));
+    vec3 depth2 = vec3(sqrt(texelFetch2D(gaux1,ivec2(clipPosition.xy/texelSize*0.25),0).w/65000.0));
+//	if(silhouette.x > 1.0 || silhouette.y > 1.0 || silhouette.x < 0.0 || silhouette.y < 0.0) discard;
+	gl_FragData[3].rgb = vec3(coord-lmtexcoord.xyz);
+			  	
 			vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 		  #ifdef DISABLE_ALPHA_MIPMAPS
 			data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
@@ -390,18 +496,59 @@ vec2 lm = lmtexcoord.zw;
 			
 			normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 			normalTex.z = clamp(normalTex.z,0,1);	
+	//		normalTex.rgb += FindNormal(texture,lmtexcoord.xy,texelSize-0.0001).rgb;
+	//		normalTex.rg -= FindNormal(texture,lmtexcoord.xy,texelSize-0.0003).rg;
 			normal = applyBump(tbnMatrix,normalTex);
+			
+	#ifdef DLM
 
+	vec3 Q1 = dFdx(viewPos.xyz);
+	vec3 Q2 = dFdy(viewPos.xyz);
+	float st1 = dFdx(lm.x);
+	float st2 = dFdy(lm.x);
+
+	st1 /= dot(fwidth(viewPos.xyz), vec3(0.3));
+	st2 /= dot(fwidth(viewPos.xyz), vec3(0.3));
+	vec3 T = (Q1*st2 - Q2*st1);
+	T = normalize(T + normal.xyz * 0.0002);
+	T = cross(T, normal.xyz);
+
+	T = normalize(T + normal * 0.01);
+	T = normalize(T + normal * 0.85 * (lm.x));
+
+
+	float lml = pow(clamp(dot(T, normalMat.xyz),0,1), 1.0);
+	lml += pow(clamp(dot(T, normalMat.xyz) * 0.5 + 1 ,0,1), 1.0) * 0.5;
+	if (dot(T, normal.xyz) > 0.99)
+	{
+	lml = (pow(lml, 2.0)* length(normal)*0.45) ;
+	}
+	lm.x = lmfaloff(lm.x);
+	lm.x =  (lm.x * lml)*5;					
+	lm.x =  (pow(lm.x, 0.5));
+	
+							
+	#endif
 
 			data0.rgb*=color.rgb;
 			vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0,1);
 
 	
 
-			#ifdef SPEC
+	
+	#ifdef SPEC
+	#ifdef labspec
 			gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
-
 			gl_FragData[1].a = 0.0;
+	#else	
+		gl_FragData[1] = vec4(hspec.rg,hspec.b,hspec.a)/255;
+			gl_FragData[1].a = 0.0;		
+	#endif	
+
+	
+	
+	
+			
 			#else 
 			gl_FragData[1] = vec4(0.0);	
 			#endif
@@ -443,16 +590,45 @@ vec2 lm = lmtexcoord.zw;
 		vec3 normalTex = texture2D(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
 
 		lm *= normalTex.b;
-
+		vec2 lm2 = lm * normalTex.b;
 		normalTex.xy = normalTex.xy*2.0-1.0;
 
 		normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
-		normalTex.z = clamp(normalTex.z,0,1);			
+		normalTex.z = clamp(normalTex.z,0,1);	
 		normal = applyBump(tbnMatrix,normalTex);
+	
 
 
 	#endif
+	#ifdef DLM
 
+	vec3 Q1 = dFdx(viewPos.xyz);
+	vec3 Q2 = dFdy(viewPos.xyz);
+	float st1 = dFdx(lm.x);
+	float st2 = dFdy(lm.x);
+
+	st1 /= dot(fwidth(viewPos.xyz), vec3(0.3));
+	st2 /= dot(fwidth(viewPos.xyz), vec3(0.3));
+	vec3 T = (Q1*st2 - Q2*st1);
+	T = normalize(T + normal.xyz * 0.0002);
+	T = cross(T, normal.xyz);
+
+	T = normalize(T + normal * 0.01);
+	T = normalize(T + normal * 0.85 * (lm.x));
+
+
+	float lml = pow(clamp(dot(T, normalMat.xyz),0,1), 1.0);
+	lml += pow(clamp(dot(T, normalMat.xyz) * 0.5 + 1 ,0,1), 1.0) * 0.5;
+	if (dot(T, normal.xyz) > 0.99)
+	{
+	lml = (pow(lml, 2.0)* length(normal)*0.45) ;
+	}
+	lm.x = lmfaloff(lm.x);
+	lm.x =  (lm.x * lml)*5;					
+	lm.x =  (pow(lm.x, 0.5));
+	
+							
+	#endif
 
 	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
 //	vec4 data1 = encode(viewToWorld(normal), lm);

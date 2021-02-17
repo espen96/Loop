@@ -5,7 +5,7 @@
 #define WAVY_STRENGTH 1.0 //[0.1 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0]
 #define WAVY_SPEED 1.0 //[0.001 0.01 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0 1.25 1.5 2.0 3.0 4.0]
 #define SEPARATE_AO
-
+//#define DLM
 //#define POM
 //#define USE_LUMINANCE_AS_HEIGHTMAP	//Can generate POM on any texturepack (may look weird in some cases)
 
@@ -30,7 +30,7 @@ varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 varying vec4 hspec;
-#ifdef POM
+#if defined (POM)||  defined (DLM)
 varying vec4 vtexcoordam; // .st for add, .pq for mul
 varying vec4 vtexcoord;
 #endif
@@ -114,7 +114,7 @@ hspec = hspec = vec4(50,250,000,000);
   
 
 	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
-	#ifdef POM
+#if defined (POM)||  defined (DLM)
 	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
@@ -134,7 +134,7 @@ hspec = hspec = vec4(50,250,000,000);
 		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
 	#endif
 
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 10001 ? 0.5:1.0);
+	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 80 || mc_Entity.x == 10001 ? 0.5:1.0);
 	normalMat.a = mc_Entity.x == 10006 ? 0.6 : normalMat.a;
 
 	#ifdef WAVY_PLANTS

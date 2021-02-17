@@ -200,23 +200,24 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
 
 
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
+    vec3 stepv = direction *10. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
 
-	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
+	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv;
 
 
 
 
 
 	for (int i = 0; i < int(quality); i++) {
-		spos += stepv;
+		spos += stepv*dither;
 
 		float sp = texture2D(depthtex1,spos.xy).x;
+		if (sp >0.999) return 1.0;
         if( sp < spos.z) {
 
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
 
-			if (dist < 0.01 ) return 0.0;
+			if (dist < 0.035 ) return 0.0 + clamp(ld(sp)*10-1,0,1);
 
 
 
@@ -539,6 +540,7 @@ void main() {
 		vec4 transparent = texture2D(colortex2,texcoord);
 		
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		bool istransparent = luma(transparent.rgb) > 0.1;
 
 		vec4 mask = texture2D(colortex9,texcoord);
 		vec4 data = texture2D(colortex1,texcoord);
@@ -639,9 +641,11 @@ void main() {
 						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 						float shadow0 = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 							 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
+						//	 shadowCol += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow5(filtered.x)),-diffthresh*weight))).xyzw;
 						float transparentshadow = (shadow1-shadow0);	 
 							 shadowCol = shadowCol *transparentshadow;
-							 shadowCol.rgb = (shadowCol.rgb * (1-(shadowCol.a*0.5)))*0.5;
+							 shadowCol.rgb = (shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0;
+						//	 shadowCol.rgb = pow(((shadowCol.rgb * (1-(shadowCol.a*0.5)))*0.5),vec3(filtered.x))*20;
 							transparentshadow -= shadowCol.a;
 		
 						shading += clamp((isShadow+transparentshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
@@ -704,7 +708,8 @@ void main() {
 					SSS *= 1;
 			#endif 
 			}
-gl_FragData[1].rgb = vec3(shading);
+		
+
 		#ifdef CAVE_LIGHT_LEAK_FIX
 			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
 			shadowCol.rgb = mix(vec3(0.0), shadowCol.rgb, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
@@ -722,6 +727,10 @@ gl_FragData[1].rgb = vec3(shading);
 			shading *= cloudShadow;
 			SSS *= cloudShadow;
 		#endif
+		
+gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
+
+
 
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
@@ -735,7 +744,7 @@ gl_FragData[1].rgb = vec3(shading);
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-		if(!hand)	emitting = (luma(albedo)*8.0*Emissive_Strength)*2-1;
+		if(!hand)	emitting = (luma(albedo)*10.0*Emissive_Strength)*2-1;
 		if (hand)   emitting = (luma(albedo)*Emissive_Strength)*2-1;
 			custom_lightmap.y = 0.0;
 			emitting = clamp(emitting*(1-luma(transparent.rgb*20)),0.0,10);
@@ -875,7 +884,7 @@ gl_FragData[1].rgb = vec3(shading);
 					// Skip SSR if ray contribution is low
 					if (rayQuality > 5.0) {
 						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
-							gl_FragData[2].rgb = vec3(rtPos);
+		
 						// Reproject on previous frame
 						if (rtPos.z < 1.){
 							vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rtPos) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
@@ -898,10 +907,7 @@ gl_FragData[1].rgb = vec3(shading);
 				}
 
 			}
-			gl_FragData[1].rgb = (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb));	
-			
-		
-		
+
 			vec3 closestToCamera = closestToCamera5taps(texcoord);
 			vec3 fragposition = toScreenSpace(closestToCamera);			
 			fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
@@ -952,6 +958,14 @@ gl_FragData[1].rgb = vec3(shading);
 
 		#endif
 
+		
+		
+		
+		
+		
+		
+		
+		
 		}
 
 	}
@@ -963,5 +977,5 @@ gl_FragData[1].rgb = vec3(shading);
 	
 
 
-/* DRAWBUFFERS:3ED */
+/* DRAWBUFFERS:3E */
 }

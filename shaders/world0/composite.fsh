@@ -400,6 +400,9 @@ vec3 decodeNormal3x16(float encoded){
                return cross(va,vb).rgb; //you may not need to swizzle the normal
                
             }
+
+			
+			
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 
@@ -419,7 +422,7 @@ void main() {
 		p3 += gbufferModelViewInverse[3].xyz;
 
 		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-
+gl_FragData[5].rgb = vec3(edgemask);
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		vec4 data = texture2D(colortex1,texcoord);
@@ -436,7 +439,7 @@ void main() {
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
-		gl_FragData[5].rgb = vec3(lightmap,0);	
+
 		bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
 		
 		float NdotLGeom = dot(normal, WsunVec);
@@ -607,7 +610,7 @@ void main() {
 
 	gl_FragData[3].rgba = vec4(texture2D(colortexA,texcoord).rgb,ld(texture2D(depthtex0,texcoord).r));	
 //	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
-	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
+//	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
 
 	
 	
@@ -615,5 +618,5 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8C9AEB */
+/* DRAWBUFFERS:8C9ABD */
 }

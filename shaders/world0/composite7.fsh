@@ -11,6 +11,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortexA;
 uniform sampler2D colortexC;
+uniform sampler2D colortexD;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
@@ -95,20 +96,40 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 	}
 	return caustic / weightSum;
 }
+
+
+
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  /* DRAWBUFFERS:73 */
+  vec2 texcoord2 = gl_FragCoord.xy*texelSize;
+  vec2 texcoord3 = gl_FragCoord.xy*texelSize;
+  /* DRAWBUFFERS:73 */  
+  vec4 trpData = texture2D(colortex7,texcoord);
+  bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
+  bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
+
+  vec4 normal2 = (texture2D(colortexA, texcoord));
+
+	    float sigma = 0.5;
+	    float intensity = exp(-sigma * texture2D(colortex2,texcoord).a);  
+   vec2 refractedCoord = texcoord; 
+  float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.0025);
+
+ if(istransparent || iswater)   texcoord.xy=texcoord.xy+normal2.xy*(refraction);
+
+  vec4 transparencies = texture2D(colortex2,texcoord);  
 
 
 
-  vec4 transparencies = texture2D(colortex2,texcoord);
-  vec4 trpData = texture2D(colortex7,texcoord);
-  bool iswater = trpData.a > 0.99;
-  vec2 refractedCoord = texcoord;
+
+
+
+
+
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
   if (iswater){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
@@ -121,11 +142,17 @@ void main() {
       refractedCoord = texcoord;
 
   }
+
+ if(istransparent || iswater)   refractedCoord.xy=refractedCoord.xy+normal2.xy*(refraction);
+
   vec3 color = texture2D(colortex3,refractedCoord).rgb;
 
-  if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
-    color = color*(1.0-transparencies.a)+transparencies.rgb*10.;
 
+	
+
+  if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
+    color = color*(1.0-transparencies.a)+transparencies.rgb*15.;
+	color.rgb = intensity * color.rgb;	
 
   float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);

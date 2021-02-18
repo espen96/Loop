@@ -431,7 +431,8 @@ gl_FragData[5].rgb = vec3(edgemask);
 		vec4 transparent = texture2D(colortex2,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 //		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
-		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
+		vec3 normalorg = (texture2D(colortexA,texcoord).rgb+texture2D(colortex8,texcoord).rgb);
+		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 
@@ -594,29 +595,31 @@ gl_FragData[5].rgb = vec3(edgemask);
 
 				float ao = 1.0;
 				if (!hand)
-					ssao(ao,fragpos,1.0,noise,worldToView(decode(dataUnpacked0.yw)),z);
+					ssao(ao,fragpos,1.0,noise,normalorg,z);
 				gl_FragData[0] *= ao;			
+		
 			#endif			
 		
 
 	
-		
+			gl_FragData[5].rgb = vec3(texture2D(colortex8,texcoord).rgb);		
+	
 
-		
+	gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));			
 	}
 
 	
 	
 
-	gl_FragData[3].rgba = vec4(texture2D(colortexA,texcoord).rgb,ld(texture2D(depthtex0,texcoord).r));	
+
 //	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
 //	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
+	gl_FragData[4].r = luma(viewToWorld(mat3(gbufferModelViewInverse) *texture2D(colortex8,texcoord).rgb));	
 
-	
-	
+			
 		
 	
 	
 
-/* DRAWBUFFERS:8C9ABD */
+/* DRAWBUFFERS:8C9AB */
 }

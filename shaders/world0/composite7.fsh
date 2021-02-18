@@ -3,13 +3,14 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 
-
+uniform mat4 gbufferModelView;
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortexA;
+uniform sampler2D colortexB;
 uniform sampler2D colortexC;
 uniform sampler2D colortexD;
 uniform sampler2D colortex2;
@@ -27,6 +28,7 @@ uniform vec2 texelSize;
 uniform vec3 cameraPosition;
 #include "/lib/waterOptions.glsl"
 #include "/lib/res_params.glsl"
+#include "/lib/color_transforms.glsl"
 #include "/lib/sky_gradient.glsl"
 #define clamp01(x) clamp(x, 0.0, 1.0)
 #define fsign(x) (clamp01(x * 1e35) * 2.0 - 1.0)
@@ -97,7 +99,23 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 	return caustic / weightSum;
 }
 
+vec3 worldToView(vec3 worldPos) {
 
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
 
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
@@ -112,16 +130,23 @@ void main() {
   vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
   bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
 
+
   vec4 normal2 = (texture2D(colortexA, texcoord));
+  vec4 normal3 = (texture2D(colortexB, texcoord));
+  vec3 worldnormal = vec3(normal3.r); 
 
-	    float sigma = 0.5;
+	    float sigma = 0.25;
 	    float intensity = exp(-sigma * texture2D(colortex2,texcoord).a);  
+  gl_FragData[2].rgb = vec3( worldnormal);  		
+		
    vec2 refractedCoord = texcoord; 
-  float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.0025);
+  float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.005);
+  float refraction2 = pow(texture2D(colortex2,texcoord).a,3)*2-0.2;
 
- if(istransparent || iswater)   texcoord.xy=texcoord.xy+normal2.xy*(refraction);
-
+ if(istransparent || iswater)   texcoord.xy=texcoord.xy+worldnormal.xy*(refraction*refraction2);
   vec4 transparencies = texture2D(colortex2,texcoord);  
+
+
 
 
 
@@ -143,7 +168,7 @@ void main() {
 
   }
 
- if(istransparent || iswater)   refractedCoord.xy=refractedCoord.xy+normal2.xy*(refraction);
+ if(istransparent || iswater)   refractedCoord.xy=refractedCoord.xy+worldnormal.xy*(refraction);
 
   vec3 color = texture2D(colortex3,refractedCoord).rgb;
 

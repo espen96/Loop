@@ -485,6 +485,18 @@ vec3 median2(sampler2D tex1) {
 }
 
 
+vec3 getProjPos(in vec2 uv, in float depth) {
+    return vec3(uv, depth) * 2.0 - 1.0;
+}
+
+vec3 proj2view(in vec3 proj_pos) {
+    vec4 view_pos = gbufferProjectionInverse * vec4(proj_pos, 1.0);
+    return view_pos.xyz / view_pos.w;
+}
+
+
+
+
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 	float dirtAmount = Dirt_Amount;

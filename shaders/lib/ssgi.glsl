@@ -355,9 +355,6 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 	if (hand) edgemask = 1.0;
-		vec3 normal2 = (texture2D(colortexA, texcoord).rgb);
-		vec3 normal3 =  (texture2D(colortex8, texcoord)).rgb;
-		normal =  (mat3(gbufferModelViewInverse) *(normal2.rgb+normal3));
 	
 		vec4 transparencies = texture2D(colortex2,texcoord);			
 		bool istransparent = luma(transparencies.rgb) > 0.1;		

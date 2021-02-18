@@ -860,7 +860,7 @@ globalInit();
 //    gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
-//  gl_FragData[0].rgb = vec3((texture2D(colortexC,texcoord*RENDER_SCALE).rgb))*0.5;
+//  gl_FragData[0].rgb = vec3((texture2D(colortexD,texcoord*RENDER_SCALE).rrr));
 
 
 

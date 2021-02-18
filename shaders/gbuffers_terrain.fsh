@@ -9,6 +9,7 @@
 
 //#define POM
 #define labspec
+#define bumpmultiplier 1.0
 //#define smooth_depth
 
 
@@ -126,7 +127,7 @@ vec4 encode (vec3 unenc, vec2 lightmaps)
 vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 {
 
-		float bumpmult = (1.0-wetness*0.95);
+		float bumpmult = (1.0-wetness*0.95)*bumpmultiplier;
 
 		bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
 

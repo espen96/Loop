@@ -63,7 +63,7 @@ const bool colortexBClear = false;
 
 
 const bool colortexCClear = false;
-const bool colortexDClear = false;
+const bool colortexDClear = true;
 const bool colortexEClear = false;
 const bool colortexFClear = false;
 

@@ -3,6 +3,7 @@
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
+uniform sampler2D normals;
 varying vec3 binormal;
 varying vec3 tangent;
 varying vec3 viewVector;
@@ -176,7 +177,7 @@ float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:278A*/
+/* DRAWBUFFERS:278AD*/
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 		vec2 tempOffset=offsets[framemod8];
@@ -197,16 +198,20 @@ void main() {
 		}
 
 
-
+			vec3 normalTex = texture2D(normals, lmtexcoord.xy).rgb;
 
 			vec3 normal = normalMat.xyz;
+			vec3 normal2 = normalMat.xyz;
+			vec3 normal3 = normalMat.xyz;
 
 			vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 			mat3 tbnMatrix = mat3(tangent.x, binormal.x, normal.x,
 														tangent.y, binormal.y, normal.y,
 														tangent.z, binormal.z, normal.z);
-			if (iswater > 0.4){
+		//	if (iswater > 0.4){
 				float bumpmult = 1.;
+				float bumpmult2 = 0.1;
+				float bumpmult3 = 20;
 				if (iswater > 0.9)
 					bumpmult = 1.;
 				float parallaxMult = bumpmult;
@@ -215,15 +220,26 @@ void main() {
 				if (iswater < 0.9)
 					posxz.xz *= 3.0;
 				vec3 bump;
+				vec3 bump2;
+				vec3 bump3;
 
 
 				posxz.xyz = getParallaxDisplacement(posxz,iswater,bumpmult,normalize(tbnMatrix*fragpos));
 				bump = normalize(getWaveHeight(posxz.xz,iswater));
+				bump2 = normalize(getWaveHeight(posxz.xz,iswater));
+				bump3 = normalize(getWaveHeight(posxz.xz,iswater));
+				if (iswater < 0.1) bump = normalTex;
+				if (iswater < 0.1) bump2 = normalTex;
+				if (iswater < 0.1) bump3 = normalTex;
 
 				bump = bump * vec3(bumpmult, bumpmult, bumpmult) + vec3(0.0f, 0.0f, 1.0f - bumpmult);
+				bump2 = bump2 * vec3(bumpmult2, bumpmult2, bumpmult2) + vec3(0.0f, 0.0f, 1.0f - bumpmult2);
+				bump3 = bump3 * vec3(bumpmult3, bumpmult3, bumpmult3) + vec3(0.0f, 0.0f, 1.0f - bumpmult3);
 
 				normal = normalize(bump * tbnMatrix);
-			}
+				normal2 = normalize(bump2 * tbnMatrix);
+				normal3 = normalize(bump3 * tbnMatrix);
+		//	}
 
 			float NdotL = lightSign*dot(normal,sunVec);
 	
@@ -277,9 +293,14 @@ void main() {
 
 
 			vec3 reflectedVector = reflect(normalize(fragpos), normal);
+			vec3 reflectedVector2 = reflect(normalize(fragpos), normal3);
+			if (iswater < 0.1) reflectedVector = reflect(normalize(fragpos), normal2);
 			float normalDotEye = dot(normal, normalize(fragpos));
+			if (iswater < 0.1) normalDotEye = dot(normal, normalize(fragpos));
 			float fresnel = Pow5(clamp(1.0 + normalDotEye,0.0,1.0));
+				if (iswater < 0.1) fresnel = Pow5(clamp(0.6 + normalDotEye,0.0,1.0));
 			fresnel = mix(f0,1.0,fresnel);
+	
 			if (iswater > 0.4){
 				roughness = 0.1;
 			}
@@ -287,6 +308,7 @@ void main() {
 
 
 			vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
+			if (iswater < 0.1) wrefl = mat3(gbufferModelViewInverse)*reflectedVector2;
 			vec3 sky_c = mix(skyCloudsFromTex(wrefl,gaux1).rgb,texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb*0.5,isEyeInWater);
 			sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240./240./150.*8./3.;
 
@@ -308,10 +330,11 @@ void main() {
 				vec3 sunSpec = GGX(normal,-normalize(fragpos),  lightSign*sunVec, rainStrength*0.2+roughness+0.05+clamp(-lightSign*0.15,0.0,1.0), f0) * texelFetch2D(gaux1,ivec2(6,37),0).rgb*8./3./150.0/3.1415 * (1.0-rainStrength*0.9);
 			#else
 				vec3 sunSpec = drawSun(dot(lightSign*sunVec,reflectedVector), 0.0,texelFetch2D(gaux1,ivec2(6,37),0).rgb,vec3(0.0))*8./3./150.0*fresnel/3.1415 * (1.0-rainStrength*0.9);
+				if (iswater < 0.1) sunSpec = drawSun(dot(lightSign*sunVec,reflectedVector2), 0.0,texelFetch2D(gaux1,ivec2(6,37),0).rgb,vec3(0.0))*8./3./150.0*fresnel/3.1415 * (1.0-rainStrength*0.9);
 			#endif
 			vec3 reflected= reflection.rgb*fresnel+shading*sunSpec;
 
-
+			gl_FragData[4].rgba = vec4(fresnel);
 			float alpha0 = gl_FragData[0].a;
 
 			//correct alpha channel with fresnel
@@ -327,7 +350,7 @@ void main() {
 
 
 			gl_FragData[1] = vec4(0.1, 0.02, 0.0,iswater);
-		gl_FragData[2].rgba = vec4(normal,1);
+		gl_FragData[2].rgba = vec4(normal3,1);
 }
 		}			
 

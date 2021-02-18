@@ -7,8 +7,8 @@
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
-
-
+uniform sampler2D normals;
+uniform sampler2D specular;
 uniform sampler2D texture;
 uniform sampler2DShadow shadow;
 uniform sampler2D gaux1;
@@ -148,19 +148,48 @@ float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
            g1(fuv.y) * (g0x * shadow2D(tex, vec3(p2,sc.z)).x  +
                         g1x * shadow2D(tex, vec3(p3,sc.z)).x);
 }
+mat3 cotangent( vec3 N, vec3 p, vec2 uv )
+{
 
+    vec3 dp1 = dFdx( p );
+    vec3 dp2 = dFdy( p );
+    vec2 duv1 = dFdx( uv );
+    vec2 duv2 = dFdy( uv );
+ 
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:2A */
+/* DRAWBUFFERS:2A7 */
 void main() {
 
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
 	vec2 tempOffset=offsets[framemod8];
+
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));	
+		vec2 lm = lmtexcoord.zw;
+		vec3 normal = normalMat.xyz;
+		vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	lm *= normalTex.b;
+    normalTex = normalTex * 255./127. - 128./127.;
 	
-	
+    normalTex.z = sqrt( 1.0 - dot( normalTex.xy, normalTex.xy ) );
+    normalTex.y = -normalTex.y;
+    normalTex.x = -normalTex.x;
+
+    mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
+    normal = normalize( TBN * clamp(normalTex,-1,1) );	
+
 #if defined(damagedblock)
 	if (gl_FragData[0].a>0.1){
 #endif	
@@ -184,8 +213,8 @@ void main() {
 #else
 		vec3 albedo = toLinear(gl_FragData[0].rgb);
 
-		vec3 normal = normalMat.xyz;
-		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+	
+
 
 		float NdotL = lightCol.a*dot(normal,sunVec);
 		float NdotU = dot(upVec,normal);
@@ -231,6 +260,9 @@ void main() {
 		vec3 diffuseLight = direct + ambient;
 
 
+		
+		
+		
 	#if defined(spidereyes)	
 	albedo.rgb = toLinear(albedo.rgb)*0.33;
 	gl_FragData[0] = albedo;	
@@ -245,6 +277,10 @@ void main() {
 	}
 #endif	
 
-
+	#ifdef SPEC
+		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
+	#else	
+		gl_FragData[1] = vec4(0.0);
+	#endif	
 
 }

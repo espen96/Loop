@@ -177,7 +177,7 @@ float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:278AD*/
+/* DRAWBUFFERS:278A*/
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 		vec2 tempOffset=offsets[framemod8];
@@ -298,7 +298,7 @@ void main() {
 			float normalDotEye = dot(normal, normalize(fragpos));
 			if (iswater < 0.1) normalDotEye = dot(normal, normalize(fragpos));
 			float fresnel = Pow5(clamp(1.0 + normalDotEye,0.0,1.0));
-				if (iswater < 0.1) fresnel = Pow5(clamp(0.6 + normalDotEye,0.0,1.0));
+				if (iswater < 0.1) fresnel = Pow5(clamp(0.5 + normalDotEye,0.0,1.0));
 			fresnel = mix(f0,1.0,fresnel);
 	
 			if (iswater > 0.4){
@@ -334,7 +334,7 @@ void main() {
 			#endif
 			vec3 reflected= reflection.rgb*fresnel+shading*sunSpec;
 
-			gl_FragData[4].rgba = vec4(fresnel);
+		
 			float alpha0 = gl_FragData[0].a;
 
 			//correct alpha channel with fresnel

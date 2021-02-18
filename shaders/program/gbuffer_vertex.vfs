@@ -1,4 +1,5 @@
 
+
 /*
 !! DO NOT REMOVE !!
 This code is from Chocapic13' shaders
@@ -10,6 +11,7 @@ varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 
+attribute vec4 mc_midTexCoord;
 #ifdef water
 varying vec3 binormal;
 varying vec3 tangent;					 
@@ -39,6 +41,11 @@ uniform float frameTimeCounter;
 
 
 
+//#define POM							
+#if defined (POM)||  defined (DLM)
+varying vec4 vtexcoordam; // .st for add, .pq for mul
+varying vec4 vtexcoord;
+#endif					   
 uniform vec2 texelSize;
 uniform int framemod8;
 		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
@@ -71,6 +78,13 @@ void main() {
 
 											
 	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
+  #if defined (POM)||  defined (DLM)
+	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
+	vtexcoordam.pq  = abs(texcoordminusmid)*2;
+	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
+	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
+	#endif 
 	
 #if defined(weather) || defined(glint)	
 		lmtexcoord.zw = lmcoord*lmcoord;	

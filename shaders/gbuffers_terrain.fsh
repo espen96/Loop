@@ -152,6 +152,12 @@ float encodeVec2(float x,float y){
 float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
+vec3 toScreenSpace(vec3 p) {
+	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
+    vec3 p3 = p * 2. - 1.;
+    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    return fragposition.xyz / fragposition.w;
+}
 #ifdef POM
 
 
@@ -175,12 +181,7 @@ mat3 inverse(mat3 m) {
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
-vec3 toScreenSpace(vec3 p) {
-	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
-    vec3 p3 = p * 2. - 1.;
-    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
-    return fragposition.xyz / fragposition.w;
-}
+
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
@@ -386,13 +387,16 @@ vec2 lm = lmtexcoord.zw;
 	#endif	
 //////////////////////////////POM//////////////////////////////	
 		float noise = interleaved_gradientNoise();
+	vec2 tempOffset=offsets[framemod8];	
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));	
+	
 	
 #ifdef POM
 
 
-		vec2 tempOffset=offsets[framemod8];
+	
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
-		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+
 		
 
 
@@ -596,8 +600,9 @@ vec2 lm = lmtexcoord.zw;
 
 		normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 		normalTex.z = clamp(normalTex.z,0,1);	
+
 		normal = applyBump(tbnMatrix,normalTex);
-	
+
 
 
 	#endif

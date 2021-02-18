@@ -6,13 +6,18 @@
 #ifdef SPEC
 uniform sampler2D specular;
 #endif
-
-
+uniform int framemod8;
+uniform sampler2D normals;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
+uniform vec2 texelSize;
+
+
+
+
 
 vec3 worldToView(vec3 worldPos) {
 
@@ -39,14 +44,13 @@ float interleaved_gradientNoise(){
 	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
 }
 
-//encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 unenc)
-{    
+vec4 encode (vec3 unenc, vec2 lightmaps)
+{
 	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
 	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
     vec2 encn = unenc.xy * 0.5 + 0.5;
 	
-    return vec4((encn),vec2(lmtexcoord.z,lmtexcoord.w));
+    return vec4((encn),vec2(lightmaps.x,lightmaps.y));
 }
 
 float luma(vec3 color) {
@@ -61,6 +65,27 @@ float encodeVec2(vec2 a){
 float encodeVec2(float x,float y){
     return encodeVec2(vec2(x,y));
 }
+
+//	based on code from Christian Schüler
+mat3 cotangent( vec3 N, vec3 p, vec2 uv )
+{
+
+    vec3 dp1  = dFdx(p);
+    vec3 dp2  = dFdy(p);
+    vec2 duv1 = dFdx(uv);
+    vec2 duv2 = dFdy(uv);
+ 
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
+
+
 
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
@@ -86,7 +111,10 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 /* DRAWBUFFERS:17A */
-void main() {
+void main() {		
+		vec2 tempOffset=offsets[framemod8];
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+	vec2 lm = lmtexcoord.zw;		
 
 	#ifdef SPEC	
 		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
@@ -112,10 +140,23 @@ void main() {
 	data0.rgb*=color.rgb;
 	if (data0.a > 0.1) data0.a = normalMat.a;
 	else data0.a = 0.0;
+	
+//	based on code from Christian Schüler	
+	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	lm *= normalTex.b;
+    normalTex = normalTex * 255./127. - 128./127.;
+	
+    normalTex.z = sqrt( 1.0 - dot( normalTex.xy, normalTex.xy ) );
+    normalTex.y = -normalTex.y;
+    normalTex.x = -normalTex.x;
 
-	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal)),0.,1.0);
+    mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
+    normal = normalize( TBN * clamp(normalTex,-1,1) );	
+	
+	
+	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	gl_FragData[1].a = 0.0;
-
+		gl_FragData[2].rgb = vec3(normal);	
 }

@@ -563,6 +563,7 @@ void main() {
 		
 		
 		vec4 shadowCol = vec4(0.0);
+		vec4 shadowCol2 = vec4(0.0);
 		float caustics = 1;
 		
 		
@@ -650,14 +651,27 @@ void main() {
 				//	float weight = 1.0+(i)*rdMul/2*shadowMapResolution;
 					
 				
-						float shadow1 = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-						float shadow0 = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-							 shadowCol = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
-						//	 shadowCol += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow5(filtered.x)),-diffthresh*weight))).xyzw;
+						float shadow1    = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+						float shadow0    = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
+							 shadowCol2  = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
+							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.0)),-diffthresh*weight))).xyzw;
+							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.5)),-diffthresh*weight))).xyzw;
+
+							 shadowCol2.rgb = (shadowCol2.rgb * pow(shadowCol2.a,4))*0.25;
+							 if (luma(shadowCol2.rgb) < 1) shadowCol2 = shadowCol;
+							 if (luma(shadowCol2.rgb) > 3) shadowCol2 = shadowCol;
+							 shadowCol2.rgb = pow(shadowCol2.rgb,vec3(1.0))*0.15;
+
+							 
+
 						float transparentshadow = (shadow1-shadow0);	 
+						float transparentshadow2 = (shadow1-shadow0);	 
 							 shadowCol = shadowCol *transparentshadow;
-							 shadowCol.rgb = (shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0;
-						//	 shadowCol.rgb = pow(((shadowCol.rgb * (1-(shadowCol.a*0.5)))*0.5),vec3(filtered.x))*20;
+							 shadowCol2 = shadowCol2 *transparentshadow;
+							// shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0)* (shadowCol2.rgb*10);
+							 shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0);
+						 
 							transparentshadow -= shadowCol.a;
 		
 						shading += clamp((isShadow+transparentshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
@@ -965,7 +979,8 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 //		if (!hand)	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
 
-		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
+			gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
+
 
 
 
@@ -973,7 +988,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 		
 		
-		
+			if (!hand)	gl_FragData[2].rgb =   shadowCol2.rgb;	
 		
 		
 		

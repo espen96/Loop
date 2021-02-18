@@ -431,7 +431,7 @@ gl_FragData[5].rgb = vec3(edgemask);
 		vec4 transparent = texture2D(colortex2,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 //		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
-		vec3 normalorg = (texture2D(colortexA,texcoord).rgb+texture2D(colortex8,texcoord).rgb);
+		vec3 normalorg = texture2D(colortexA,texcoord).rgb+texture2D(colortex8,texcoord).rgb;
 		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -602,7 +602,7 @@ gl_FragData[5].rgb = vec3(edgemask);
 		
 
 	
-			gl_FragData[5].rgb = vec3(texture2D(colortex8,texcoord).rgb);		
+			gl_FragData[5].rgb = vec3(normal.rgb);		
 	
 
 	gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));			

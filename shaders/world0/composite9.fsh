@@ -366,7 +366,7 @@ flat varying vec2 rodExposureDepth;
 
 void main() {
 
-/* DRAWBUFFERS:5 */
+/* DRAWBUFFERS:5B */
 
 
 	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;

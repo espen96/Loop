@@ -10,7 +10,7 @@ varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 
-
+uniform sampler2D specular;
 
 uniform sampler2D texture;
 uniform sampler2DShadow shadow;
@@ -214,7 +214,13 @@ void main() {
 
 
 	gl_FragData[0].rgb = diffuseLight*albedo*8.*0.333*0.0066*0.1;
-	gl_FragData[1].rgba = vec4(0.0);
+
+	#ifdef SPEC
+		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
+	#else	
+		gl_FragData[1] = vec4(0.0);
+	#endif	
+
 
 
 

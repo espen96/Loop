@@ -22,7 +22,7 @@ void main() {
 	 albedo.a = texture2DLod(tex,texcoord.xy,0).a;
 	#endif
 	gl_FragData[0] = albedo;
-	if ( albedo.a < 0.0001) discard;	
+	if ( albedo.a <= 0.0) discard;	
 	
 
 	

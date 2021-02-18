@@ -5,13 +5,13 @@
 #ifdef SPEC
 uniform sampler2D specular;
 #endif
-
-
+uniform int framemod8;
+uniform sampler2D normals;
 uniform int entityId;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
-
+uniform vec2 texelSize;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 
@@ -41,14 +41,33 @@ float interleaved_gradientNoise(){
 }
 
 //encode normal in two channels (xy),torch(z) and sky lightmap (w)
-vec4 encode (vec3 unenc)
-{    
+vec4 encode (vec3 unenc, vec2 lightmaps)
+{
 	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
 	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
     vec2 encn = unenc.xy * 0.5 + 0.5;
 	
-    return vec4((encn),vec2(lmtexcoord.z,lmtexcoord.w));
+    return vec4((encn),vec2(lightmaps.x,lightmaps.y));
 }
+mat3 cotangent( vec3 N, vec3 p, vec2 uv )
+{
+
+    vec3 dp1 = dFdx( p );
+    vec3 dp2 = dFdy( p );
+    vec2 duv1 = dFdx( uv );
+    vec2 duv2 = dFdy( uv );
+ 
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
+
+
 
 //encoding by jodie
 float encodeVec2(vec2 a){
@@ -86,7 +105,10 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 /* DRAWBUFFERS:17A2 */
 void main() {
-	float lightningBolt = float(entityId == 58);	
+	float lightningBolt = float(entityId == 58);
+	vec2 lm = lmtexcoord.zw;
+		vec2 tempOffset=offsets[framemod8];	
+		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));		
 	#ifdef SPEC	
 		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
 
@@ -105,14 +127,27 @@ void main() {
 	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
 	if (data0.a > 0.3) data0.a = normalMat.a;
 	else data0.a = 0.0;
+	
+	
+//	based on code from Christian Schüler
+	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	lm *= normalTex.b;
+    normalTex = normalTex * 255./127. - 128./127.;
+	
+    normalTex.z = sqrt( 1.0 - dot( normalTex.xy, normalTex.xy ) );
+    normalTex.y = -normalTex.y;
+    normalTex.x = -normalTex.x;
 
-	vec4 data1 = clamp(encode(viewToWorld(normal)),0.,1.0);
+    mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
+    normal = normalize( TBN * clamp(normalTex,-1,1) );	
+	
+	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
 	if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
 
 	if (lightningBolt > 0.5) gl_FragData[3] = vec4(1.0);
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	#ifdef SPEC
-		gl_FragData[1] = vec4(texture2D(specular, lmtexcoord.xy, -400).rgb,0);
+		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
 	#else	
 		gl_FragData[1] = vec4(0.0);
 	#endif	

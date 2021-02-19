@@ -2,7 +2,32 @@
 #define PCF
 
 
+     uniform int renderStage; 
 
+// 0 Undefined
+// 1  Sky
+// 2  Sunset and sunrise overlay
+// 3  Custom sky
+// 4  Sun
+// 5  Moon
+// 6  Stars
+// 7  Void
+// 8  Terrain solid
+// 9  Terrain cutout mipped
+// 10 Terrain cutout
+// 11 Entities
+// 12 Block entities
+// 13 Destroy overlay
+// 14 Selection outline
+// 15 Debug renderers
+// 16 Solid handheld objects
+// 17 Terrain translucent
+// 18 Tripwire string
+// 19 Particles
+// 20 Clouds
+// 21 Rain and snow
+// 22 World border
+// 23 Translucent handheld objects
 
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -177,7 +202,7 @@ mat3 cotangent( vec3 N, vec3 p, vec2 uv )
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* RENDERTARGETS: 2,10,7 */
+/* RENDERTARGETS: 2,10,7,13 */
 void main() {
 
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
@@ -203,9 +228,8 @@ void main() {
     mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
 //    normal = normalize( TBN * clamp(normalTex,-1,1) );	
 
-#if defined(damagedblock)
-	if (gl_FragData[0].a>0.1){
-#endif	
+
+//	if (gl_FragData[0].a>0.1){
 
 
 
@@ -305,14 +329,14 @@ void main() {
 
 	gl_FragData[1].rgba = vec4(normal,0);		
 #endif		
-#if defined(damagedblock)
-	}
-#endif	
+
+//	}
+
 
 	#ifdef SPEC
 		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
 	#else	
 		gl_FragData[1] = vec4(0.0);
 	#endif	
-
+	if(renderStage == 13)	gl_FragData[1] = vec4(1);	
 }

@@ -405,15 +405,7 @@ void main() {
 	#endif
 
 vec2 lm = lmtexcoord.zw;
-	#ifdef SPEC	
-		float labemissive = texture2D(specular, lmtexcoord.xy, -400).a;
-
-		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
-		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
-
 	
-	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
-	#endif	
 //////////////////////////////POM//////////////////////////////	
 		float noise = interleaved_gradientNoise();
 	vec2 tempOffset=offsets[framemod8];	
@@ -574,7 +566,15 @@ vec2 lm = lmtexcoord.zw;
 			gl_FragData[1].a = 0.0;		
 	#endif	
 
+		#ifdef SPEC	
+		float labemissive = texture2DLod(specular, adjustedTexCoord.xy, 0).a;
+
+		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
+		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
+
 	
+	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
+	#endif
 	
 	
 			
@@ -599,10 +599,18 @@ vec2 lm = lmtexcoord.zw;
 		#else
 		gl_FragData[1] = vec4(0.0);
 	#endif
+	#ifdef SPEC	
+		float labemissive = texture2DLod(specular, lmtexcoord.xy, 0).a;
 
+		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
+		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
+
+	
+	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
+	#endif
 	data0.rgb*=color.rgb;
-  float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-  data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+    float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+    data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 
   
   #ifdef DISABLE_ALPHA_MIPMAPS

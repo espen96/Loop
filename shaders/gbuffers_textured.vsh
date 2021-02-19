@@ -23,6 +23,6 @@
 
 
 #define textured
-#define solid1
+//#define solid1
 #include "/lib/res_params.glsl"
 #include "/program/gbuffer_vertex.vfs"

@@ -14,7 +14,32 @@
 #undef POM
 #endif
 #endif
+     uniform int renderStage; 
 
+// 0 Undefined
+// 1  Sky
+// 2  Sunset and sunrise overlay
+// 3  Custom sky
+// 4  Sun
+// 5  Moon
+// 6  Stars
+// 7  Void
+// 8  Terrain solid
+// 9  Terrain cutout mipped
+// 10 Terrain cutout
+// 11 Entities
+// 12 Block entities
+// 13 Destroy overlay
+// 14 Selection outline
+// 15 Debug renderers
+// 16 Solid handheld objects
+// 17 Terrain translucent
+// 18 Tripwire string
+// 19 Particles
+// 20 Clouds
+// 21 Rain and snow
+// 22 World border
+// 23 Translucent handheld objects
 #ifdef POM
 #define MC_NORMAL_MAP
 #endif
@@ -169,4 +194,9 @@ hspec = hspec = vec4(50,250,000,000);
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w * texelSize;
 	#endif
+	
+
+	
+	
+	
 }

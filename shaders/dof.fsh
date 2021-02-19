@@ -391,6 +391,7 @@ uniform sampler2D colortex12;
 uniform sampler2D colortex13;
 uniform sampler2D colortex14;
 
+     uniform int renderStage; 
 uniform sampler2D colortex0;
 uniform sampler2D colortex11;
 uniform sampler2D colortex9;
@@ -860,6 +861,7 @@ globalInit();
 //    gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
+//  gl_FragData[0].rgb = vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
 //  gl_FragData[0].rgb = vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
 
 

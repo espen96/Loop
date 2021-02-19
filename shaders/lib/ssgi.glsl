@@ -409,8 +409,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		
 	}
 
-		
-			
+
 
 	vec3 closestToCamera = closestToCamera5taps(texcoord);
 	vec3 fragposition = toScreenSpace(closestToCamera);			

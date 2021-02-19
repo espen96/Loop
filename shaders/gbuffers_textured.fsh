@@ -1,16 +1,16 @@
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
-
+#extension GL_ARB_shader_texture_lod : enable
 #define PCF
 
 
-
+uniform sampler2D specular;
 
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 
-uniform sampler2D specular;
+uniform sampler2D normals;
 
 uniform sampler2D texture;
 uniform sampler2DShadow shadow;
@@ -104,7 +104,7 @@ float w2(float a)
 float w3(float a)
 {
     return (0.1666)*(a*a*a);
-}
+}	
 
 float g0(float a)
 {
@@ -152,6 +152,26 @@ float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
 float luma(vec3 color) {
 	return dot(color,vec3(0.299, 0.587, 0.114));
 }
+
+mat3 cotangent( vec3 N, vec3 p, vec2 uv )
+{
+
+    vec3 dp1 = dFdx( p );
+    vec3 dp2 = dFdy( p );
+    vec2 duv1 = dFdx( uv );
+    vec2 duv2 = dFdy( uv );
+ 
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
+
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -159,10 +179,9 @@ float luma(vec3 color) {
 //////////////////////////////VOID MAIN//////////////////////////////
 /* DRAWBUFFERS:27A */
 void main() {
-
+	vec2 lm = lmtexcoord.zw;
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
 	vec2 tempOffset=offsets[framemod8];
-
 	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 	vec3 albedo = toLinear(gl_FragData[0].rgb);
@@ -204,7 +223,17 @@ void main() {
 		}
 
 	}
+//	based on code from Christian Schüler
+	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	lm *= normalTex.b;
+    normalTex = normalTex * 255./127. - 128./127.;
+	
+    normalTex.z = sqrt( 1.0 - dot( normalTex.xy, normalTex.xy ) );
+    normalTex.y = -normalTex.y;
+    normalTex.x = -normalTex.x;
 
+    mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
+    normal = normalize( TBN * clamp(normalTex,-1,1) );	
 
 	direct *= diffuseSun;
 
@@ -214,14 +243,13 @@ void main() {
 
 
 	gl_FragData[0].rgb = diffuseLight*albedo*8.*0.333*0.0066*0.1;
-
 	#ifdef SPEC
 		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
 	#else	
 		gl_FragData[1] = vec4(0.0);
 	#endif	
 
-
+	gl_FragData[2] = vec4(normal,1);
 
 
 

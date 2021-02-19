@@ -422,7 +422,6 @@ void main() {
 		p3 += gbufferModelViewInverse[3].xyz;
 
 		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-gl_FragData[5].rgb = vec3(edgemask);
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		vec4 data = texture2D(colortex1,texcoord);
@@ -605,7 +604,7 @@ gl_FragData[5].rgb = vec3(edgemask);
 			gl_FragData[5].rgb = vec3(normal.rgb);		
 	
 
-	gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));			
+	gl_FragData[2].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));			
 	}
 
 	
@@ -613,13 +612,13 @@ gl_FragData[5].rgb = vec3(edgemask);
 
 
 //	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
-//	gl_FragData[4].rgba = vec4(texture2D(colortexE,texcoord).rgb,texture2D(colortexA,texcoord).a);	
-	gl_FragData[4].r = luma(viewToWorld(mat3(gbufferModelViewInverse) *texture2D(colortex8,texcoord).rgb));	
+	gl_FragData[3].a = texture2D(colortexA,texcoord).a;	
+	gl_FragData[3].r = luma(viewToWorld(mat3(gbufferModelViewInverse) *texture2D(colortex8,texcoord).rgb));	
 
 			
 		
 	
 	
 
-/* DRAWBUFFERS:8C9AB */
+/* DRAWBUFFERS:8CAB */
 }

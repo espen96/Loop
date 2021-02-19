@@ -19,26 +19,39 @@ const int noiseTextureResolution = 32;
 
 
 /*
-const int colortex0Format = RGBA16F;				// low res clouds (deferred->composite2) + low res VL (composite5->composite15)
-const int colortex1Format = RGBA16;					//terrain gbuffer (gbuffer->composite2)
-const int colortex2Format = RGBA16F;				//forward + transparencies (gbuffer->composite4)
-const int colortex3Format = R11F_G11F_B10F;			//frame buffer + bloom (deferred6->final)
-const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
-const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
-const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
-const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
-
-
-const int colortex8Format = R11F_G11F_B10F;		
-const int colortex9Format = R11F_G11F_B10F;	
+const int colortex0Format = RGBA16F;				
+	// low res clouds (deferred->composite2) + low res VL (composite5->composite15)
+const int colortex1Format = RGBA16;					
+	//terrain gbuffer (gbuffer->composite2)
+const int colortex2Format = RGBA16F;				
+	//forward + transparencies (gbuffer->composite4)
+const int colortex3Format = R11F_G11F_B10F;			
+	//frame buffer + bloom (deferred6->final)
+const int colortex4Format = RGBA16F;				
+	//light values and skyboxes (everything)
+const int colortex5Format = R11F_G11F_B10F;			
+	//TAA buffer (everything)
+const int colortex6Format = R11F_G11F_B10F;			
+	//additionnal buffer for bloom (composite3->final)
+const int colortex7Format = RGBA8;					
+	//Final output, transparencies id (gbuffer->composite4)
+const int colortex8Format = R11F_G11F_B10F;		   
+	//transparent normals (gbuffer->composite0) ambient light(composite0->)
+const int colortex9Format = R11F_G11F_B10F;			
+	//None
 		
-const int colortexAFormat = RGBA16F;	
-const int colortexBFormat = RGBA16F;	
-
-const int colortexCFormat = RGBA16F;	
-const int colortexDFormat = RGBA16F;	
-
-const int colortexEFormat = RGBA16F;		//spec a
+const int colortexAFormat = RGBA16F;                
+	//Normals (rgb) and depth (a)	
+const int colortexBFormat = R11F_G11F_B10F_A10F;	
+	//Transparent normal for refraction(r) and LAB emissive (a)
+const int colortexCFormat = R11F_G11F_B10F_A10F;				
+	//SSPT temporal
+const int colortexDFormat = RGBA16F;			    
+	//None
+const int colortexEFormat = R11F_G11F_B10F_A10F;			    
+	//specular temporal
+const int colortexFFormat = RGBA16F;		        
+	//None
 	
 	
 
@@ -59,7 +72,7 @@ const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
 const bool colortexAClear = true;
-const bool colortexBClear = false;
+const bool colortexBClear = true;
 
 
 const bool colortexCClear = false;

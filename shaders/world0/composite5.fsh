@@ -52,6 +52,7 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
+uniform sampler2D colortexB;
 
 
 uniform sampler2D colortexC;
@@ -554,7 +555,7 @@ void main() {
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		bool istransparent = luma(transparent.rgb) > 0.1;
 
-		vec4 mask = texture2D(colortex9,texcoord);
+
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -571,7 +572,6 @@ void main() {
 
 
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
-		bool entity = abs(mask.r) >0.9;
 		vec2 lightmap = dataUnpacked1.yz;
 		bool translucent = abs(dataUnpacked1.w-0.5) <0.01;	// Strong translucency
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
@@ -825,7 +825,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			ambientLight *= (1+clamp(transparent.rgb*10*emitting*2,1,100));					
 					
 
-		float labemissive = texture2D(colortexE, texcoord).a;
+		float labemissive = texture2D(colortexB, texcoord).a;
 		ambientLight += vec3(labemissive);
 		
 	
@@ -988,7 +988,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 		
 		
-			if (!hand)	gl_FragData[2].rgb =   shadowCol2.rgb;	
+
 		
 		
 		

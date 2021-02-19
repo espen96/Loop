@@ -9,8 +9,8 @@ uniform sampler2D depthtex0;
 uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
-uniform sampler2D colortexA;
-uniform sampler2D colortexC;
+uniform sampler2D colortex10;
+uniform sampler2D colortex12;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
@@ -97,7 +97,7 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 }
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  /* DRAWBUFFERS:73 */
+/* RENDERTARGETS: 7,3 */
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   float frDepth = ld(z);

@@ -428,15 +428,15 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	   
 
 
-	vec3 albedoCurrent0 = texture2D(colortexC, texcoord).rgb;
-	vec3 albedoCurrent1 = texture2D(colortexC, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 = texture2D(colortexC, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 = texture2D(colortexC, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 = texture2D(colortexC, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 = texture2D(colortexC, texcoord + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 = texture2D(colortexC, texcoord + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 = texture2D(colortexC, texcoord + vec2(-texelSize.x,0.0)).rgb;
-	vec3 albedoCurrent8 = texture2D(colortexC, texcoord + vec2(texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent0 = texture2D(colortex12, texcoord).rgb;
+	vec3 albedoCurrent1 = texture2D(colortex12, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortex12, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortex12, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortex12, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortex12, texcoord + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortex12, texcoord + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortex12, texcoord + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture2D(colortex12, texcoord + vec2(texelSize.x,0.0)).rgb;
 	
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
@@ -449,7 +449,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 	
-	vec3 albedoPrev = max(FastCatmulRom(colortexC, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev = max(FastCatmulRom(colortex12, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
@@ -469,9 +469,9 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	if (hand) occlusion =0.0;
 	if (emissive) weight =0.0;
 	
-	gl_FragData[1].a = mix(texture2D(colortexC,previousPosition.xy).a ,weight ,0.5);	
+	gl_FragData[1].a = mix(texture2D(colortex12,previousPosition.xy).a ,weight ,0.5);	
 			
-	weight = clamp( (((texture2D(colortexC,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))),0.5,1.0);
+	weight = clamp( (((texture2D(colortex12,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))),0.5,1.0);
 	float weight2 = weight-0.75;
 	if (hand) weight2 =10.0;
   
@@ -479,7 +479,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(intRadiance2),clamp( ((weight2) +depthmask )  ,0.0,1.0)))*(1.0-(occlusion)/nrays);	
 		
-		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortexC,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
+		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortex12,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 
 
 	gl_FragData[1].rgb = (intRadiance);

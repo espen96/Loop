@@ -46,17 +46,17 @@ uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex2;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox
-uniform sampler2D colortexA;
+uniform sampler2D colortex10;
 uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
-uniform sampler2D colortexB;
+uniform sampler2D colortex11;
 
 
-uniform sampler2D colortexC;
-uniform sampler2D colortexE;
+uniform sampler2D colortex12;
+uniform sampler2D colortex14;
 
 uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
@@ -127,7 +127,7 @@ float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
 #ifdef SPEC
-uniform sampler2D colortexD;
+uniform sampler2D colortex13;
 #endif
 
 #include "/lib/specular.glsl"
@@ -942,15 +942,15 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			vec2 velocity = previousPosition.xy - closestToCamera.xy;
 			previousPosition.xy = texcoord + velocity;
 
-			vec3 albedoCurrent0 = texture2D(colortexE, texcoord).rgb;
-			vec3 albedoCurrent1 = texture2D(colortexE, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent2 = texture2D(colortexE, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent3 = texture2D(colortexE, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent4 = texture2D(colortexE, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent5 = texture2D(colortexE, texcoord + vec2(0.0,texelSize.y)).rgb;
-			vec3 albedoCurrent6 = texture2D(colortexE, texcoord + vec2(0.0,-texelSize.y)).rgb;
-			vec3 albedoCurrent7 = texture2D(colortexE, texcoord + vec2(-texelSize.x,0.0)).rgb;
-			vec3 albedoCurrent8 = texture2D(colortexE, texcoord + vec2(texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent0 = texture2D(colortex14, texcoord).rgb;
+			vec3 albedoCurrent1 = texture2D(colortex14, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent2 = texture2D(colortex14, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent3 = texture2D(colortex14, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent4 = texture2D(colortex14, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent5 = texture2D(colortex14, texcoord + vec2(0.0,texelSize.y)).rgb;
+			vec3 albedoCurrent6 = texture2D(colortex14, texcoord + vec2(0.0,-texelSize.y)).rgb;
+			vec3 albedoCurrent7 = texture2D(colortex14, texcoord + vec2(-texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent8 = texture2D(colortex14, texcoord + vec2(texelSize.x,0.0)).rgb;
 
 			//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 
@@ -959,13 +959,13 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 			
 					 
-			vec3 albedoPrev = max(FastCatmulRom(colortexE, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+			vec3 albedoPrev = max(FastCatmulRom(colortex14, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 			vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 			vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);			
 					
 			float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10));	 
 			float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
-			float isclamped3 = (((distance(luma(albedoPrev2),texture2D(colortexE,previousPosition.xy).a)/luma(albedoPrev2)) *0.9) );	 
+			float isclamped3 = (((distance(luma(albedoPrev2),texture2D(colortex14,previousPosition.xy).a)/luma(albedoPrev2)) *0.9) );	 
 			float clamped = dot(isclamped,isclamped2);
 			rej = clamp( (clamp(   (isclamped3)   ,0,1) +(edgemask*5-0.75)) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
 			vec3 bn = blueNoise(gl_FragCoord.xy).xyz;
@@ -973,7 +973,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 		
 			
 		//	vec3 speculars = mix( (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)),vec3(0.0), clamp(rej,0,1.0) );			
-			gl_FragData[1].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
+			gl_FragData[1].rgb = mix(texture2D(colortex14, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
 	
 
 		//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
@@ -1006,5 +1006,5 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 	
 
 
-/* DRAWBUFFERS:3E */
+/* RENDERTARGETS: 3,14 */
 }

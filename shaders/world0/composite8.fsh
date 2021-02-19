@@ -10,7 +10,7 @@ uniform sampler2D colortex3;
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:06 */
+/* RENDERTARGETS: 0,6 */
   ivec2 center = ivec2(gl_FragCoord.xy);
 	vec3 current = texelFetch2D(colortex3, center, 0).rgb;
   vec3 cMin = current;

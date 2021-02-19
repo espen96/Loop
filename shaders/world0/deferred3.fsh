@@ -97,7 +97,7 @@ vec3 viewToWorld(vec3 viewPos) {
     return pos.xyz;
 }
 void main() {
-/* DRAWBUFFERS:3 */
+/* RENDERTARGETS: 3 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.1, 0.0, 0.0);

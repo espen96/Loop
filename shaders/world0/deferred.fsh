@@ -85,7 +85,7 @@ vec4 lightCol = vec4(lightSourceColor, float(sunElevation > 1e-5)*2-1.);
 const float[17] Slightmap = float[17](14.0,17.,19.0,22.0,24.0,28.0,31.0,40.0,60.0,79.0,93.0,110.0,132.0,160.0,197.0,249.0,249.0);
 
 void main() {
-/* DRAWBUFFERS:4 */
+/* RENDERTARGETS: 4 */
 gl_FragData[0] = vec4(0.0);
 float minLight = MIN_LIGHT_AMOUNT * 0.007/ (exposure + rodExposure/(rodExposure+1.0)*exposure);
 //Lightmap for forward shading (contains average integrated sky color across all faces + torch + min ambient)

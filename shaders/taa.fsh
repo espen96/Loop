@@ -32,12 +32,12 @@ const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer-
 const int colortex8Format = R11F_G11F_B10F;		
 const int colortex9Format = R11F_G11F_B10F;	
 		
-const int colortexAFormat = RGBA8_SNORM;	
-const int colortexBFormat = RGBA8_SNORM;	
-const int colortexCFormat = R11F_G11F_B10F;	
+const int colortex10Format = RGBA8_SNORM;	
+const int colortex11Format = RGBA8_SNORM;	
+const int colortex12Format = R11F_G11F_B10F;	
 	
-const int colortexEFormat = R11F_G11F_B10F;		//spec B
-const int colortexFFormat = R16F;		
+const int colortex14Format = R11F_G11F_B10F;		//spec B
+const int colortex15Format = R16F;		
 	
 
 
@@ -56,12 +56,12 @@ const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
-const bool colortexAClear = false;
+const bool colortex10Clear = false;
 
-const bool colortexCClear = false;
-const bool colortexFClear = false;
+const bool colortex12Clear = false;
+const bool colortex15Clear = false;
 
-const bool colortexEClear = false;
+const bool colortex14Clear = false;
 
 
 */
@@ -75,12 +75,12 @@ uniform sampler2D colortex6;
 
 
 
-uniform sampler2D colortexA;
+uniform sampler2D colortex10;
 
-uniform sampler2D colortexC;
-uniform sampler2D colortexE;
+uniform sampler2D colortex12;
+uniform sampler2D colortex14;
 
-uniform sampler2D colortexD;
+uniform sampler2D colortex13;
 uniform sampler2D depthtex0;
 
 uniform vec2 texelSize;
@@ -349,7 +349,7 @@ vec3 TAA_hq(){
 
 void main() {
 
-/* DRAWBUFFERS:5 */
+/* RENDERTARGETS: 5 */
 
 	#ifdef TAA
 	vec3 color = TAA_hq();

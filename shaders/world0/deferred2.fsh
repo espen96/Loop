@@ -17,7 +17,7 @@ float linZ(float depth) {
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:4 */
+/* RENDERTARGETS: 4 */
 
 	vec3 oldTex = texelFetch2D(colortex4, ivec2(gl_FragCoord.xy), 0).xyz;
 	float newTex = texelFetch2D(depthtex1, ivec2(gl_FragCoord.xy*4), 0).x;

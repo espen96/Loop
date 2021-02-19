@@ -7,7 +7,7 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 
-/* DRAWBUFFERS:1 */
+/* RENDERTARGETS: 1 */
 
 varying vec4 color;
 varying vec2 texcoord;

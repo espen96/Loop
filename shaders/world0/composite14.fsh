@@ -80,7 +80,7 @@ vec4 texture2D_bicubic(sampler2D tex, vec2 uv)
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:3 */
+/* RENDERTARGETS: 3 */
 vec2 resScale = vec2(1920.,1080.)/(max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))/BLOOM_QUALITY);
 vec2 texcoord = ((gl_FragCoord.xy)*2.+0.5)*texelSize;
 vec3 bloom = texture2D_bicubic(colortex3,texcoord*0.5).rgb;	//1/4 res

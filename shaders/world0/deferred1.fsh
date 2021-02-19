@@ -63,7 +63,7 @@ float R2_dither(){
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 	#ifdef VOLUMETRIC_CLOUDS
 	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
 

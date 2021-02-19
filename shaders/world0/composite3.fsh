@@ -14,11 +14,11 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 
 
-uniform sampler2D colortexA;
-uniform sampler2D colortexB;
-uniform sampler2D colortexC;
-uniform sampler2D colortexD;
-uniform sampler2D colortexE;
+uniform sampler2D colortex10;
+uniform sampler2D colortex11;
+uniform sampler2D colortex12;
+uniform sampler2D colortex13;
+uniform sampler2D colortex14;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 
@@ -72,7 +72,7 @@ float ld(float dist) {
 #include "/lib/filter.glsl"
 void main() {
 
-/* DRAWBUFFERS:8 */
+/* RENDERTARGETS: 8 */
 
 
 

@@ -59,12 +59,12 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
-uniform sampler2D colortexA;
-uniform sampler2D colortexB;
+uniform sampler2D colortex10;
+uniform sampler2D colortex11;
 
 
-uniform sampler2D colortexC;
-uniform sampler2D colortexE;
+uniform sampler2D colortex12;
+uniform sampler2D colortex14;
 
 
 uniform sampler2D colortex6; // Noise
@@ -130,7 +130,7 @@ float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
 
-uniform sampler2D colortexD;
+uniform sampler2D colortex13;
 #include "/lib/specular.glsl"
 vec3 normVec (vec3 vec){
 	return vec*inversesqrt(dot(vec,vec));
@@ -430,7 +430,7 @@ void main() {
 		vec4 transparent = texture2D(colortex2,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 //		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
-		vec3 normalorg = texture2D(colortexA,texcoord).rgb+texture2D(colortex8,texcoord).rgb;
+		vec3 normalorg = texture2D(colortex10,texcoord).rgb+texture2D(colortex8,texcoord).rgb;
 		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -611,8 +611,8 @@ void main() {
 	
 
 
-//	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
-	gl_FragData[0].a = texture2D(colortexA,texcoord).a;	
+//	gl_FragData[3].rgba = vec4(FindNormal(colortex11,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
+	gl_FragData[0].a = texture2D(colortex10,texcoord).a;	
 	gl_FragData[3].r = luma(viewToWorld(mat3(gbufferModelViewInverse) *texture2D(colortex8,texcoord).rgb));	
 
 
@@ -620,5 +620,6 @@ void main() {
 	
 	
 
-/* DRAWBUFFERS:8CAB */
+
+/* RENDERTARGETS: 8,12,10,11 */
 }

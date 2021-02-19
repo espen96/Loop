@@ -9,10 +9,10 @@ uniform sampler2D depthtex0;
 uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
-uniform sampler2D colortexA;
-uniform sampler2D colortexB;
-uniform sampler2D colortexC;
-uniform sampler2D colortexD;
+uniform sampler2D colortex10;
+uniform sampler2D colortex11;
+uniform sampler2D colortex12;
+uniform sampler2D colortex13;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
@@ -121,7 +121,7 @@ void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
   vec2 texcoord2 = gl_FragCoord.xy*texelSize;
   vec2 texcoord3 = gl_FragCoord.xy*texelSize;
-  /* DRAWBUFFERS:73 */  
+/* RENDERTARGETS: 7,3 */
   vec4 trpData = texture2D(colortex7,texcoord);
   bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
@@ -131,8 +131,8 @@ void main() {
   bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
 
 
-  vec4 normal2 = (texture2D(colortexA, texcoord));
-  vec4 normal3 = (texture2D(colortexB, texcoord));
+  vec4 normal2 = (texture2D(colortex10, texcoord));
+  vec4 normal3 = (texture2D(colortex11, texcoord));
   vec3 worldnormal = vec3(normal3.r); 
 
 	    float sigma = 0.25;

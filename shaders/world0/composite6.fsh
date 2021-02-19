@@ -284,7 +284,7 @@ float blueNoise(){
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;

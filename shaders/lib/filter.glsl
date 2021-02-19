@@ -188,7 +188,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	float weight = 0.0;
 	
 
-		vec4 normaldepth = texelFetch(colortexA, pos2, 0).rgba; 
+		vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
 
 
      float   c_depth    = normaldepth.a * far;	
@@ -238,7 +238,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
 
-		vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
+		vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
 	
 		vec3 normal = (normaldepth2.rgb);			
@@ -308,7 +308,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
         c_depth    = ld(c_depth) * far;	
 
-	vec3 origNormal =  (texelFetch(colortexA, pos2, 0).rgb);			
+	vec3 origNormal =  (texelFetch(colortex10, pos2, 0).rgb);			
 
     float totalWeight   = 1.0;	
 	
@@ -327,7 +327,7 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
         bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
 		
-     	vec4 normaldepth2 = texelFetch(colortexA, d_pos2, 0).rgba; 
+     	vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
 	
 		vec3 normal = (normaldepth2.rgb);			

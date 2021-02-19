@@ -386,13 +386,13 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex6;
 uniform sampler2D colortex7;
 uniform sampler2D colortex8;
-uniform sampler2D colortexA;
-uniform sampler2D colortexC;
-uniform sampler2D colortexD;
-uniform sampler2D colortexE;
+uniform sampler2D colortex10;
+uniform sampler2D colortex12;
+uniform sampler2D colortex13;
+uniform sampler2D colortex14;
 
 uniform sampler2D colortex0;
-uniform sampler2D colortexB;
+uniform sampler2D colortex11;
 uniform sampler2D colortex9;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
@@ -722,7 +722,7 @@ vec3 median2(sampler2D tex1) {
 
 
 void main() {
-  /* DRAWBUFFERS:7 */
+/* RENDERTARGETS: 7 */
 
   float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE*RENDER_SCALE,2,colortex8).rgb,0,1).r;
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
@@ -763,7 +763,7 @@ globalInit();
 				focus = MANUAL_FOCUS * screenBrightness;
 		#endif
 			for ( int i = 0; i < 15; i++) {
-				pcoc += texture2D(colortexB, texcoord.xy + poisson15[i]*0.01).r;
+				pcoc += texture2D(colortex11, texcoord.xy + poisson15[i]*0.01).r;
 			}
 			pcoc = pcoc/15.0;		
 
@@ -860,7 +860,7 @@ globalInit();
 //    gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
 //   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
 
-//  gl_FragData[0].rgb = vec3((texture2D(colortexD,texcoord*RENDER_SCALE).rgb));
+//  gl_FragData[0].rgb = vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
 
 
 

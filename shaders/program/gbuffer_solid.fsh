@@ -265,7 +265,7 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A2 */
+/* RENDERTARGETS: 1,7,10,2 */
 void main() {		
 
 
@@ -274,14 +274,12 @@ void main() {
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
 	vec2 lm = lmtexcoord.zw;		
 
-	
+vec4 data0 = vec4(0.0);
 
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
 	
-  	vec4 data0 = texture2D(texture, lmtexcoord.xy)*color;
-	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+
 
 	
 	//////////////////////////////POM//////////////////////////////	
@@ -371,12 +369,23 @@ void main() {
 		  #endif
 
 		  }	
-
+		 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 #endif	
 
 #endif
 	//////////////////////////////POM//////////////////////////////	  
-  
+	
+	#ifdef block
+	
+  	 data0 = texture2D(texture, lmtexcoord.xy)*color;
+	 
+	 #else
+	   	 data0 = texture2D(texture, lmtexcoord.xy)*color;
+	#endif	 
+	 
+	 
+	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);  
   
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;

@@ -40,17 +40,17 @@ const int colortex8Format = RGBA16F;
 const int colortex9Format = R11F_G11F_B10F;			
 	//None
 		
-const int colortexAFormat = RGBA16F;                
+const int colortex10Format = RGBA16F;                
 	//Normals (rgb),  LAB emissive (a) (gbuffer->composite0),  depth (a)  (composite0->)	
-const int colortexBFormat = R11F_G11F_B10F_A10F;	
+const int colortex11Format = R11F_G11F_B10F_A10F;	
 	//Transparent normal for refraction(r) 
-const int colortexCFormat = RGBA16F;				
+const int colortex12Format = RGBA16F;				
 	//SSPT temporal
-const int colortexDFormat = RGBA16F;			    
+const int colortex13Format = RGBA16F;			    
 	//None
-const int colortexEFormat = RGBA16F;			    
+const int colortex14Format = RGBA16F;			    
 	//specular temporal
-const int colortexFFormat = RGBA16F;		        
+const int colortex15Format = RGBA16F;		        
 	//None
 	
 	
@@ -71,14 +71,14 @@ const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
-const bool colortexAClear = true;
-const bool colortexBClear = true;
+const bool colortex10Clear = true;
+const bool colortex11Clear = true;
 
 
-const bool colortexCClear = false;
-const bool colortexDClear = true;
-const bool colortexEClear = false;
-const bool colortexFClear = false;
+const bool colortex12Clear = false;
+const bool colortex13Clear = true;
+const bool colortex14Clear = false;
+const bool colortex15Clear = false;
 
 
 
@@ -99,13 +99,13 @@ uniform sampler2D colortex6;
 uniform float near;
 uniform float far;
 
-uniform sampler2D colortexA;
-uniform sampler2D colortexB;
+uniform sampler2D colortex10;
+uniform sampler2D colortex11;
 
-uniform sampler2D colortexC;
-uniform sampler2D colortexE;
+uniform sampler2D colortex12;
+uniform sampler2D colortex14;
 
-uniform sampler2D colortexD;
+uniform sampler2D colortex13;
 uniform sampler2D depthtex0;
 
 uniform vec2 texelSize;
@@ -380,8 +380,7 @@ flat varying vec2 rodExposureDepth;
 
 void main() {
 
-/* DRAWBUFFERS:5B */
-
+/* RENDERTARGETS: 5,11 */
 
 	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 		#if DOF_MODE == 0

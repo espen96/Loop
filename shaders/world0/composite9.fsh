@@ -48,7 +48,7 @@ const int colortexCFormat = RGBA16F;
 	//SSPT temporal
 const int colortexDFormat = RGBA16F;			    
 	//None
-const int colortexEFormat = R11F_G11F_B10F_A10F;			    
+const int colortexEFormat = RGBA16F;			    
 	//specular temporal
 const int colortexFFormat = RGBA16F;		        
 	//None

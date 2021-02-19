@@ -345,6 +345,35 @@ float lmfaloff(float lm)
 	return lm;
 }
 
+mat3 tbnpom( vec3 N, vec3 p, vec2 uv )
+{
+
+vec3 binormal = vec3(0.0);
+vec3 tangent = vec3(0.0);
+
+	
+	
+    vec3 pos_dx = dFdx(p);
+    vec3 pos_dy = dFdy(p);
+    float tcoord_dx = dFdx(uv.y);
+    float tcoord_dy = dFdy(uv.y); 
+ 
+ 
+    // Fix issues when the texture coordinate is wrong, this happens when
+    // two adjacent vertices have the same texture coordinate, as the gradient
+    // is 0 then. We just assume some hard-coded tangent and binormal then
+    if (abs(tcoord_dx) < 1e-24 && abs(tcoord_dy) < 1e-24) {
+        vec3 base = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(0, 1, 0);
+        tangent = normalize(cross(N, base));
+    } else {
+        tangent = normalize(pos_dx * tcoord_dy - pos_dy * tcoord_dx);
+    }
+
+    binormal = normalize(cross(tangent, N)); 
+
+	
+	return 	  mat3(tangent.x, binormal.x, N.x, tangent.y, binormal.y, N.y, tangent.z, binormal.z, N.z);
+}
 
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -352,7 +381,7 @@ float lmfaloff(float lm)
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* DRAWBUFFERS:17A */
+/* DRAWBUFFERS:17AD */
 void main() {
 
 		vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
@@ -372,7 +401,7 @@ void main() {
 		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
 								  tangent.y, tangent2.y, normal.y,
 						     	  tangent.z, tangent2.z, normal.z);
-							
+				
 	#endif
 
 vec2 lm = lmtexcoord.zw;
@@ -390,7 +419,7 @@ vec2 lm = lmtexcoord.zw;
 	vec2 tempOffset=offsets[framemod8];	
 		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));	
 	
-	
+			  mat3 TBN = tbnpom( normal, -fragpos, lmtexcoord.xy );	
 #ifdef POM
 
 
@@ -401,6 +430,7 @@ vec2 lm = lmtexcoord.zw;
 
 
 		  vec3 coord = vec3(vtexcoord.st, 1.0);
+		  
 		vec3 viewVector = normalize(tbnMatrix*fragpos);
 		float dist = length(fragpos);
 		#ifdef Depth_Write_POM
@@ -480,13 +510,7 @@ vec2 lm = lmtexcoord.zw;
 
 		  }
 		
-		vec3	silhouette = vec3(coord);
-    vec3 clipPosition = toClipSpace3(fragpos);
-    vec3 depth1 = vec3(sqrt(texelFetch2D(gaux1,ivec2(clipPosition.xy/texelSize*0.25),0).w/65000.0));
-    vec3 depth2 = vec3(sqrt(texelFetch2D(gaux1,ivec2(clipPosition.xy/texelSize*0.25),0).w/65000.0));
-//	if(silhouette.x > 1.0 || silhouette.y > 1.0 || silhouette.x < 0.0 || silhouette.y < 0.0) discard;
-	gl_FragData[3].rgb = vec3(coord-lmtexcoord.xyz);
-			  	
+
 			vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 		  #ifdef DISABLE_ALPHA_MIPMAPS
 			data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;

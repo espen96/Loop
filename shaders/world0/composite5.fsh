@@ -602,7 +602,7 @@ void main() {
 		// compute shadows only if not backfacing the sun
 		// or if the blocker search was full or empty
 		// always compute all shadows at close range where artifacts may be more visible
-		if (diffuseSun > 0.001) {
+		if (diffuseSun > 0.001 &&!hand) {
 		#else
 		if (translucent) {
 			sssAmount = 0.5;
@@ -805,7 +805,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			ambientLight += custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);
 
 			//combine all light sources
-
+			gl_FragData[1].rgb = vec3(0.0);
 			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (1.0-Pow5(1.0-WsunVec.y));	//fresnel
@@ -825,9 +825,8 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			ambientLight *= (1+clamp(transparent.rgb*10*emitting*2,1,100));					
 					
 
-		float labemissive = texture2D(colortexB, texcoord).a;
+		float labemissive = texture2D(colortex8, texcoord).a;
 		ambientLight += vec3(labemissive);
-		
 	
 
 
@@ -872,6 +871,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			
 			float rainMult = sqrt(lightmap.y)*wetness*(1.0-square(porosity));
 			roughness = mix(roughness, 0.01, rainMult);
+
 			f0 = mix(f0, vec3(0.02), rainMult);
 			//f0 = vec3(0.5);
 			//roughness = 0.01;
@@ -969,29 +969,30 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			float clamped = dot(isclamped,isclamped2);
 			rej = clamp( (clamp(   (isclamped3)   ,0,1) +(edgemask*5-0.75)) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
 			vec3 bn = blueNoise(gl_FragCoord.xy).xyz;
-			vec3 bn_tri = vec3( remap_noise_tri_erp(noise), 
-								remap_noise_tri_erp(noise), 
-								remap_noise_tri_erp(noise) );
-  
+			if(hand) rej = 1;
+		
+			
 		//	vec3 speculars = mix( (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)),vec3(0.0), clamp(rej,0,1.0) );			
 			gl_FragData[1].rgb = mix(texture2D(colortexE, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
-			
+	
 
-//		if (!hand)	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
+		//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
 
-			gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
+		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
+		
 
-
+	
 
 
 		#endif
+		if (!hand)	gl_FragData[2].rgb =	vec3( gl_FragData[1].rgb);
+		
+	
 
 		
 		
+			
 
-		
-		
-		
 		
 		
 		}
@@ -1005,5 +1006,5 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 	
 
 
-/* DRAWBUFFERS:3E */
+/* DRAWBUFFERS:3ED */
 }

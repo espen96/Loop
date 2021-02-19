@@ -35,16 +35,16 @@ const int colortex6Format = R11F_G11F_B10F;
 	//additionnal buffer for bloom (composite3->final)
 const int colortex7Format = RGBA8;					
 	//Final output, transparencies id (gbuffer->composite4)
-const int colortex8Format = R11F_G11F_B10F;		   
-	//transparent normals (gbuffer->composite0) ambient light(composite0->)
+const int colortex8Format = RGBA16F;		   
+	//transparent normals (gbuffer->composite0) ambient light(composite0->) and LAB emissive (a) (composite0->)
 const int colortex9Format = R11F_G11F_B10F;			
 	//None
 		
 const int colortexAFormat = RGBA16F;                
-	//Normals (rgb) and depth (a)	
+	//Normals (rgb),  LAB emissive (a) (gbuffer->composite0),  depth (a)  (composite0->)	
 const int colortexBFormat = R11F_G11F_B10F_A10F;	
-	//Transparent normal for refraction(r) and LAB emissive (a)
-const int colortexCFormat = R11F_G11F_B10F_A10F;				
+	//Transparent normal for refraction(r) 
+const int colortexCFormat = RGBA16F;				
 	//SSPT temporal
 const int colortexDFormat = RGBA16F;			    
 	//None
@@ -356,7 +356,8 @@ vec3 TAA_hq(){
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 	float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
-		
+	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;	
+	if(z < 0.56) movementRejection = 1.0;
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
 	vec3 supersampled = invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR + movementRejection,0.,1.)));
 	#endif

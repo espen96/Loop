@@ -612,10 +612,10 @@ void main() {
 
 
 //	gl_FragData[3].rgba = vec4(FindNormal(colortexB,texcoord,texelSize),ld(texture2D(depthtex0,texcoord).r));	
-	gl_FragData[3].a = texture2D(colortexA,texcoord).a;	
+	gl_FragData[0].a = texture2D(colortexA,texcoord).a;	
 	gl_FragData[3].r = luma(viewToWorld(mat3(gbufferModelViewInverse) *texture2D(colortex8,texcoord).rgb));	
 
-			
+
 		
 	
 	

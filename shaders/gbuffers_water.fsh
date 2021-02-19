@@ -350,7 +350,8 @@ void main() {
 
 
 			gl_FragData[1] = vec4(0.1, 0.02, 0.0,iswater);
-		gl_FragData[2].rgba = vec4(normal3,1);
+		    gl_FragData[2].rgba = vec4(normal3,1);
+
 }
 		}			
 

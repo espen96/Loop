@@ -13,8 +13,9 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex5;
 uniform sampler2D colortex7;
 
-uniform sampler2D colortexB;
+
 uniform sampler2D colortexA;
+uniform sampler2D colortexB;
 uniform sampler2D colortexC;
 uniform sampler2D colortexD;
 uniform sampler2D colortexE;
@@ -80,10 +81,12 @@ void main() {
 
 	vec4 trpData = texture2D(colortex7,texcoord);
 	bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-	vec3	 color = texture2D(colortex8,texcoord).rgb;		
+	vec4 color = texture2D(colortex8,texcoord).rgba;		
+	
 	
 #ifdef ssptfilter
 #ifdef filterpass_1
+
 	if (z <1 && !iswater) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,12,colortex8,0.0).rgb,0,10);
 
 
@@ -94,7 +97,8 @@ void main() {
 
 
 
-	gl_FragData[0].rgb = color;
+
+	gl_FragData[0] = color;
 
 
 

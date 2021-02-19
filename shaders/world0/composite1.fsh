@@ -81,7 +81,7 @@ void main() {
 
 	vec4 trpData = texture2D(colortex7,texcoord);
 	bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-	vec3	 color = texture2D(colortex8,texcoord).rgb;		
+	vec4 color = texture2D(colortex8,texcoord).rgba;		
 	
 	
 #ifdef ssptfilter
@@ -98,7 +98,7 @@ void main() {
 
 
 
-	gl_FragData[0].rgb = color;
+	gl_FragData[0] = color;
 
 
 

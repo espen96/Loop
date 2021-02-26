@@ -18,12 +18,11 @@ const ivec2 kernelO_5x5[25] = ivec2[25] (
 
 
 vec3 screenToViewSpace(vec3 screenpos, mat4 projInv, const bool taaAware) {
-    screenpos   = screenpos*2.0-1.0;
+     screenpos   = screenpos*2.0-1.0;
 
 
-
-    vec3 viewpos    = vec3(vec2(projInv[0].x, projInv[1].y)*screenpos.xy + projInv[3].xy, projInv[3].z);
-        viewpos    /= projInv[2].w*screenpos.z + projInv[3].w;
+vec3 viewpos    = vec3(vec2(projInv[0].x, projInv[1].y)*screenpos.xy + projInv[3].xy, projInv[3].z);
+     viewpos    /= projInv[2].w*screenpos.z + projInv[3].w;
     
     return viewpos;
 }
@@ -65,30 +64,25 @@ ivec2 clampTexelPos(ivec2 pos) {
 }
 
 
-vec2 computeVariance(sampler2D tex, ivec2 pos) {
-    float sumMsqr   = 0.0;
-    float sumMean   = 0.0;
+float computeVariance(sampler2D tex, ivec2 pos) {
+    float sum_msqr  = 0.0;
+    float sum_mean  = 0.0;
 
     for (int i = 0; i<9; i++) {
         ivec2 deltaPos     = kernelO_3x3[i];
+        //float weight        = kernelW_5x5[i];
 
-        vec3 col    = texelFetch(tex, clampTexelPos(pos + deltaPos), 0).rgb;
+        vec3 col    = texelFetch(tex, pos + deltaPos, 0).rgb;
         float lum   = luma(col);
 
-        sumMsqr    += sqr(lum);
-        sumMean    += lum;
+        sum_msqr   += sqr(lum);
+        sum_mean   += lum;
     }
-    sumMsqr  /= 9.0;
-    sumMean  /= 9.0;
+    sum_msqr /= 9.0;
+    sum_mean /= 9.0;
 
-    return vec2(abs(sumMsqr - sqr(sumMean)) * rcp(max(sumMean, 1e-20)), sumMean);
-}
-
-
-
-float hash1(float seed) {
-    return fract(sin(seed)*43758.5453123);
-}
+    return abs(sum_msqr - sqr(sum_mean)) * rcp(max(sum_mean, 1e-25));
+}   
 
 #ifdef power
 
@@ -146,76 +140,31 @@ uniform sampler2D colortex4;
 
 
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
-    float denoiseStrength = ((DENOISE_RANGE1.x + (DENOISE_RANGE1.y-DENOISE_RANGE1.x)*hash1(641.128752*gl_FragCoord.x + 312.321374*gl_FragCoord.y+1.92357812*frameCounter)));
-	int size2 = int(denoiseStrength);
 
-    float kernel[25];
-    kernel[0] = 1.0f/256.0f;
-    kernel[1] = 1.0f/64.0f;
-    kernel[2] = 3.0f/128.0f;
-    kernel[3] = 1.0f/64.0f;
-    kernel[4] = 1.0f/256.0f;
-    
-    kernel[5] = 1.0f/64.0f;
-    kernel[6] = 1.0f/16.0f;
-    kernel[7] = 3.0f/32.0f;
-    kernel[8] = 1.0f/16.0f;
-    kernel[9] = 1.0f/64.0f;
-    
-    kernel[10] = 3.0f/128.0f;
-    kernel[11] = 3.0f/32.0f;
-    kernel[12] = 9.0f/64.0f;
-    kernel[13] = 3.0f/32.0f;
-    kernel[14] = 3.0f/128.0f;
-    
-    kernel[15] = 1.0f/64.0f;
-    kernel[16] = 1.0f/16.0f;
-    kernel[17] = 3.0f/32.0f;
-    kernel[18] = 1.0f/16.0f;
-    kernel[19] = 1.0f/64.0f;
-    
-    kernel[20] = 1.0f/256.0f;
-    kernel[21] = 1.0f/64.0f;
-    kernel[22] = 3.0f/128.0f;
-    kernel[23] = 1.0f/64.0f;
-    kernel[24] = 1.0f/256.0f;
-   
-
-  
 
     ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
+    vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
+    if (luma(colorCenter) <= 0.0) return colorCenter;	
     float sumweight = 0.0;	
 	float weight = 0.0;
 	
 
-		vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
+	vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
 
 
-     float   c_depth    = normaldepth.a * far;	
+    float   c_depth    = normaldepth.a * far;	
 	vec3 origNormal =  normaldepth.rgb;			
-	vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
-	
 
 
 
 
-    vec4 totalColor     = vec4(colorCenter,1);
+
+    vec3 totalColor     = colorCenter;
+
     float totalWeight   = 1.0;	
 	
-    vec2 variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
-    float var2        = rcp(0.5 + variance2.x *1000);	
-    float sigmaL        = rcp(0.5 + variance2.x *1000);	
-
-	
-	
-	float var3 = abs(variance2.x*1000);		
-	
-			
-
-	if (var3 < 0.001)  return totalColor.rgb;
-
-
-
+    float variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
+    float var2        = rcp(0.5 + variance2 *4);	
 
 
 //#define HQ
@@ -230,13 +179,12 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
     for (int i = 0; i<9; i++) {
 	ivec2 delta  = kernelO_3x3[i] * size;	
 #endif
-	
+
         if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos2  = pos2 + delta;
         if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
-        bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
-        if (!valid) continue;		
+	
 
 		vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
@@ -247,28 +195,28 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 		
 		float d_weight = abs(cu_depth - c_depth);	
         float depthWeight = expf(-d_weight);	
-        if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
+        if (depthWeight < 1e-5 ) continue;
 		
 	
         float normalWeight = pow(clamp(dot(normal, origNormal),0,1),32);
 
 
-        float weight    = normalWeight;			
+        float weight = normalWeight;			
 		
 
        
        weight *= exp(-d_weight - var2);
 	   
-      totalColor.rgb += color.rgb * weight;
+       totalColor += color.rgb * weight;
 
-        totalWeight += weight;
-gl_FragData[1].rgb = vec3(weight);
+       totalWeight += weight;
+
 	}
 
-    totalColor.rgb *= rcp(max(totalWeight, 1e-25));
+    totalColor *= rcp(max(totalWeight, 1e-25));
 
 
-    return totalColor.rgb;
+    return totalColor;
 
 
 	
@@ -298,63 +246,72 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 
   
-    ivec2 pos     = ivec2(floor(coord * vec2(viewWidth, viewHeight)));
+
     ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     float sumweight = 0.0;	
 	float weight = 0.0;
 	
 
-    float c_depth  = texelFetch(depthtex0, pos2, 0).x;
+		vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
 
-        c_depth    = ld(c_depth) * far;	
 
-	vec3 origNormal =  (texelFetch(colortex10, pos2, 0).rgb);			
+     float   c_depth    = normaldepth.a * far;	
+	vec3 origNormal =  normaldepth.rgb;			
 
+    vec4 totalColor     = vec4(0.0);
     float totalWeight   = 1.0;	
 	
-
+    float variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
+    float var2        = rcp(0.5 + variance2 *1000);	
+    float sigmaL        = rcp(0.5 + variance2 *1000);	
 
 	
+	
+	float var3 = abs(variance2*1000);		
+	
+
     for (int i = 0; i<9; i++) {
-
+	ivec2 delta  = kernelO_3x3[i] * 1;	
 
 	
-        ivec2 delta  = kernelO_5x5[i];	
         if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos2  = pos2 + delta;
         if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
         bool valid          = all(greaterThanEqual(d_pos2, ivec2(0))) && all(lessThan(d_pos2, ivec2(vec2(viewWidth, viewHeight))));
         if (!valid) continue;		
-		
-     	vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
+
+		vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
 	
 		vec3 normal = (normaldepth2.rgb);			
 		
-		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+	
 		
 		float d_weight = abs(cu_depth - c_depth);	
         float depthWeight = expf(-d_weight);	
-    //  if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
-        float normalWeight = pow(clamp(dot(normal, origNormal),0,.9),32);
+        if ((depthWeight < 1e-5 || cu_depth == 1.0)) continue;
+		
+	
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),32);
 
 
         float weight    = normalWeight;			
+		
 
        
-    //   weight *= exp(-d_weight );
+    //   weight *= exp(-d_weight - var2);
+	   
+      totalColor.rgb = 1-clamp(vec3(weight),0,1);
 
 
-        totalWeight += weight;
 
-	
 	}
 
-    totalWeight = rcp(totalWeight)*2-1.6;
+ //   totalColor.rgb *= rcp(max(totalWeight, 1e-25));
 
 
-    return vec3(totalWeight)*2;
+    return totalColor.rgb;
 
 
 	

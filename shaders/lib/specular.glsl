@@ -87,7 +87,7 @@ vec3 GGX (vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
-vec3 rayTrace(vec3 dir,vec3 position,float dither, float quality){
+vec3 rayTrace(vec3 viewNormal,vec3 dir,vec3 position,float dither, float quality){
 
     vec3 clipPosition = toClipSpace3(position);
   	float rayLength = ((position.z + dir.z * far*sqrt(3.)) > -near) ? (-near -position.z) / dir.z : far*sqrt(3.);
@@ -108,6 +108,9 @@ vec3 rayTrace(vec3 dir,vec3 position,float dither, float quality){
 	float minZ = clipPosition.z+stepv.z*clamp(dither-0.5,0.0,1.0);
 	float maxZ = spos.z+stepv.z*(0.5+dither);
 	spos.xy += TAA_Offset*texelSize*0.5/RENDER_SCALE;
+
+
+
 
   for (int i = 0; i <= int(quality); i++) {
     if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)

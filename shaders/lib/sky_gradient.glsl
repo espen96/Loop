@@ -4,11 +4,11 @@
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
 float Pow32(float x) { return x * x * x; }
 vec3 drawSun(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
-	return inColor+nsunlight/0.0008821203*Pow32(smoothstep(cos(0.0297869339504),cos(0.0167551503471),cosY))*0.62;
-}
+	return inColor+nsunlight/0.0008821203*pow(smoothstep(cos(0.0093084168595*3.2),cos(0.0093084168595*1.8),cosY),3.)*0.62;
+ 
 
-vec3 drawMoon(float cosY, float sunInt,vec3 nsunlight,vec3 inColor){
-	return inColor+nsunlight/0.0008821203*Pow32(smoothstep(cos(0.0297869339504),cos(0.0167551503471),cosY))*0.62;
+																	
+																											  
 }
 const float pi = 3.141592653589793238462643383279502884197169;
 vec2 sphereToCarte(vec3 dir) {
@@ -21,22 +21,22 @@ vec3 skyFromTex(vec3 pos,sampler2D sampler){
 }
 float w0(float a)
 {
-    return (0.166)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
+    return (1.0/6.0)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
 }
 
 float w1(float a)
 {
-    return (0.166)*(a*a*(3.0*a - 6.0) + 4.0);
+    return (1.0/6.0)*(a*a*(3.0*a - 6.0) + 4.0);
 }
 
 float w2(float a)
 {
-    return (0.166)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
+    return (1.0/6.0)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
 }
 
 float w3(float a)
 {
-    return (0.166)*(a*a*a);
+    return (1.0/6.0)*(a*a*a);
 }
 
 float g0(float a)

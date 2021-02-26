@@ -1,15 +1,16 @@
 #define TIME_MULT 1.0
 #define TIME (frameTimeCounter * TIME_MULT)
 
-const float PI 		= 3.14159265359;
-const float TAU 	= 6.28318530717;
-const float hPI 	= 1.57079632679;
-const float rPI 	= 0.31830988618;
-const float rTAU 	= 0.15915494309;
+const float PI 		= acos(-1.0);
+const float TAU 	= PI * 2.0;
+const float hPI 	= PI * 0.5;
+const float rPI 	= 1.0 / PI;
+const float rTAU 	= 1.0 / TAU;
 
 const float PHI		= sqrt(5.0) * 0.5 + 0.5;
 const float rLOG2	= 1.0 / log(2.0);
-const float goldenAngle = 137.5077640500378546463487;
+
+const float goldenAngle = TAU / PHI / PHI;
 
 #define clamp01(x) clamp(x, 0.0, 1.0)
 #define max0(x) max(x, 0.0)

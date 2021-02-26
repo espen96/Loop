@@ -32,7 +32,9 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
+#ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
+#endif
 flat varying vec3 refractedSunVec;
 flat varying vec3 WsunVec;
 
@@ -187,7 +189,11 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
+			#ifdef SHADOWS_ON	
 				sh = shadow2D( shadow, pos).x;
+			#else
+				sh = 0;	
+			#endif	
 				#ifdef VL_Clouds_Shadows
 				float cloudShadow = 0.0;
 				const int rayMarchSteps = 6;
@@ -263,7 +269,11 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
-				sh =  shadow2D( shadow, pos).x;
+			#ifdef SHADOWS_ON	
+				sh = shadow2D( shadow, pos).x;
+			#else
+				sh = 0;	
+			#endif	
 			}
 			vec3 ambientMul = exp(-max(estEyeDepth - dY * d,0.0) * waterCoefs);
 			vec3 sunMul = exp(-max((estEyeDepth - dY * d) ,0.0)/abs(refractedSunVec.y) * waterCoefs);

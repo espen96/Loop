@@ -1,20 +1,18 @@
-#version 120
-//Horizontal bilateral blur for volumetric fog + Forward rendered objects + Draw volumetric fog
-#extension GL_EXT_gpu_shader4 : enable
 
-
-
+uniform mat4 gbufferModelView;
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex10;
+uniform sampler2D colortex11;
 uniform sampler2D colortex12;
+uniform sampler2D colortex13;
 uniform sampler2D colortex2;
 uniform sampler2D colortex0;
 uniform sampler2D noisetex;
-
+uniform float blindness;  
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform float far;
@@ -26,6 +24,7 @@ uniform vec2 texelSize;
 uniform vec3 cameraPosition;
 #include "/lib/waterOptions.glsl"
 #include "/lib/res_params.glsl"
+#include "/lib/color_transforms.glsl"
 #include "/lib/sky_gradient.glsl"
 #define clamp01(x) clamp(x, 0.0, 1.0)
 #define fsign(x) (clamp01(x * 1e35) * 2.0 - 1.0)
@@ -95,20 +94,81 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 	}
 	return caustic / weightSum;
 }
+vec2 noise(vec2 coord)
+{
+     float x = sin(coord.x * 100.0) * 0.1 + sin((coord.x * 200.0) + 3.0) * 0.05 + fract(cos((coord.x * 19.0) + 1.0) * 33.33) * 0.15;
+     float y = sin(coord.y * 100.0) * 0.1 + sin((coord.y * 200.0) + 3.0) * 0.05 + fract(cos((coord.y * 19.0) + 1.0) * 33.33) * 0.25;
+	 return vec2(x,y);
+}
+
+vec3 worldToView(vec3 worldPos) {
+
+    vec4 pos = vec4(worldPos, 0.0);
+    pos = gbufferModelView * pos;
+
+    return pos.xyz;
+}
+
+vec3 viewToWorld(vec3 viewPos) {
+
+    vec4 pos;
+    pos.xyz = viewPos;
+    pos.w = 0.0;
+    pos = gbufferModelViewInverse * pos;
+
+    return pos.xyz;
+}
+
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
+  vec2 texcoord2 = gl_FragCoord.xy*texelSize;
+  vec2 texcoord3 = gl_FragCoord.xy*texelSize;
 /* RENDERTARGETS: 7,3 */
+  vec4 trpData = texture2D(colortex7,texcoord);
+  bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
   float z = texture2D(depthtex0,texcoord).x;
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
+  bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
 
 
+  vec4 normal2 = (texture2D(colortex10, texcoord));
+  vec4 normal3 = (texture2D(colortex11, texcoord));
+  vec3 worldnormal = vec3(normal3.r); 
 
-  vec4 transparencies = texture2D(colortex2,texcoord);
-  vec4 trpData = texture2D(colortex7,texcoord);
-  bool iswater = trpData.a > 0.99;
-  vec2 refractedCoord = texcoord;
+	    float sigma = 0.25;
+	    float intensity = exp(-sigma * texture2D(colortex2,texcoord).a);  
+  gl_FragData[2].rgb = vec3( worldnormal);  		
+		
+   vec2 refractedCoord = texcoord; 
+     #ifdef NETHER 
+        vec2 p_m = texcoord;
+    vec2 p_d = p_m;
+    p_d.xy -= frameTimeCounter * 0.1;
+    vec2 dst_map_val = vec2(noise(p_d.xy));
+    vec2 dst_offset = dst_map_val.xy;
+
+    dst_offset *= 2.0;
+
+    dst_offset *= 0.01;
+	
+    //reduce effect towards Y top
+	
+    dst_offset *= (1. - p_m.t);	
+    vec2 dist_tex_coord = p_m.st + (dst_offset*ld(z)*0.02);
+
+	  vec2 coord = dist_tex_coord;
+
+  refractedCoord = coord; 
+  #endif
+  float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.005);
+  float refraction2 = pow(texture2D(colortex2,texcoord).a,3)*2-0.2;
+
+// if(istransparent || iswater)   texcoord.xy=texcoord.xy+worldnormal.xy;
+  vec4 transparencies = texture2D(colortex2,texcoord);  
+
+
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
   if (iswater){
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
@@ -121,11 +181,17 @@ void main() {
       refractedCoord = texcoord;
 
   }
+
+// if(istransparent || iswater)   refractedCoord.xy=refractedCoord.xy+worldnormal.xy;
+
   vec3 color = texture2D(colortex3,refractedCoord).rgb;
 
-  if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
-    color = color*(1.0-transparencies.a)+transparencies.rgb*10.;
 
+	
+
+  if (frDepth > 2.5/far || transparencies.a < 0.99)  // Discount fix for transparencies through hand
+    color = color*(1.0-transparencies.a)+transparencies.rgb*15.;
+	color.rgb = intensity * color.rgb;	
 
   float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -148,8 +214,19 @@ void main() {
 
     vl.a = 0.0;
   }
+  if (blindness > 0){
+    vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
+    color.rgb *= exp(-length(fragpos)*vec3(1.0)*blindness);
+
+
+    vl.a = 0.0;
+  }  
   else
-    color += vl.rgb;	
+  
+    color += vl.rgb;
+	
+
+	
 	float fogFactorAbs = 1.0 - clamp((length(fragpos) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
    fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(0.0)*texelSize*0.5,z));	
 	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;

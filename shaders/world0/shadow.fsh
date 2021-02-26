@@ -1,4 +1,5 @@
 #version 120
+#include "/lib/res_params.glsl"
 #extension GL_ARB_shader_texture_lod : enable
 #extension GL_EXT_gpu_shader4 : enable
 //#define SHADOW_DISABLE_ALPHA_MIPMAPS // Disables mipmaps on the transparency of alpha-tested things like foliage, may cost a few fps in some cases

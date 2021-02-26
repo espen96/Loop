@@ -30,7 +30,9 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
+#ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
+#endif
 flat varying vec3 refractedSunVec;
 flat varying vec3 WsunVec;
 

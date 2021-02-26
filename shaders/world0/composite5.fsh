@@ -7,9 +7,9 @@
 #define SSAO
 
 #define ROUGHREF
+#define labemissivespwitch
 
-
-
+//const bool colortex5MipmapEnabled = true;
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
 #define POM_DEPTH 0.25 // [0.025 0.05 0.075 0.1 0.125 0.15 0.20 0.25 0.30 0.50 0.75 1.0] //Increase to increase POM strength
 #define CAVE_LIGHT_LEAK_FIX // Hackish way to remove sunlight incorrectly leaking into the caves. Can inacurrately create shadows in some places
@@ -20,8 +20,8 @@
 
 #define CLOUDS_QUALITY 0.35 //[0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.9 1.0]
 #define TORCH_R 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
-#define TORCH_G 0.4 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
-#define TORCH_B 0.13 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+#define TORCH_G 0.5 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+#define TORCH_B 0.2 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
 #define Emissive_Strength 2.00 // [0.10 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.20 0.22 0.23 0.25 0.27 0.29 0.32 0.34 0.37 0.40 0.43 0.46 0.50 0.54 0.58 0.63 0.68 0.74 0.79 0.86 0.93 1.00 1.08 1.17 1.26 1.36 1.47 1.59 1.71 1.85 2.00 2.16 2.33 2.51 2.72 2.93 3.17 3.42 3.69 3.99 4.30 4.65 5.02 5.42 5.85 6.32 6.82 7.37 7.95 8.59 9.27 10.01 10.81 11.68 12.61 13.61 14.70 15.87 17.14 18.51 19.99 21.58 23.30 25.16 27.17 29.34 31.68 34.21 36.94 39.89 43.07 46.50 50.22 54.22 58.55 63.22 68.27 73.72 79.60 85.95 92.81 100.22 108.21 116.85 126.17 136.24 147.11 158.85 171.53 185.22 200.00]
 #define SPEC_SSR_QUALITY 2 //[1 2 3 4 5 6 7 8 9 10 ]
 
@@ -64,12 +64,10 @@ uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
 
 
-
+#ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
+#endif
 
-uniform sampler2DShadow shadowtex1;
-uniform sampler2DShadow shadowtex0;
-uniform sampler2DShadow shadowcolor0;
 
 
 
@@ -316,7 +314,14 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 			float sh = 1.0;
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5*0.166)+0.5;
+
+
+	#ifdef SHADOWS_ON
 				sh =  shadow2D( shadow, pos).x;
+		#else 
+				sh =  0;
+	#endif
+				
 			}
 			vec3 ambientMul = exp(-estEndDepth * d * waterCoefs * 1.1);
 			vec3 sunMul = exp(-estSunDepth * d * waterCoefs);
@@ -485,6 +490,83 @@ vec3 median2(sampler2D tex1) {
 
 }
 
+vec2 outlineOffsets[24] = vec2[24](
+    vec2(-2.0, -2.0),
+    vec2(-1.0, -2.0),
+    vec2( 0.0, -2.0),
+    vec2( 1.0, -2.0),
+    vec2( 2.0, -2.0),
+    vec2(-2.0, -1.0),
+    vec2(-1.0, -1.0),
+    vec2( 0.0, -1.0),
+    vec2( 1.0, -1.0),
+    vec2( 2.0, -1.0),
+    vec2(-2.0,  0.0),
+    vec2(-1.0,  0.0),
+    vec2( 1.0,  0.0),
+    vec2( 2.0,  0.0),
+    vec2(-2.0,  1.0),
+    vec2(-1.0,  1.0),
+    vec2( 0.0,  1.0),
+    vec2( 1.0,  1.0),
+    vec2( 2.0,  1.0),
+    vec2(-2.0,  2.0),
+    vec2(-1.0,  2.0),
+    vec2( 0.0,  2.0),
+    vec2( 1.0,  2.0),
+    vec2( 2.0,  2.0)
+);
+
+
+vec4 blur5(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
+  vec4 color = vec4(0.0);
+  vec2 off1 = vec2(1.3846153846) * direction;
+  vec2 off2 = vec2(3.2307692308) * direction;
+  color += texture2D(image, uv) * 0.2270270270;
+  color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
+  color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
+  color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
+  color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
+  return color;
+}
+void PromoOutline(inout vec3 color, sampler2D depth) {
+		vec2 texCoord = gl_FragCoord.xy*texelSize;
+	float ph = 1.0 / viewHeight;
+	float pw = ph / aspectRatio;
+
+	float outlinea = 0.0, outlineb = 0.0, outlinec = 0.0, outlined = 0.0;
+	float z = ld(texture2D(depth, texCoord).r) * far;
+	float totalz = 0.0;
+	float maxz = z;
+	float sampleza = 0.0;
+	float samplezb = 0.0;
+
+	for(int i = 0; i < 12; i++) {
+		vec2 offset = vec2(pw, ph) * outlineOffsets[i];
+		sampleza = ld(texture2D(depth, texCoord + offset).r) * far;
+		samplezb = ld(texture2D(depth, texCoord - offset).r) * far;
+		maxz = max(maxz, max(sampleza, samplezb));
+
+		float sample = (z * 2.0 - (sampleza + samplezb)) / length(outlineOffsets[i]);
+
+		outlinea += clamp(1.0 + sample * 4.0 / z, 0.0, 1.0);
+		if(i >= 8) outlineb += 1.0 - (1.0 - clamp(1.0 - sample * 512.0 / z, 0.0, 1.0)) * clamp(1.0 - sample * 16.0 / z, 0.0, 1.0);
+		outlinec += clamp(1.0 + sample * 128.0 / z, 0.0, 1.0);
+
+		totalz += sampleza + samplezb;
+	}
+	outlinea = clamp(outlinea - 10.0, 0.0, 1.0);
+	outlineb = clamp(outlineb - 2.0, 0.0, 1.0);
+	outlinec = 1.0 - clamp(outlinec - 11.0, 0.0, 1.0);
+	outlined = clamp(1.0 + 64.0 * (z - maxz) / z, 0.0, 1.0);
+	
+	float outline = clamp((0.2 * outlinea * outlineb + 0.8) + 0.2 * outlinec * outlined,1,1.01);
+
+	color = sqrt(sqrt(color));
+	color *= outline;
+	color *= color; 
+	color *= color;
+}
 
 vec3 getProjPos(in vec2 uv, in float depth) {
     return vec3(uv, depth) * 2.0 - 1.0;
@@ -496,9 +578,114 @@ vec3 proj2view(in vec3 proj_pos) {
 }
 
 
+#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
 
+vec3 reproject(vec3 sceneSpace, bool hand) {
+    vec3 prevScreenPos = hand ? vec3(0.0) : cameraPosition - previousCameraPosition;
+    prevScreenPos = sceneSpace + prevScreenPos;
+    prevScreenPos = viewMAD(gbufferPreviousModelView, prevScreenPos);
+    prevScreenPos = viewMAD(gbufferPreviousProjection, prevScreenPos) * (0.5 / -prevScreenPos.z) + 0.5;
+
+    return prevScreenPos;
+}
+
+	float checkerboard(in vec2 uv)
+{
+    vec2 pos = floor(uv);
+  	return mod(pos.x + mod(pos.y, 2.0), 2.0);
+}	
+
+vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
+
+
+    ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
+    vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
+    if (luma(colorCenter) <= 0.0) return colorCenter;	
+    float sumweight = 0.0;	
+	float weight = 0.0;
+	
+
+	vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
+
+
+    float   c_depth    = normaldepth.a * far;	
+	vec3 origNormal =  normaldepth.rgb;			
+
+
+
+
+
+    vec3 totalColor     = colorCenter;
+
+    float totalWeight   = 1.0;	
+	
+    float variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
+    float var2        = rcp(0.5 + variance2 *4);	
+
+
+//#define HQ
+
+
+
+#ifdef HQ
+
+    for (int i = 0; i<25; i++) {
+	ivec2 delta  = kernelO_5x5[i] * size;	
+# else 
+    for (int i = 0; i<9; i++) {
+	ivec2 delta  = kernelO_3x3[i] * size;	
+#endif
+
+        if (delta.x == 0 && delta.y == 0) continue;
+		
+        ivec2 d_pos2  = pos2 + delta;
+        if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
+	
+
+		vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
+        float cu_depth = (normaldepth2.a) * far;
+	
+		vec3 normal = (normaldepth2.rgb);			
+		
+		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
+		
+		float d_weight = abs(cu_depth - c_depth);	
+        float depthWeight = expf(-d_weight);	
+        if (depthWeight < 1e-5 ) continue;
+		
+	
+        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),32);
+
+
+        float weight = normalWeight;			
+		
+
+       
+       weight *= exp(-d_weight - var2);
+	   
+       totalColor += color.rgb * weight;
+
+       totalWeight += weight;
+
+	}
+
+    totalColor *= rcp(max(totalWeight, 1e-25));
+
+
+    return totalColor;
+
+
+	
+}
 
 void main() {
+
+float checkerboard = checkerboard(gl_FragCoord.xy);
+
+
+
+
+
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 	float dirtAmount = Dirt_Amount;
 	vec3 waterEpsilon = vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B);
@@ -550,12 +737,13 @@ void main() {
 		p3 += gbufferModelViewInverse[3].xyz;
 
 		vec4 trpData = texture2D(colortex7,texcoord);
+		vec3 preshade = texture2D(colortex11,texcoord).rgb;
 		vec4 transparent = texture2D(colortex2,texcoord);
 		
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		bool istransparent = luma(transparent.rgb) > 0.1;
 
-
+//		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
 		vec4 data = texture2D(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
@@ -569,6 +757,11 @@ void main() {
 		
 		
 		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
+//	    	 normal = mat3(gbufferModelViewInverse) * blur5(colortex10, texcoord, vec2(viewWidth,viewHeight), vec2(1,1) ).rgb;
+
+
+	//	vec3 normal = mat3(gbufferModelViewInverse) * texture2D(colortex10,texcoord).rgb;
+		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 
 
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
@@ -594,7 +787,7 @@ void main() {
 			filtered = texture2D(colortex3,texcoord).rgb;
 		}
 		float shading = 1.0 - filtered.b;
-		float pShadow = filtered.b*2.0-1.0;
+
 
 		vec3 SSS = vec3(0.0);
 		float sssAmount = 0.0;
@@ -610,76 +803,7 @@ void main() {
 		}
 		if (diffuseSun > 0.000) {
 		#endif
-			vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-			projectedShadowPosition = diagonal3(shadowProjection) * projectedShadowPosition + shadowProjection[3].xyz;
-			//apply distortion
-			float distortFactor = calcDistort(projectedShadowPosition.xy);
-			projectedShadowPosition.xy *= distortFactor;
-			//do shadows only if on shadow map
-			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
-				float rdMulcaustic = caustic.x*distortFactor*d0*k/shadowMapResolution*2;
-				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
-				float distortThresh = (sqrt(1.0-NdotLGeom*NdotLGeom)/NdotLGeom+0.7)/distortFactor;
-				#ifdef Variable_Penumbra_Shadows
-				float diffthresh = distortThresh/6000.0*threshMul;
-				#else
-				float diffthresh = translucent? 0.0001 : distortThresh/6000.0*threshMul;
-				#endif
-				#ifdef POM
-				#ifdef Depth_Write_POM
-					diffthresh += POM_DEPTH*0.0078125*0.25*0.166;
-				#endif
-				#endif
-				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
-				shading = 0.0;
-				for(int i = 0; i < SHADOW_FILTER_SAMPLE_COUNT; i++){
-					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
 
-					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-
-					float isShadow = shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-				//	float isShadow =shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-
-
-		
-	
-
-
-				//	vec2 offsetS = tapLocation(i,2/2, 0.0,noise,0.0);
-
-				//	float weight = 1.0+(i)*rdMul/2*shadowMapResolution;
-					
-				
-						float shadow1    = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-						float shadow0    = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
-							 shadowCol2  = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
-							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.0)),-diffthresh*weight))).xyzw;
-							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.5)),-diffthresh*weight))).xyzw;
-
-							 shadowCol2.rgb = (shadowCol2.rgb * pow(shadowCol2.a,4))*0.25;
-							 if (luma(shadowCol2.rgb) < 1) shadowCol2 = shadowCol;
-							 if (luma(shadowCol2.rgb) > 3) shadowCol2 = shadowCol;
-							 shadowCol2.rgb = pow(shadowCol2.rgb,vec3(1.0))*0.15;
-
-							 
-
-						float transparentshadow = (shadow1-shadow0);	 
-						float transparentshadow2 = (shadow1-shadow0);	 
-							 shadowCol = shadowCol *transparentshadow;
-							 shadowCol2 = shadowCol2 *transparentshadow;
-							// shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0)* (shadowCol2.rgb*10);
-							 shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0);
-						 
-							transparentshadow -= shadowCol.a;
-		
-						shading += clamp((isShadow+transparentshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
-						
-						
-									
-				}
-			}
 		}
 		//custom shading model for translucent objects
 		#ifdef Variable_Penumbra_Shadows
@@ -691,7 +815,6 @@ void main() {
 			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.5*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
-			diffuseSun *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
 		}
 
@@ -702,7 +825,6 @@ void main() {
 			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
-			diffuseSun *= 1.0 - sssAmount;
 			SSS *= sqrt(lightmap.y);
 		}
 		
@@ -714,47 +836,10 @@ void main() {
 			SSS = exp(-filtered.y*11.0*extinction) + 3.0*exp(-filtered.y*11./3.*extinction);
 			float scattering = clamp((0.7+0.3*pi*phaseg(dot(np3, WsunVec),0.85))*1.26*0.25*sssAmount,0.0,1.0);
 			SSS *= scattering;
-			diffuseSun *= 1.0 - sssAmount;
 			SSS *= clamp(sqrt(lightmap.y*2-1.5),0,1);
-			SSS *= shading;
 		}	
 		#endif
 		#endif
-
-
-		if ((diffuseSun*shading > 0.001 || abs(filtered.y-0.1) < 0.0004)){
-
-		if(!hand){	
-		#ifdef SCREENSPACE_CONTACT_SHADOWS
-				vec3 vec = lightCol.a*sunVec;
-				float screenShadow = rayTraceShadow(vec,fragpos,noise);
-				shading = min(screenShadow, shading);
-				// Out of shadow map
-				if (abs(filtered.y-0.1) < 0.0004)
-					SSS *= 1;
-			#endif 
-			}
-		
-
-		#ifdef CAVE_LIGHT_LEAK_FIX
-			shading = mix(0.0, shading, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
-			shadowCol.rgb = mix(vec3(0.0), shadowCol.rgb, clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0))*lightmap.y;
-		#endif
-		}
-		#ifdef CLOUDS_SHADOWS
-			vec3 pos = p3 + cameraPosition;
-			const int rayMarchSteps = 6;
-			float cloudShadow = 0.0;
-			for (int i = 0; i < rayMarchSteps; i++){
-				vec3 cloudPos = pos + WsunVec/abs(WsunVec.y)*(1500+(noise+i)/rayMarchSteps*1700-pos.y);
-				cloudShadow += getCloudDensity(cloudPos, 0);
-			}
-			cloudShadow = mix(1.0,exp(-cloudShadow*cloudDensity*1700/rayMarchSteps),mix(CLOUDS_SHADOWS_STRENGTH,1.0,rainStrength));
-			shading *= cloudShadow;
-			SSS *= cloudShadow;
-		#endif
-		
-gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 
 
@@ -766,11 +851,11 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 0.166, sssAmount);
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 0.166, sssAmount);
 
-		vec3 directLightCol = lightCol.rgb;
+		vec3 directLightCol = lightCol.rgb*2;
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
-		if(!hand)	emitting = (luma(albedo)*10.0*Emissive_Strength)*2-1;
+		if(!hand)	emitting = (luma(albedo)*4.0*Emissive_Strength);
 		if (hand)   emitting = (luma(albedo)*Emissive_Strength)*2-1;
 			custom_lightmap.y = 0.0;
 			emitting = clamp(emitting*(1-luma(transparent.rgb*20)),0.0,10);
@@ -806,7 +891,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 			//combine all light sources
 			gl_FragData[1].rgb = vec3(0.0);
-			gl_FragData[0].rgb = ((shading*diffuseSun + SSS)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
+			gl_FragData[0].rgb = ((preshade)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting) * albedo;
 			//Bruteforce integration is probably overkill
 			vec3 lightColVol = lightCol.rgb * (1.0-Pow5(1.0-WsunVec.y));	//fresnel
 			vec3 ambientColVol =  ambientUp*8./150./3.*0.5 / 240.0 * eyeBrightnessSmooth.y;
@@ -822,21 +907,24 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 
 			ambientLight = texture2D(colortex8,texcoord).rgb;
+			ambientLight = mix( median2(colortex8), ambientLight,0.0);
 			ambientLight *= (1+clamp(transparent.rgb*10*emitting*2,1,100));					
 					
 
-		float labemissive = texture2D(colortex8, texcoord).a;
+
+	#ifdef SPEC
+		float labemissive = texture2D(colortex8, texcoord).a*2;
+		if(emissive) ambientLight *= 0.75;
+		if(emissive) emitting = emitting*0.05 + (labemissive*2);
 		ambientLight += vec3(labemissive);
-	
 
+	#endif
 
-	//		 if(hand) shading = 1.0;
-					
 
 			//combine all light sources
-			caustic = shadowCol.rgb ;			
+		
 
-			gl_FragData[0].rgb = (((shading * diffuseSun + (caustic*0.2) + SSS )/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
+			gl_FragData[0].rgb = (((preshade)/pi*8./150./3.*directLightCol.rgb + ambientLight + emitting)*albedo) ;
 
 
 	#define albedotint
@@ -849,7 +937,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			float roughness = unpackRoughness(trpData.x);
 			float porosity = trpData.z;
 			float rej = 1;
-			float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+		//	float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
 
 			if (porosity > 64.5/255.0)
 				porosity = 0.0;
@@ -878,6 +966,7 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 			// Energy conservation between diffuse and specular
 			vec3 fresnelDiffuse = vec3(0.0);
+			vec3 reflection = vec3(0.0);
 
 			// Sun specular
 			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
@@ -887,6 +976,8 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			mat3 basis = CoordBase(normal);
 			vec3 normSpaceView = -np3*basis;
 			vec3 rayContrib = vec3(0.0);
+			vec3 reflectedVector = reflect(normalize(fragpos), normalize(normal2));
+		
 			for (int i = 0; i < nSpecularSamples; i++){
 				// Generate ray
 				int seed = frameCounter*nSpecularSamples + i;
@@ -894,22 +985,29 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 				vec3 H = sampleGGXVNDF(normSpaceView, roughness, roughness, ij.x, ij.y);
 				vec3 Ln = reflect(-normSpaceView, H);
 				vec3 L = basis * Ln;
-
+		//		if (dot(reflectedVector, normal2) < 0.0) L = -L;	
 				// Ray contribution
 				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
 				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
+ // 				gl_FragData[0].rgb = vec3((texture2DLod(colortex5,texcoord,4).rgb));
+
 				     rayContrib = F * g1;
 
 				// Skip calculations if ray does not contribute much to the lighting
-				
-				if (luma(rayContrib) > 0.02){
+		
+				if (luma(rayContrib) > 0.05){
 				
 					vec4 reflection = vec4(0.0,0.0,0.0,0.0);
 					// Scale quality with ray contribution
 					float rayQuality = 35*sqrt(luma(rayContrib));
+
 					// Skip SSR if ray contribution is low
 					if (rayQuality > 5.0) {
-						vec3 rtPos = rayTrace(mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
+
+
+
+						vec3 rtPos = rayTrace(normal2,mat3(gbufferModelView) * L, fragpos.xyz, noise, rayQuality);
+				//		vec3 rtPos = rayTrace(normal2,reflectedVector, fragpos.xyz, noise, rayQuality);
 		
 						// Reproject on previous frame
 						if (rtPos.z < 1.){
@@ -918,14 +1016,14 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 							previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 							if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
 								reflection.a = 1.0;
-								reflection.rgb = texture2D(colortex5,previousPosition.xy).rgb*1.1;
+								reflection.rgb = clamp(clamp(texture2D(colortex5,previousPosition.xy).rgb,0.0, luma(texture2D(colortex5,previousPosition.xy).rgb)),0,20);
 							}
 						}
 					}
 
 					// Sample skybox
 					if (reflection.a < 0.9){
-						reflection.rgb = (skyCloudsFromTex(L, colortex4).rgb)*clamp(lightmap.y-0.8,0,1);
+						reflection.rgb = clamp((skyCloudsFromTex(L, colortex4).rgb)*clamp(lightmap.y-0.8,0,1),0,10);
 						reflection.rgb *= sqrt(lightmap.y)/150.*8./3.;
 					}
 					indirectSpecular += reflection.rgb * rayContrib;
@@ -933,7 +1031,14 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 				}
 
 			}
-
+			
+			vec4    historyGData    = vec4(1.0);
+			vec4   indirectHistory = vec4(0.0);
+			vec4    indirectCurrent = texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgba;
+			float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
+			vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
+			vec3 reprojection   = reproject(scenePos, hand);	
+	        bool offscreen      = clamp(reprojection,0,1) != reprojection;
 			vec3 closestToCamera = closestToCamera5taps(texcoord);
 			vec3 fragposition = toScreenSpace(closestToCamera);			
 			fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
@@ -942,15 +1047,15 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 			vec2 velocity = previousPosition.xy - closestToCamera.xy;
 			previousPosition.xy = texcoord + velocity;
 
-			vec3 albedoCurrent0 = texture2D(colortex14, texcoord).rgb;
-			vec3 albedoCurrent1 = texture2D(colortex14, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent2 = texture2D(colortex14, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent3 = texture2D(colortex14, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent4 = texture2D(colortex14, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent5 = texture2D(colortex14, texcoord + vec2(0.0,texelSize.y)).rgb;
-			vec3 albedoCurrent6 = texture2D(colortex14, texcoord + vec2(0.0,-texelSize.y)).rgb;
-			vec3 albedoCurrent7 = texture2D(colortex14, texcoord + vec2(-texelSize.x,0.0)).rgb;
-			vec3 albedoCurrent8 = texture2D(colortex14, texcoord + vec2(texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent0 = texture2D(colortex14, reprojection.xy*RENDER_SCALE).rgb;
+			vec3 albedoCurrent1 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent2 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent3 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent4 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent5 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,texelSize.y)).rgb;
+			vec3 albedoCurrent6 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,-texelSize.y)).rgb;
+			vec3 albedoCurrent7 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent8 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,0.0)).rgb;
 
 			//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 
@@ -959,51 +1064,43 @@ gl_FragData[1].rgb = vec3( rayTraceShadow((lightCol.a*sunVec),fragpos,noise));
 
 			
 					 
-			vec3 albedoPrev = max(FastCatmulRom(colortex14, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
-			vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+			vec3 albedoPrev = max(FastCatmulRom(colortex14, reprojection.xy*RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+			vec3 albedoPrev2 = max(FastCatmulRom(colortex5, reprojection.xy*RENDER_SCALE/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 			vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);			
 					
 			float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10));	 
 			float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
-			float isclamped3 = (((distance(luma(albedoPrev2),texture2D(colortex14,previousPosition.xy).a)/luma(albedoPrev2)) *0.9) );	 
+			float isclamped3 = (((distance(luma(albedoPrev2),texture2D(colortex14,reprojection.xy*RENDER_SCALE).a)/luma(albedoPrev2)) *0.5) );	 
 			float clamped = dot(isclamped,isclamped2);
-			rej = clamp( (clamp(   (isclamped3)   ,0,1) +(edgemask*5-0.75)) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
+			rej = clamp( (clamp(   (isclamped3)   ,0,1) ) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
 			vec3 bn = blueNoise(gl_FragCoord.xy).xyz;
 			if(hand) rej = 1;
 		
 			
 		//	vec3 speculars = mix( (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)),vec3(0.0), clamp(rej,0,1.0) );			
-			gl_FragData[1].rgb = mix(texture2D(colortex14, previousPosition.xy).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
+		reflection = mix(atrous3(reprojection.xy*RENDER_SCALE*RENDER_SCALE,4,colortex14,0.0).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
 	
+		gl_FragData[1].rgb = reflection;
+	//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
 
-		//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;
-
-		if (!hand)	gl_FragData[0].rgb =   gl_FragData[1].rgb +  (1.0-fresnelDiffuse/(nSpecularSamples*1.5)) * gl_FragData[0].rgb;
+		if (!hand)	gl_FragData[0].rgb =   (reflection) +  (1.0-fresnelDiffuse/(nSpecularSamples*1.22)) * gl_FragData[0].rgb;
 		
-
-	
-
 
 		#endif
-		if (!hand)	gl_FragData[2].rgb =	vec3( gl_FragData[1].rgb);
-		
+//		if (!hand)	gl_FragData[2].rgb =	vec3( gl_FragData[1].rgb );
 	
-
-		
-		
-			
-
-		
-		
+	
 		}
 
-	}
 
 
+//vec3 color22 = 	gl_FragData[0].rgb;
+//PromoOutline(  color22,  depthtex0);
+//gl_FragData[0].rgb =  mix(color22,gl_FragData[0].rgb,ld(z));
 
 
 	
-	
+	}	
 
 
 /* RENDERTARGETS: 3,14 */

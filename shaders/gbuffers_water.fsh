@@ -18,7 +18,11 @@ varying float lumaboost;
 
 uniform sampler2D texture;
 uniform sampler2D noisetex;
+
+#ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
+#endif
+
 uniform sampler2D gaux2;
 uniform sampler2D gaux3;
 uniform sampler2D gaux1;
@@ -273,7 +277,12 @@ void main() {
 						vec2 offsetS = tapLocation(i,9, 2.0,noise,0.0);
 
 						float weight = 1.0+(i+noise)*rdMul/9.0*shadowMapResolution;
+			#ifdef SHADOWS_ON			
 						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x*0.111;
+			#else
+
+					
+			#endif			
 						}
 					direct *= shading;
 				}

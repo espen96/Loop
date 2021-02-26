@@ -61,16 +61,26 @@ float R2_dither(){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
+	float checkerboard(in vec2 uv)
+{
+    vec2 pos = floor(uv);
+  	return mod(pos.x + mod(pos.y, 2.0), 2.0);
+}		
+
 
 void main() {
+
 /* RENDERTARGETS: 0 */
+
+
+
+
 	#ifdef VOLUMETRIC_CLOUDS
 	vec2 halfResTC = vec2(floor(gl_FragCoord.xy)/CLOUDS_QUALITY/RENDER_SCALE+0.5+offsets[framemod8]*CLOUDS_QUALITY*RENDER_SCALE*0.5);
 
 	vec3 fragpos = toScreenSpace(vec3(halfResTC*texelSize,1.0));
-
 	vec4 currentClouds = renderClouds(fragpos,vec3(0.), blueNoise(),sunColor/150.,moonColor/150.,avgAmbient/150.);
-	 
+	
 	gl_FragData[0] = currentClouds;
 
 

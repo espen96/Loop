@@ -1,6 +1,6 @@
 #version 120
 
-/* DRAWBUFFERS:3 */
+/* RENDERTARGETS: 3 */
 
 
 

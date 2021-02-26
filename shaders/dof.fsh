@@ -390,6 +390,7 @@ uniform sampler2D colortex10;
 uniform sampler2D colortex12;
 uniform sampler2D colortex13;
 uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 
      uniform int renderStage; 
 uniform sampler2D colortex0;
@@ -720,19 +721,30 @@ vec3 median2(sampler2D tex1) {
 }
 
 #include "/lib/filter.glsl"
+float checkerboard(in vec2 uv)
+{
+    vec2 pos = floor(uv);
+	float checkerboard = mod(pos.x + mod(pos.y, 2.0), 2.0);
+  	return checkerboard;
+}
+
+
+
+
+
 
 
 void main() {
 /* RENDERTARGETS: 7 */
 
-  float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE*RENDER_SCALE,2,colortex8).rgb,0,1).r;
+
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
   
   #ifndef firefly_supression
 	vec3 col = texture2D(colortex5,texcoord).rgb;
   #else
 	vec3 col =  median2(colortex5);
-		 col = mix(col, texture2D(colortex5,texcoord).rgb, clamp(edgemask,0,1.0) );
+
   #endif
 
 
@@ -741,7 +753,7 @@ void main() {
   
 	float noise = blueNoise()*6.28318530718;
 	float pcoc = 0;
-globalInit();
+
     fillNumbers();
     uv = gl_FragCoord.xy / vec2(viewWidth,viewHeight).xy;
 	#ifdef DOF
@@ -855,19 +867,19 @@ globalInit();
 		col = TONEMAP(col);
 		col = LinearTosRGB(clamp(col * ACESOutputMat, 0.0, 1.0));
 	#endif
-	//col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
+//	col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
 	
-//    gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
-//   gl_FragData[0].rgb += vec3(printNumber((averageFrameTime), vec2(0.6)));
+//  gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
+//  gl_FragData[0].rgb += vec3(printNumber((luma(exposure.rgb)), vec2(0.6)));
+//  gl_FragData[0].rgb = vec3((texture2D(colortex11,texcoord*RENDER_SCALE).rgb));
+//  gl_FragData[0].rgb += vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
 
-//  gl_FragData[0].rgb = vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
-//  gl_FragData[0].rgb = vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
+//  gl_FragData[0].rgb = vec3(checkerboard(gl_FragCoord.xy*0.1));
 
 
 
-
-//    gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
-	//if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
+//  gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
+//	if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
 
 }

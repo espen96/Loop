@@ -20,7 +20,7 @@ uniform float averageFrameTime;
 
 #endif
 
-
+#define SHADOWS_ON
 //#define SPEC
 #define TAA_DS // Lowers render resolution dynamically.
 

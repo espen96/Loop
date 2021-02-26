@@ -19,25 +19,40 @@ const int noiseTextureResolution = 32;
 
 
 /*
-const int colortex0Format = RGBA16F;				// low res clouds (deferred->composite2) + low res VL (composite5->composite15)
-const int colortex1Format = RGBA16;					//terrain gbuffer (gbuffer->composite2)
-const int colortex2Format = RGBA16F;				//forward + transparencies (gbuffer->composite4)
-const int colortex3Format = R11F_G11F_B10F;			//frame buffer + bloom (deferred6->final)
-const int colortex4Format = RGBA16F;				//light values and skyboxes (everything)
-const int colortex5Format = R11F_G11F_B10F;			//TAA buffer (everything)
-const int colortex6Format = R11F_G11F_B10F;			//additionnal buffer for bloom (composite3->final)
-const int colortex7Format = RGBA8;			//Final output, transparencies id (gbuffer->composite4)
-
-
-const int colortex8Format = R11F_G11F_B10F;		
-const int colortex9Format = R11F_G11F_B10F;	
+const int colortex0Format = RGBA16F;				
+	// low res clouds (deferred->composite2) + low res VL (composite5->composite15)
+const int colortex1Format = RGBA16;					
+	//terrain gbuffer (gbuffer->composite2)
+const int colortex2Format = RGBA16F;				
+	//forward + transparencies (gbuffer->composite4)
+const int colortex3Format = R11F_G11F_B10F;			
+	//frame buffer + bloom (deferred6->final)
+const int colortex4Format = RGBA16F;				
+	//light values and skyboxes (everything)
+const int colortex5Format = R11F_G11F_B10F;			
+	//TAA buffer (everything)
+const int colortex6Format = R11F_G11F_B10F;			
+	//additionnal buffer for bloom (composite3->final)
+const int colortex7Format = RGBA8;					
+	//Final output, transparencies id (gbuffer->composite4)
+const int colortex8Format = RGBA16F;		   
+	//transparent normals (gbuffer->composite0) ambient light(composite0->) and LAB emissive (a) (composite0->)
+const int colortex9Format = RGBA16F;			
+	//None
 		
-const int colortex10Format = RGBA8_SNORM;	
-const int colortex11Format = RGBA8_SNORM;	
-const int colortex12Format = R11F_G11F_B10F;	
+const int colortex10Format = RGBA16F;                
+	//Normals (rgb),  LAB emissive (a) (gbuffer->composite0),  depth (a)  (composite0->)	
+const int colortex11Format = R11F_G11F_B10F;	
+	//Transparent normal for refraction(r) 
+const int colortex12Format = RGBA16F;				
+	//SSPT temporal
+const int colortex13Format = RGBA16F;			    
+	//None
+const int colortex14Format = RGBA16F;			    
+	//specular temporal
+const int colortex15Format = RGBA16F;		        
+	//None
 	
-const int colortex14Format = R11F_G11F_B10F;		//spec B
-const int colortex15Format = R16F;		
 	
 
 
@@ -56,12 +71,18 @@ const bool colortex6Clear = false;
 const bool colortex7Clear = false;
 const bool colortex8Clear = true;
 const bool colortex9Clear = false;
-const bool colortex10Clear = false;
+const bool colortex10Clear = true;
+const bool colortex11Clear = true;
+
 
 const bool colortex12Clear = false;
+const bool colortex13Clear = true;
+const bool colortex14Clear = false;
 const bool colortex15Clear = false;
 
-const bool colortex14Clear = false;
+
+
+
 
 
 */
@@ -73,9 +94,11 @@ uniform sampler2D colortex5;
 uniform sampler2D colortex0;
 uniform sampler2D colortex6;
 
-
+uniform float near;
+uniform float far;
 
 uniform sampler2D colortex10;
+uniform sampler2D colortex11;
 
 uniform sampler2D colortex12;
 uniform sampler2D colortex14;
@@ -94,7 +117,9 @@ uniform mat4 gbufferPreviousModelView;
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 #include "/lib/projections.glsl"
 
-
+float ld(float depth) {
+    return (2.0 * near) / (far + near - depth * (far - near));		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
+}
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
@@ -154,6 +179,7 @@ vec3 weightedSample(sampler2D colorTex, vec2 texcoord){
 	return wsample/(1.0+luma(wsample));
 
 }
+
 
 
 //from : https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
@@ -273,6 +299,10 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(-7.,-1.)/8.,
 							vec2(3,7.)/8.,
 							vec2(7.,-7.)/8.);
+							
+							
+							
+							
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
 	vec2 adjTC = clamp(texcoord*RENDER_SCALE, vec2(0.0),RENDER_SCALE-texelSize*2.);
@@ -329,7 +359,8 @@ vec3 TAA_hq(){
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 	float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
-		
+	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;	
+	if(z < 0.56) movementRejection = 1.0;
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
 	vec3 supersampled = invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR + movementRejection,0.,1.)));
 	#endif
@@ -343,14 +374,29 @@ vec3 TAA_hq(){
 	//De-tonemap
 	return supersampled;
 }
+#define DOF_MODE 0 // [0 1 2]
+#define MANUAL_FOCUS	48.0	// If autofocus is turned off, sets the focus point (meters)	[0.06948345122280154 0.07243975703425146 0.07552184450877376 0.07873506526686186 0.0820849986238988 0.08557746127787037 0.08921851740926011 0.09301448921066349 0.09697196786440505 0.10109782498721881 0.10539922456186433 0.10988363537639657 0.11455884399268773 0.11943296826671962 0.12451447144412296 0.129812176855438 0.1353352832366127 0.1410933807013415 0.1470964673929768 0.15335496684492847 0.1598797460796939 0.16668213447794653 0.17377394345044514 0.18116748694692214 0.18887560283756183 0.19691167520419406 0.20528965757990927 0.21402409717744744 0.22313016014842982 0.2326236579172927 0.2425210746356487 0.25283959580474646 0.26359713811572677 0.27481238055948964 0.2865047968601901 0.29869468928867837 0.3114032239145977 0.32465246735834974 0.3384654251067422 0.3528660814588489 0.36787944117144233 0.3835315728763107 0.39984965434484737 0.4168620196785084 0.4345982085070782 0.453089017280169 0.4723665527410147 0.49246428767540973 0.513417119032592 0.5352614285189903 0.5580351457700471 0.5817778142098083 0.6065306597126334 0.6323366621862497 0.6592406302004438 0.6872892787909722 0.7165313105737893 0.7470175003104326 0.7788007830714049 0.8119363461506349 0.8464817248906141 0.8824969025845955 0.9200444146293233 0.9591894571091382 1.0 1.0425469051899914 1.086904049521229 1.1331484530668263 1.1813604128656459 1.2316236423470497 1.2840254166877414 1.338656724353094 1.3956124250860895 1.4549914146182013 1.5168967963882134 1.5814360605671443 1.6487212707001282 1.7188692582893286 1.7920018256557555 1.8682459574322223 1.9477340410546757 2.030604096634748 2.117000016612675 2.2070718156067044 2.300975890892825 2.398875293967098 2.5009400136621287 2.6073472713092674 2.718281828459045 2.833936307694169 2.9545115270921065 3.080216848918031 3.211270543153561 3.347900166492527 3.4903429574618414 3.638846248353525 3.7936678946831774 3.955076722920577 4.123352997269821 4.298788906309526 4.4816890703380645 4.672371070304759 4.871165999245474 5.0784190371800815 5.29449005047003 5.51975421667673 5.754602676005731 5.999443210467818 6.254700951936329 6.5208191203301125 6.798259793203881 7.087504708082256 7.38905609893065 7.703437568215379 8.031194996067258 8.372897488127265 8.72913836372013 9.10053618607165 9.487735836358526 9.891409633455755 10.312258501325767 10.751013186076355 11.208435524800691 11.685319768402522 12.182493960703473 12.700821376227164 13.241202019156521 13.804574186067095 14.391916095149892 15.00424758475255 15.642631884188171 16.30817745988666 17.00203994009402 17.725424121461643 18.479586061009854 19.265835257097933 20.085536923187668 20.940114358348602 21.831051418620845 22.75989509352673 23.728258192205157 24.737822143832553 25.790339917193062 26.88763906446752 28.03162489452614 29.22428378123494 30.46768661252054 31.763992386181833 33.11545195869231 34.52441195350251 35.99331883562839 37.524723159600995 39.12128399815321 40.78577355933337 42.52108200006278 44.3302224444953 46.21633621589248 48.182698291098816 50.23272298708815 52.36996988945491 54.598150033144236 56.92113234615337 59.34295036739207 61.867809250367884 64.50009306485578 67.24437240923179 70.10541234668786 73.08818067910767 76.19785657297057 79.43983955226133 82.81975887399955 86.3434833026695 90.01713130052181 93.84708165144015 97.83998453682129 102.00277308269969 106.34267539816554 110.86722712598126 115.58428452718766 120.50203812241894 125.62902691361414 130.9741532108186 136.54669808981876 142.35633750745257 148.4131591025766 154.72767971186107 161.3108636308289 168.17414165184545 175.32943091211476 182.78915558614753 190.56626845863 198.67427341514983 ]
 
-
-
+#define focal  2.4
+#define aperture  0.8	
+flat varying vec2 rodExposureDepth;
 
 void main() {
 
 /* RENDERTARGETS: 5 */
 
+	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+		#if DOF_MODE == 0
+			float focus = rodExposureDepth.y*far;
+		#endif	
+		#if DOF_MODE == 1
+			float focus = MANUAL_FOCUS;
+		#endif			
+		
+		#if DOF_MODE == 2
+				focus = MANUAL_FOCUS * screenBrightness;
+		#endif
+	gl_FragData[1].r = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
 	#ifdef TAA
 	vec3 color = TAA_hq();
 

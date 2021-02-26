@@ -5,15 +5,20 @@
 
 
 
-vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent){
+vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 lightmap, bool emissive, bool hand,float z){
 
 
-	float stepSize = (STEP_LENGTH);
 
-	float MINS = 0;
-	float MAXS = 1;
-
+	float depthmask = ld(z);
+	float stepSize = STEP_LENGTH;
+//	int maxSteps =   clamp(int(  (clamp((lightmap.x),0,1)*99)),6,99);
 	int maxSteps = STEPS;
+
+//	if (emissive) return vec3(1.1);
+	if (hand) return vec3(1.1);
+
+
+
 	bool istranparent = transparent > 0.0;
 	vec3 clipPosition = toClipSpace3(position);
 	
@@ -320,25 +325,141 @@ vec4 twoLayerReverseReprojection(vec2 currentScreenCoord,  sampler2D depthBuffer
 
 
 
+#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
+
+vec3 reproject(vec3 sceneSpace, bool hand) {
+    vec3 prevScreenPos = hand ? vec3(0.0) : cameraPosition - previousCameraPosition;
+    prevScreenPos = sceneSpace + prevScreenPos;
+    prevScreenPos = viewMAD(gbufferPreviousModelView, prevScreenPos);
+    prevScreenPos = viewMAD(gbufferPreviousProjection, prevScreenPos) * (0.5 / -prevScreenPos.z) + 0.5;
+
+    return prevScreenPos;
+}
+
+float checkerboard(in vec2 uv)
+{
+    vec2 pos = floor(uv);
+  	return mod(pos.x + mod(pos.y, 2.0), 2.0);
+}		
+
+void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indirectHistory,vec3 fragpos,vec3 normal2, float z,vec2 texcoord , bool hand, vec3 inderectNoSSGI)
+{
+
+
+float checkerboard = checkerboard(gl_FragCoord.xy);
+
+
+    vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
+    vec3 reprojection   = reproject(scenePos, hand);	
+    bool offscreen      = clamp(reprojection,0,1) != reprojection;
+    vec3 cameraMovement = mat3(gbufferModelView) * (cameraPosition - previousCameraPosition);
+    vec4 currentGData   = vec4(normal2,0);	
+         currentGData.rgb = currentGData.rgb * 2.0 - 1.0;
+         currentGData.a  = length(fragpos);	
+		
+
+        historyGData        = texture2D(colortex9, reprojection.xy*RENDER_SCALE);
+        historyGData.rgb    = historyGData.rgb * 2.0 - 1.0;
+
+
+        float distanceDelta = distance(historyGData.a * far, currentGData.a) - abs(cameraMovement.z);
+        float depthRejection = (offscreen) ? 0.0 : exp(-max(distanceDelta - 0.2, 0.0) * 3.0);
+		
+        indirectHistory     = texture2D(colortex12, reprojection.xy*RENDER_SCALE);
+        indirectHistory.a   = clamp(indirectHistory.a,0,1);
+
+        float normalWeight  = sqr(clamp(dot(historyGData.rgb, currentGData.rgb),0,1));
+
+
+        float accumulationR0        = mix(0.1, 0.01, sqrt(indirectHistory.a));
+        float accumulationWeight    = depthRejection;
+			  accumulationWeight     *= normalWeight;
+			  accumulationWeight     += clamp(((distance(indirectHistory.rgb,indirectCurrent.rgb)/luma(indirectHistory.rgb)) ) *(abs(cameraMovement.r)+abs(cameraMovement.g)+abs(cameraMovement.b)),0,1);	 			  
+			  accumulationWeight      = clamp(1.0 - accumulationWeight,0,1);		
+			  accumulationWeight      = max(accumulationWeight, accumulationR0);		
+
+	vec3 closestToCamera = closestToCamera5taps(texcoord);
+	vec3 fragposition = toScreenSpace(closestToCamera);			
+			
+	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+	previousPosition = toClipSpace3Prev(previousPosition);
+	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+
+	previousPosition.xy = texcoord + velocity;
+
+
+		vec3 albedoCurrent0 = texture2D(colortex12, texcoord).rgb;
+		vec3 albedoCurrent1 = texture2D(colortex12, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
+		vec3 albedoCurrent2 = texture2D(colortex12, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
+		vec3 albedoCurrent3 = texture2D(colortex12, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
+		vec3 albedoCurrent4 = texture2D(colortex12, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
+		vec3 albedoCurrent5 = texture2D(colortex12, texcoord + vec2(0.0,texelSize.y)).rgb;
+		vec3 albedoCurrent6 = texture2D(colortex12, texcoord + vec2(0.0,-texelSize.y)).rgb;
+		vec3 albedoCurrent7 = texture2D(colortex12, texcoord + vec2(-texelSize.x,0.0)).rgb;
+		vec3 albedoCurrent8 = texture2D(colortex12, texcoord + vec2(texelSize.x,0.0)).rgb;
+		
+		//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
+		vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
+		vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
+
+
+
+		vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy*RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+		vec3 albedoPrev2 = max(FastCatmulRom(colortex5, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+		vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
+
+		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0,1)*0.1);	 
+		float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
+	//	float isclamped3 = (((distance(luma(albedoPrev2),amb)/luma(albedoPrev2)) *0.9) );	 
+		float clamped = (dot(isclamped,isclamped2))*10 ;
+
+		float acctest = distance(albedoPrev.rgb,finalcAcc.rgb)/luma(albedoPrev.rgb);
+
+		accumulationWeight = clamp(accumulationWeight + clamped +(0.05*clamp(length(velocity/texelSize),0.0,1.0)),0,1);	
+		
+
+        if (!offscreen) {
+   		//	indirectCurrent.rgb     = mix(indirectCurrent.rgb, inderectNoSSGI.rgb, clamp( isclamped,0,1));
+            indirectHistory.rgb     = mix(indirectHistory.rgb, indirectCurrent, accumulationWeight);
+            indirectHistory.a       = mix(0.0, clamp(indirectHistory.a + rcp(30),0,1), float(distanceDelta < 0.2));
+        } else {
+            indirectHistory         = vec4(indirectCurrent, 0.0);
+        }		
+
+
+        indirectCurrent     = indirectHistory.rgb;
+        historyGData.rgb    = currentGData.rgb ;
+        historyGData.a      = currentGData.a / far;
+	
+		
+indirectCurrent = indirectCurrent;
+historyGData = historyGData;
+indirectHistory = indirectHistory;
+
+
+}
+
 
 
 //////////////////////////////SSGI//////////////////////////////
 					
 
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, float edgemask, vec3 shadowCol){
+vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, vec3 torch, vec3 albedo, float amb,float z, vec4 dataUnpacked1, vec3 shadowCol,vec2 lightmap, bool emissive,bool hand, vec2 texcoord){
 
+	vec4    historyGData    = vec4(1.0);
+	vec4   indirectHistory = vec4(0.0);
+	vec4    indirectCurrent = texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgba;
+	float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
 
+ 
+    vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
 
-	vec3 bn_tri = vec3( remap_noise_tri_erp(noise.x), 
-						remap_noise_tri_erp(noise.y), 
-						remap_noise_tri_erp(noise.z) );
+    vec3 reprojection   = reproject(scenePos, hand);	
+	bool offscreen      = clamp(reprojection,0,1) != reprojection;
 
-
-
-
-	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 	int nrays = RAY_COUNT;
+//	int nrays = clamp(int(clamp((lightmap.x),0,1)*6),2,6);
 //	if (z > 0.50) nrays = 2;
 //	if (z > 0.75) nrays = 1;
 	float mixer = SSPTMIX1;
@@ -347,31 +468,35 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	vec3 intRadiance = vec3(0.0);
 	
 
-	vec2 texcoord = gl_FragCoord.xy*texelSize;		
+	
 	vec3 intRadiance2 = vec3(texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgb);
 	float occlusion = 0.0;
 	float depthmask = ((z*z*z)*2);
 	if (depthmask >1) nrays = 1;
 
 
-	if (hand) edgemask = 1.0;
+
 	
 		vec4 transparencies = texture2D(colortex2,texcoord);			
 		bool istransparent = luma(transparencies.rgb) > 0.1;		
- float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.025);
 
 	for (int i = 0; i < nrays; i++){ 
 	
 	
 		int seed = (frameCounter%40000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
-
+	//		 ij.xy *= clamp(1+lightmap.x,1.0,1);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
 			
 		rayDir = TangentToWorld(normal,rayDir);
 		rayDir = mat3(gbufferModelView)*rayDir;
 
-		vec3 rayHit = RT(rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal,luma(transparencies.rgb));
+		
+	
+		vec3 rayHit = RT(rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal,luma(transparencies.rgb),lightmap,emissive,hand,z);
+
+
+
 		vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
 		previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 		previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
@@ -380,18 +505,22 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 		if (rayHit.z < 1.0){
  
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
-			
-				intRadiance += (texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent) ;
+				#ifdef NETHER
+				intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb*(1+(lightmap.x*4)))  + ambient*albedo*translucent) ;
+				#else
+				intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb*(1+(lightmap.x*2)))  + ambient*albedo*translucent) ;
+				#endif
 
 		#ifdef ssgi_staturation
 				float lum = luma(intRadiance);
 				vec3 diff = intRadiance-lum;
-				intRadiance = (intRadiance + diff*(0.2));
+				intRadiance = (intRadiance + diff*(0.1));
 		#endif		
+		torch = vec3(0);
 				}
-				
+						
 			else{
-			
+
 			
 				intRadiance += ambient + ambient *translucent*albedo;
 			
@@ -400,15 +529,29 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 				
 		}		
 		else {
+						float bounceAmount = float(rayDir.y > 0.0);
+			vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb*8/3./150. * bounceAmount;
+				 sky_c *= clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0);		
+				 sky_c *= lightmap.y;	
 
-		
-			intRadiance += ambient;
+			intRadiance += sky_c;
+
 		}
 		
 
 		
 	}
+	
+	if (hand) occlusion =0.0;
 
+//	return intRadiance/nrays + (1.0-occlusion/nrays)*torch*0;
+	#ifdef NETHER
+	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)* ( ( (torch*0.50) + (ambient*0.15) )) +shadowCol ));	
+	#else
+	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)* ( ( (torch*0.75) + (ambient*1.0) )) +shadowCol ));	
+	#endif
+	intRadiance2.rgb = (intRadiance2 );	
+	
 
 
 	vec3 closestToCamera = closestToCamera5taps(texcoord);
@@ -427,29 +570,23 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 	   
 
 
-	vec3 albedoCurrent0 = texture2D(colortex12, texcoord).rgb;
-	vec3 albedoCurrent1 = texture2D(colortex12, texcoord + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 = texture2D(colortex12, texcoord + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 = texture2D(colortex12, texcoord + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 = texture2D(colortex12, texcoord + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 = texture2D(colortex12, texcoord + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 = texture2D(colortex12, texcoord + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 = texture2D(colortex12, texcoord + vec2(-texelSize.x,0.0)).rgb;
-	vec3 albedoCurrent8 = texture2D(colortex12, texcoord + vec2(texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent0 = texture2D(colortex12, reprojection.xy*RENDER_SCALE).rgb;
+	vec3 albedoCurrent1 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture2D(colortex12, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,0.0)).rgb;
 	
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
-	if (hand) occlusion =0.0;
-
-	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)*torch+ambient+shadowCol));	
-	intRadiance2.rgb = (intRadiance2 );	
-	
 
 
-	
-	vec3 albedoPrev = max(FastCatmulRom(colortex12, previousPosition.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
-	vec3 albedoPrev2 = max(FastCatmulRom(colortex5, previousPosition.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy*RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+	vec3 albedoPrev2 = max(FastCatmulRom(colortex5, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 	vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
 
@@ -464,31 +601,32 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 	 
 
-	if (hand) weight =10.0;
+	if (hand) weight =1.0;
 	if (hand) occlusion =0.0;
 	if (emissive) weight =0.0;
-	
-	gl_FragData[1].a = mix(texture2D(colortex12,previousPosition.xy).a ,weight ,0.5);	
+
+//	gl_FragData[1].a = mix(texture2D(colortex12,reprojection.xy*RENDER_SCALE).a ,weight ,0.1);	
 			
-	weight = clamp( (((texture2D(colortex12,previousPosition.xy).a) +(edgemask*5-0.75)) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))),0.5,1.0);
-	float weight2 = weight-0.75;
-	if (hand) weight2 =10.0;
+//	weight = clamp( (((texture2D(colortex12,reprojection.xy*RENDER_SCALE).a) +((edgemask*5-0.75)*0) ) +((isclamped*2)*clamp(length(velocity/texelSize),0.0,1.0))),0.5,1.0);
+	weight = 0;
+	float weight2 = clamp(weight-0.75,0.01,0.1);
+
   
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > RENDER_SCALE.x || previousPosition.y > RENDER_SCALE.y) weight = 1;
 
-		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(intRadiance2),clamp( ((weight2) +depthmask )  ,0.0,1.0)))*(1.0-(occlusion)/nrays);	
+//		intRadiance.rgb = invTonemap(mix( tonemap(intRadiance),tonemap(intRadiance2),clamp( ((weight2) +depthmask )  ,0.0,1.0)))*(1.0-(occlusion)/nrays);	
 		
-		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortex12,previousPosition.xy).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
+//		intRadiance.rgb = clamp(invTonemap(mix(tonemap(texture2D(colortex12,reprojection.xy*RENDER_SCALE).rgb), tonemap(intRadiance.rgb), weight  )),0.0,1000);
 
 
-	gl_FragData[1].rgb = (intRadiance);
+//	gl_FragData[1].rgb = (intRadiance);
 
 
 	
 
 
 		
-	return vec3(intRadiance).rgb;
+	return vec3(intRadiance).rgb*(1.0-(occlusion)/nrays);
 
 
 

@@ -26,6 +26,10 @@
 // 22 World border
 // 23 Translucent handheld objects
 
+uniform mat4 gbufferPreviousProjection;
+uniform mat4 gbufferPreviousModelView;
+uniform vec3 previousCameraPosition;
+uniform vec3 cameraPosition;
 varying vec3 velocity;
 #define DLM
 varying float nonlabemissive;
@@ -420,7 +424,7 @@ vec3 DetectSmoothEdge(vec3 edge, vec3 junkNorm, vec3 sharpNorm, vec3 edge0, vec3
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* RENDERTARGETS: 1,7,10,13 */
+/* RENDERTARGETS: 1,7,10 */
 void main() {
 
 
@@ -728,14 +732,28 @@ vec2 lm = lmtexcoord.zw;
 	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
 //	vec4 data1 = encode(viewToWorld(normal), lm);
 
-	gl_FragData[3].rgba = vec4(5.0 * velocity.rgb * 0.5 + 0.5, data0.a);
+
+		vec4 currentPosition = vec4(lmtexcoord.x * 2.0 - 1.0, lmtexcoord.y * 2.0 - 1.0, 2.0 * gl_FragCoord.z - 1.0, 1.0);
+
+		vec4 fragposition = gbufferProjectionInverse * currentPosition;
+		fragposition = gbufferModelViewInverse * fragposition;
+		fragposition /= fragposition.w;
+		fragposition.xyz += cameraPosition;
+
+		vec4 previousPosition = fragposition;
+		previousPosition.xyz -= previousCameraPosition;
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition /= previousPosition.w;
+
+
+        vec3 velocity2   =  vec3(velocity);
+
 	gl_FragData[1].a = 0.0;
 	#endif	
 	gl_FragData[2].rgb = normal;
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-if(renderStage == 8)gl_FragData[4].r = 0.1;
-if(renderStage == 9)gl_FragData[4].g = 0.1;
-if(renderStage == 10)gl_FragData[4].b = 0.1;
+
 
 	
 

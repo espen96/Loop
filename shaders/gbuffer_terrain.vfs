@@ -37,7 +37,8 @@
 #ifdef POM
 #define MC_NORMAL_MAP
 #endif
-
+attribute vec3 at_velocity;
+varying vec3 velocity;
 /*
 !! DO NOT REMOVE !!
 This code is from Chocapic13' shaders
@@ -204,7 +205,8 @@ nonlabemissive = 0.0;
 	#endif
 	
 
-	
+
+		velocity = at_velocity / 10000.0;	
 	
 	
 }

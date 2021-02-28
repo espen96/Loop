@@ -9,10 +9,6 @@
 #define ROUGHREF
 #define power
 
-
-
-const float eyeBrightnessHalflife = 10.0f;
-
 #define Depth_Write_POM	// POM adjusts the actual position, so screen space shadows can cast shadows on POM
 #define POM_DEPTH 0.25 // [0.025 0.05 0.075 0.1 0.125 0.15 0.20 0.25 0.30 0.50 0.75 1.0] //Increase to increase POM strength
 #define CAVE_LIGHT_LEAK_FIX // Hackish way to remove sunlight incorrectly leaking into the caves. Can inacurrately create shadows in some places
@@ -64,7 +60,7 @@ uniform sampler2D colortex11;
 
 
 uniform sampler2D colortex12;
-uniform sampler2D colortex14;
+
 
 
 uniform sampler2D colortex6; // Noise
@@ -101,6 +97,7 @@ uniform float viewWidth;
 uniform float viewHeight;
 uniform float aspectRatio;
 uniform vec2 texelSize;
+uniform vec2 viewSize;
 uniform vec3 cameraPosition;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
@@ -121,7 +118,7 @@ vec3 toScreenSpacePrev(vec3 p) {
 }
 
 
-#include "/lib/waterOptions.glsl"
+
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/sky_gradient.glsl"
@@ -188,15 +185,6 @@ float linZ(float depth) {
 
 
 
-float remap_noise_tri_erp( const float v )
-{
-    float r2 = 0.5 * v;
-    float f1 = sqrt( r2 );
-    float f2 = 1.0 - sqrt( r2 - 0.25 );    
-    return (v < 0.5) ? f1 : f2;
-}
-
-
 
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort)
 {
@@ -229,14 +217,21 @@ float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
 }
-vec3 toShadowSpaceProjected(vec3 p3){
-    p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
-    p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
-    p3 = diagonal3(shadowProjection) * p3 + shadowProjection[3].xyz;
+#define crcp(x) (1.0 / x)
 
-    return p3;
+
+float sqr(float x) {
+    return x*x;
 }
-
+float rcp(float x) {
+    return crcp(x);
+}
+vec2 rcp(vec2 x) {
+    return crcp(x);
+}
+vec3 rcp(vec3 x) {
+    return crcp(x);
+}
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
     float alpha = (float(sampleNumber + r0) * (1.0 / (nb)));
@@ -256,7 +251,7 @@ vec2 R2_samples(int n){
 }
 
 //#include "/lib/rsm.glsl"
-#include "/lib/filter.glsl"
+
 #include "/lib/ssgi.glsl"
 
 
@@ -418,37 +413,11 @@ vec3 decodeNormal3x16(float encoded){
     return decoded;
 }
 
-       vec3 FindNormal(sampler2D tex, vec2 uv, vec2 u)
-            {
-                    //u is one uint size, ie 1.0/texture size
-                vec2 offsets[4];
-					 offsets[0] = uv + vec2(-u.x, 0);
-					 offsets[1] = uv + vec2(u.x, 0);
-					 offsets[2] = uv + vec2(0, -u.y);
-					 offsets[3] = uv + vec2(0, u.y);
-               
-                float hts[4];
-                for(int i = 0; i < 4; i++)
-                {
-                    hts[i] = texture2D(tex, offsets[i]).x;
-                }
-               
-                vec2 _step = vec2(0.1, 0.0);
-               
-                vec3 va = normalize( vec3(_step.xy, hts[1]-hts[0]) );
-                vec3 vb = normalize( vec3(_step.yx, hts[3]-hts[2]) );
-               
-               return cross(va,vb).rgb; //you may not need to swizzle the normal
-               
-            }
 
-			
 
 void main() {
 	
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
-//		 texcoord = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-	float z0 = texture2D(depthtex0,texcoord).x;
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
@@ -462,8 +431,6 @@ void main() {
 	if (z <=1.0) {
 
 		p3 += gbufferModelViewInverse[3].xyz;
-
-		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
 		vec4 trpData = texture2D(colortex7,texcoord);
 		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
 		vec4 data = texture2D(colortex1,texcoord);
@@ -504,19 +471,6 @@ void main() {
 		float shading = 1.0 - filtered.b;
 		
 					vec3 shadowCol = vec3(0.0);
-				//	shadowCol = ((getRSM(normal,false,albedo, lightmap,z)) * 5)*lightmap.y;
-				//	float lum = luma(shadowCol);
-				//	vec3 diff = shadowCol-lum;		
-
-
-  
-				//	#define GISAT 10.0
-				//	#define GICROSS -10.0
-				
-				//	shadowCol = clamp(shadowCol + diff*(-lum*(GICROSS) + GISAT),0,1);
-
-		
-
 
 		vec3 SSS = vec3(0.0);
 		float sssAmount = 0.0;
@@ -561,13 +515,6 @@ void main() {
 		}
 		#endif
 
-
-		
-
-
-
-
-
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 1.0/6.0, sssAmount);
 		vec3 ambientLight2 = vec3(0.0);		
@@ -584,26 +531,15 @@ void main() {
 						float lum = luma(albedo);
 			vec3 diff = albedo.rgb-lum;
 			diff = (vec3(lightmap.x) + diff*(1));
-			//	if (!hand)
+
 				
-					ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, shadowCol,lightmap.xy, emissive, hand, texcoord);
-			//	else
+			ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, vec3(0.0),lightmap.xy, emissive, hand, texcoord);
 		
 			if(hand) ambientLight2 = ambientLight3;
 		
 			#else
 					ambientLight2 = ambientLight3;
 			#endif
-			//combine all light sources
-			
-
-
-			
-
-		//	gl_FragData[0].rgb = ambientLight2+((rsm*directLightCol.rgb*0.001)*lightmap.y);
-			gl_FragData[0].rgb = ambientLight2;
-
-	
 
 
 			#ifndef SSGI
@@ -614,32 +550,22 @@ void main() {
 				gl_FragData[0] *= ao;			
 		
 			#endif			
-		
-	
 
-
-
-	
-	
-
-	
 	vec4 historyGData    = vec4(1.0);
 	vec4 indirectHistory = vec4(0.0);
-	vec3 indirectCurrent = gl_FragData[0].rgb;
-//	float sceneDepth = texture2D(depthtex0,texcoord.xy).x;	
+	vec3 indirectCurrent = ambientLight2;;
+#ifdef SSGI
 #ifdef ssgi_temporal
 temporal( indirectCurrent, historyGData, indirectHistory, fragpos, normal2,  z, texcoord ,  hand, ambientLight3);
 
-
-
-if(!hand) gl_FragData[0].rgb = indirectCurrent;
 	      gl_FragData[3] = historyGData;
 		  gl_FragData[1] = indirectHistory;
 
 #endif
+#endif
 
+gl_FragData[0].rgb = indirectCurrent;
 
-//gl_FragData[3].rgba = vec4(normal2,ld(texture2D(depthtex0,texcoord).r));	
 
 	}		
 	

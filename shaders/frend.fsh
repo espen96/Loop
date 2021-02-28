@@ -119,6 +119,8 @@ vec3 viewToWorld(vec3 viewPos) {
     return pos.xyz;
 }
 
+
+
 void main() {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
   vec2 texcoord2 = gl_FragCoord.xy*texelSize;

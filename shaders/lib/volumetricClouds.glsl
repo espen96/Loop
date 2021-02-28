@@ -168,15 +168,11 @@ float getCloudDensity(in vec3 pos, in int LoD){
 }
 
 
-
-
 //Mie phase function
 float phaseg(float x, float g){
     float gg = g * g;
     return (gg * -0.25 /3.14 + 0.25 /3.14) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5);
 }
-
-
 
 
 vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 moonColor,vec3 avgAmbient) {
@@ -297,8 +293,8 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					float moonShadowMulti = exp(-log(muEshN*0.15+0.5)) * powder;			
 					float sunShadowMulti = exp(-log(muEshD*0.15+0.5)) * powder;					
 					float ambientPowder = mix(1.0,powder,h * ambientMult);
-					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
-//						 S = vec3(sunContribution*sunShadow + sunShadowMulti*sunContributionMulti + moonShadowMulti*moonContributionMulti +  moonShadow*moonContribution+skyCol0*ambientPowder);
+//					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
+					vec3 S = vec3(sunContribution*sunShadow + sunShadowMulti*sunContributionMulti + moonShadowMulti*moonContributionMulti +  moonShadow*moonContribution+skyCol0*ambientPowder);
 
 
 					vec3 Sint=(S - S * exp(-mult*muE)) / (muE);
@@ -320,20 +316,4 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 
 		return mix(vec4(fogColor,0.0), vec4(color,clamp(total_extinction,0.0,1.0)), fog);
 
-}
-float cirrusClouds(vec3 pos){
-	vec2 pos2D = pos.xz/50000.0 + frameTimeCounter/200.;
-	float cirrusMap = clamp(texture2D(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
-	float cloud = texture2D(noisetex, pos2D).r*100;
-	float weights = 1.0;
-	vec2 posMult = vec2(2.0,1.5);
-	for (int i = 1; i < 1; i++){
-		pos2D *= posMult;
-		float weight =exp2(-i*1.0);
-		cloud += texture2D(noisetex, pos2D).r*weight;
-
-		weights += weight;
-	}
-	cloud = clamp(cloud*cirrusMap*0.25,0.0,1.0);
-	return cloud/weights * float(abs(pos.y - 5500.0) < 200.0);
 }

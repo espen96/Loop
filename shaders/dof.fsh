@@ -2,6 +2,7 @@
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #define Fake_purkinje
+//#define motionblur
 
 #define BLOOMY_FOG 0.5 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
 #define BLOOM_STRENGTH  1.0 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0]
@@ -400,10 +401,12 @@ uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D noisetex;
 uniform vec2 texelSize;
+uniform vec2 viewSize;
 uniform float ratio, time;
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float frameTimeCounter;
+uniform float fps;
 uniform int frameCounter;
 uniform int isEyeInWater;
 uniform float rainStrength;
@@ -727,15 +730,67 @@ float checkerboard(in vec2 uv)
 	float checkerboard = mod(pos.x + mod(pos.y, 2.0), 2.0);
   	return checkerboard;
 }
+uniform vec3 cameraPosition;
+uniform vec3 previousCameraPosition;
+uniform sampler2D depthtex2;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferPreviousProjection;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferProjection;
 
 
+float ditherBluenoiseStatic() {
+    ivec2 coord = ivec2(fract(gl_FragCoord.xy/256.0)*256.0);
+    float noise = texelFetch(noisetex, coord, 0).a;
+
+    return noise;
+}
+vec3 getMotionblur(float depth, bool hand,vec3 color) {
+  vec2 texcoord = gl_FragCoord.xy*texelSize;
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture2D(depthtex2, texcoord.st).x - 1.0, 1.0);
+
+		vec4 fragposition = gbufferProjectionInverse * currentPosition;
+		fragposition = gbufferModelViewInverse * fragposition;
+		fragposition /= fragposition.w;
+		fragposition.xyz += cameraPosition;
+		vec4 previousPosition = fragposition;
+		previousPosition.xyz -= previousCameraPosition;
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition /= previousPosition.w;
+  	    float uVelocityScale = fps / 20;
+		vec2 velocity = (currentPosition - previousPosition).st; 
+		vec4 velocity2  =	texture2D(colortex13,texcoord*RENDER_SCALE).rgba;	
+	   	   velocity2.r = 	((velocity2.x/ld(depth)*far)*0.000032);
+	   	   velocity2.g = 	((velocity2.y/ld(depth)*far)*0.00006);
+		if(velocity2.a > 0) velocity = velocity2.xy*20;
+		if(hand) velocity *=0.1;
+		velocity *=  1.5 * 0.02;
+  		const int motionblurSamples      = int(8);
+		float dither    = clamp(ditherBluenoiseStatic(),0.9,1);
+
+		      velocity *= uVelocityScale;
+
+		float speed = length(velocity / texelSize);
+		int  nSamples = clamp(int(speed), 1, motionblurSamples);
+
+		vec2 coord = texcoord.st ;
+
+ 
+   for (int i = 1; i < nSamples; ++i) {
+      vec2 offset = velocity * (float(i) / float(nSamples - 1) - 0.5);
+      color += texture2D(colortex5, coord + offset*dither).rgb;
+   }
 
 
-
-
+		color = color / nSamples;
+return color;
+}
 
 void main() {
 /* RENDERTARGETS: 7 */
+//		globalInit();
+		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 
 
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
@@ -746,9 +801,11 @@ void main() {
 	vec3 col =  median2(colortex5);
 
   #endif
-
-
-  
+	#ifdef motionblur
+		float z2 =  (texture2D(depthtex0, texcoord.st*RENDER_SCALE).r);
+		bool hand = z < 0.54;
+ 		col =  getMotionblur(z2,  hand,col) ;
+	#endif
   
   
 	float noise = blueNoise()*6.28318530718;
@@ -759,7 +816,7 @@ void main() {
 	#ifdef DOF
 		/*--------------------------------*/
 		
-		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+
 
 		
 
@@ -781,7 +838,7 @@ void main() {
 			pcoc = pcoc/15.0;		
 
 
-//		pcoc = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
+		pcoc = (min(abs(aperture * (focal/100.0 * (z - focus)) / (z * (focus - focal/100.0))),texelSize.x*15.0));
 
 
 		
@@ -870,12 +927,12 @@ void main() {
 //	col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
 	
-//  gl_FragData[0].rgb += vec3(printNumber(RENDER_SCALE.x, vec2(0.5)));
+//  gl_FragData[0].rgb += vec3(printNumber( fps, vec2(0.5)));
 //  gl_FragData[0].rgb += vec3(printNumber((luma(exposure.rgb)), vec2(0.6)));
-//  gl_FragData[0].rgb = vec3((texture2D(colortex11,texcoord*RENDER_SCALE).rgb));
-//  gl_FragData[0].rgb += vec3((texture2D(colortex13,texcoord*RENDER_SCALE).rgb));
+//  gl_FragData[0].rgb = vec3(texture2D(colortex12,texcoord*RENDER_SCALE).rgb)*0.5;
 
-//  gl_FragData[0].rgb = vec3(checkerboard(gl_FragCoord.xy*0.1));
+
+//  gl_FragData[0].rgb = vec3(  getMotionblur(z2,  hand) 	);
 
 
 

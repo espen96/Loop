@@ -328,7 +328,8 @@ vec4 twoLayerReverseReprojection(vec2 currentScreenCoord,  sampler2D depthBuffer
 #define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
 
 vec3 reproject(vec3 sceneSpace, bool hand) {
-    vec3 prevScreenPos = hand ? vec3(0.0) : cameraPosition - previousCameraPosition;
+    vec3 prevScreenPos = hand ? vec3(0.0) : 
+	cameraPosition - previousCameraPosition;
     prevScreenPos = sceneSpace + prevScreenPos;
     prevScreenPos = viewMAD(gbufferPreviousModelView, prevScreenPos);
     prevScreenPos = viewMAD(gbufferPreviousProjection, prevScreenPos) * (0.5 / -prevScreenPos.z) + 0.5;
@@ -342,6 +343,9 @@ float checkerboard(in vec2 uv)
   	return mod(pos.x + mod(pos.y, 2.0), 2.0);
 }		
 
+
+
+
 void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indirectHistory,vec3 fragpos,vec3 normal2, float z,vec2 texcoord , bool hand, vec3 inderectNoSSGI)
 {
 
@@ -351,21 +355,31 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 
     vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
     vec3 reprojection   = reproject(scenePos, hand);	
+
+	
     bool offscreen      = clamp(reprojection,0,1) != reprojection;
     vec3 cameraMovement = mat3(gbufferModelView) * (cameraPosition - previousCameraPosition);
     vec4 currentGData   = vec4(normal2,0);	
          currentGData.rgb = currentGData.rgb * 2.0 - 1.0;
          currentGData.a  = length(fragpos);	
 		
+ 	  vec4 velocity2  =	texture2D(colortex13,texcoord).rgba;	
+	   	   velocity2.r = 	((velocity2.x/ld(z)*far)*0.000032);
+	   	   velocity2.g = 	((velocity2.y/ld(z)*far)*0.00006);
+//		   velocity2.xy = velocity2.xy*((velocity2.z/ld(z)*far)*0.1);	
 
-        historyGData        = texture2D(colortex9, reprojection.xy*RENDER_SCALE);
+	    reprojection.xy *= RENDER_SCALE;  
+	if(velocity2.a >0.0)	reprojection.xy = texcoord - velocity2.rg;		
+        historyGData        = texture2D(colortex9, reprojection.xy);
         historyGData.rgb    = historyGData.rgb * 2.0 - 1.0;
 
 
+	//		  reprojection.xy +=   (velocity2)/RENDER_SCALE;
+	//		  reprojection.xy =   (texcoord -velocity2)/RENDER_SCALE;
         float distanceDelta = distance(historyGData.a * far, currentGData.a) - abs(cameraMovement.z);
         float depthRejection = (offscreen) ? 0.0 : exp(-max(distanceDelta - 0.2, 0.0) * 3.0);
 		
-        indirectHistory     = texture2D(colortex12, reprojection.xy*RENDER_SCALE);
+        indirectHistory     = texture2D(colortex12, reprojection.xy);
         indirectHistory.a   = clamp(indirectHistory.a,0,1);
 
         float normalWeight  = sqr(clamp(dot(historyGData.rgb, currentGData.rgb),0,1));
@@ -385,7 +399,7 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
 	previousPosition = toClipSpace3Prev(previousPosition);
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
-
+	//	 velocity = velocity2;	
 	previousPosition.xy = texcoord + velocity;
 
 
@@ -405,8 +419,8 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 
 
 
-		vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy*RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
-		vec3 albedoPrev2 = max(FastCatmulRom(colortex5, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+		vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
+		vec3 albedoPrev2 = max(FastCatmulRom(colortex5, reprojection.xy/RENDER_SCALE,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 		vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
 		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0,1)*0.1);	 
@@ -416,23 +430,23 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 
 		float acctest = distance(albedoPrev.rgb,finalcAcc.rgb)/luma(albedoPrev.rgb);
 
-		accumulationWeight = clamp(accumulationWeight + clamped +(0.05*clamp(length(velocity/texelSize),0.0,1.0)),0,1);	
-		
+		      accumulationWeight = clamp(accumulationWeight + clamped ,0,1);	
+		float accumulationWeight2 =  clamp(accumulationWeight+ ((abs(velocity2.r)+abs(velocity2.g)+abs(velocity2.z*0.5))*20),0.0,1);
 
         if (!offscreen) {
    		//	indirectCurrent.rgb     = mix(indirectCurrent.rgb, inderectNoSSGI.rgb, clamp( isclamped,0,1));
-            indirectHistory.rgb     = mix(indirectHistory.rgb, indirectCurrent, accumulationWeight);
+            indirectHistory.rgb     = mix(indirectHistory.rgb, indirectCurrent, accumulationWeight2);
             indirectHistory.a       = mix(0.0, clamp(indirectHistory.a + rcp(30),0,1), float(distanceDelta < 0.2));
         } else {
             indirectHistory         = vec4(indirectCurrent, 0.0);
-        }		
+        }	
+	
 
 
         indirectCurrent     = indirectHistory.rgb;
         historyGData.rgb    = currentGData.rgb ;
         historyGData.a      = currentGData.a / far;
-	
-		
+
 indirectCurrent = indirectCurrent;
 historyGData = historyGData;
 indirectHistory = indirectHistory;
@@ -497,10 +511,7 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 
 
 
-		vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
-		previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
-		previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;	
-		
+		vec3 previousPosition   = reproject(mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz, false);	
 		
 		if (rayHit.z < 1.0){
  

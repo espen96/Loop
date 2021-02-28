@@ -2,6 +2,8 @@
 #extension GL_EXT_gpu_shader4 : enable
 
 #include "/lib/res_params.glsl"
+varying vec3 velocity;
+attribute vec3 at_velocity;   
 #define WAVY_PLANTS
 #define WAVY_STRENGTH 1.0 //[0.1 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0]
 #define WAVY_SPEED 1.0 //[0.001 0.01 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0 1.25 1.5 2.0 3.0 4.0]
@@ -25,6 +27,7 @@ This code is from Chocapic13' shaders
 Read the terms of modification and sharing before changing something below please !
 !! DO NOT REMOVE !!
 */
+
 
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -66,7 +69,7 @@ void main() {
 
 	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),blockEntityId == 10010 ? 0.6:1.0);
 	
-
+	velocity = at_velocity / 10000.0;
 	gl_Position = toClipSpace3(position);
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;

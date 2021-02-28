@@ -5,8 +5,9 @@ uniform sampler2D specular;
 #endif
 
 
+varying vec3 velocity;
 
-     uniform int renderStage; 
+uniform int renderStage; 
 
 // 0 Undefined
 // 1  Sky
@@ -294,7 +295,7 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* RENDERTARGETS: 1,7,10,2 */
+/* RENDERTARGETS: 1,7,10,2,13 */
 void main() {		
 
 
@@ -477,8 +478,9 @@ vec4 data0 = vec4(0.0);
 	#endif	
 		if (entityId == 18 && normal.g > 0.9) normal =vec3(10.0) ;
 		gl_FragData[2].rgb = vec3(normal);	
-if(renderStage == 14)gl_FragData[4].r = 0.2;
-if(renderStage == 12)gl_FragData[4].g = 0.2;
-if(renderStage == 11)gl_FragData[4].b = 0.2;
+	vec4 velocitymap = vec4( velocity.rgb, data0.a);
+
+  gl_FragData[4] = velocitymap;
+
 
 }

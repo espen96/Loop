@@ -46,8 +46,8 @@ const int colortex11Format = R11F_G11F_B10F;
 	//Transparent normal for refraction(r) 
 const int colortex12Format = RGBA16F;				
 	//SSPT temporal
-const int colortex13Format = RGBA16F;			    
-	//None
+const int colortex13Format = RGA16F;			    
+	//motion vectors
 const int colortex14Format = RGBA16F;			    
 	//specular temporal
 const int colortex15Format = RGBA16F;		        
@@ -300,8 +300,16 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 							vec2(3,7.)/8.,
 							vec2(7.,-7.)/8.);
 							
-							
-							
+#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)							
+vec3 reproject(vec3 sceneSpace, bool hand) {
+    vec3 prevScreenPos = hand ? vec3(0.0) : 
+	cameraPosition - previousCameraPosition;
+    prevScreenPos = sceneSpace + prevScreenPos;
+    prevScreenPos = viewMAD(gbufferPreviousModelView, prevScreenPos);
+    prevScreenPos = viewMAD(gbufferPreviousProjection, prevScreenPos) * (0.5 / -prevScreenPos.z) + 0.5;
+
+    return prevScreenPos;
+}							
 							
 vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
@@ -326,7 +334,7 @@ vec3 TAA_hq(){
 	previousPosition = toClipSpace3Prev(previousPosition);
 	vec2 velocity = previousPosition.xy - closestToCamera.xy;
 	previousPosition.xy = texcoord + velocity;
-
+//	previousPosition.xy = reproject(fragposition, false).xy*RENDER_SCALE;
 	//reject history if off-screen and early exit
 	if (previousPosition.x < 0.0 || previousPosition.y < 0.0 || previousPosition.x > 1.0 || previousPosition.y > 1.0)
 		return smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
@@ -359,8 +367,8 @@ vec3 TAA_hq(){
 	//Increases blending factor when far from AABB and in motion, reduces ghosting
 	float isclamped = distance(albedoPrev,finalcAcc)/luma(albedoPrev) * 0.5;
 	float movementRejection = (0.12+isclamped)*clamp(length(velocity/texelSize),0.0,1.0);
-	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;	
-	if(z < 0.56) movementRejection = 1.0;
+//	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;	
+//	if(z < 0.56) movementRejection = 1.0;
 	//Blend current pixel with clamped history, apply fast tonemap beforehand to reduce flickering
 	vec3 supersampled = invTonemap(mix(tonemap(finalcAcc),tonemap(albedoCurrent0),clamp(BLEND_FACTOR + movementRejection,0.,1.)));
 	#endif
@@ -383,7 +391,7 @@ flat varying vec2 rodExposureDepth;
 
 void main() {
 
-/* RENDERTARGETS: 5 */
+/* RENDERTARGETS: 5,11 */
 
 	float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 		#if DOF_MODE == 0

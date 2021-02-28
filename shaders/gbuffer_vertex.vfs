@@ -6,6 +6,10 @@ This code is from Chocapic13' shaders
 Read the terms of modification and sharing before changing something below please !
 !! DO NOT REMOVE !!
 */
+varying vec3 velocity;
+attribute vec3 at_velocity;   
+
+
 varying vec2 texcoord;
 varying vec4 lmtexcoord;
 varying vec4 color;
@@ -19,7 +23,7 @@ varying vec3 tangent;
 varying float dist;
 varying float lumaboost;
 varying vec3 viewVector;
-   
+
 
 attribute vec4 at_tangent;
 uniform mat4 gbufferModelViewInverse;
@@ -198,7 +202,8 @@ void main() {
 	#endif
 	#endif
 	#endif
-
+	
+	velocity = at_velocity / 10000.0;
 
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;

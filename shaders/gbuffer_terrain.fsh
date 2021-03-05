@@ -1,6 +1,6 @@
-
+#define gbuffer
      uniform int renderStage; 
-
+varying float mcentity;
 // 0 Undefined
 // 1  Sky
 // 2  Sunset and sunrise overlay
@@ -83,7 +83,6 @@ vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 
 varying vec2 taajitter;
 
-
 #ifdef MC_NORMAL_MAP
 varying vec4 tangent;
 uniform float wetness;
@@ -109,12 +108,12 @@ varying vec4 hspec;
 uniform ivec2 atlasSize;  
 
 
-                   
-
-
-
 uniform float viewWidth;
 uniform float viewHeight;
+
+#include "/lib/noise.glsl"
+
+
 vec3 worldToView(vec3 worldPos) {
 
     vec4 pos = vec4(worldPos, 0.0);
@@ -160,10 +159,7 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump)
 		return normalize(bump*tbnMatrix);
 }
 #endif
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
-}
+
 //encoding by jodie
 float encodeVec2(vec2 a){
     const vec2 constant1 = vec2( 1., 256.) / 65535.;
@@ -175,9 +171,6 @@ float encodeVec2(float x,float y){
 }
 
 
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
-}
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
     vec3 p3 = p * 2. - 1.;
@@ -252,9 +245,6 @@ vec4 readTexture(in vec2 coord)
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
 
 
 
@@ -275,47 +265,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
     return viewPos.xyz / viewPos.w;
 }
 
-vec3 decode3x16(float a){
-    int bf = int(a*65535.);
-    return vec3(bf%32, (bf>>5)%64, bf>>11) / vec3(31,63,31);
-}
 
-float encode2x16(vec2 a){
-    ivec2 bf = ivec2(a*255.);
-    return float( bf.x|(bf.y<<8) ) / 65535.;
-}
-
-vec2 decode2x16(float a){
-    int bf = int(a*65535.);
-    return vec2(bf%256, bf>>8) / 255.;
-}
-float encodeNormal3x16(vec3 a){
-    vec3 b  = abs(a);
-    vec2 p  = a.xy / (b.x + b.y + b.z);
-    vec2 sp = vec2(greaterThanEqual(p, vec2(0.0))) * 2.0 - 1.0;
-
-    vec2 encoded = a.z <= 0.0 ? (1.0 - abs(p.yx)) * sp : p;
-
-    encoded = encoded * 0.5 + 0.5;
-
-    return encode2x16(encoded);
-}
-
-vec3 decodeNormal3x16(float encoded){
-    vec2 a = decode2x16(encoded);
-
-    a = a * 2.0 - 1.0;
-    vec2 b = abs(a);
-    float z = 1.0 - b.x - b.y;
-    vec2 sa = vec2(greaterThanEqual(a, vec2(0.0))) * 2.0 - 1.0;
-
-    vec3 decoded = normalize(vec3(
-        z < 0.0 ? (1.0 - b.yx) * sa : a.xy,
-        z
-    ));
-
-    return decoded;
-}
 
 
 
@@ -371,54 +321,22 @@ float lmfaloff(float lm)
 	return lm;
 }
 
-mat3 tbnpom( vec3 N, vec3 p, vec2 uv )
-{
 
-vec3 binormal = vec3(0.0);
-vec3 tangent = vec3(0.0);
+#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
 
-	
-	
-    vec3 pos_dx = dFdx(p);
-    vec3 pos_dy = dFdy(p);
-    float tcoord_dx = dFdx(uv.y);
-    float tcoord_dy = dFdy(uv.y); 
- 
- 
-    // Fix issues when the texture coordinate is wrong, this happens when
-    // two adjacent vertices have the same texture coordinate, as the gradient
-    // is 0 then. We just assume some hard-coded tangent and binormal then
-    if (abs(tcoord_dx) < 1e-24 && abs(tcoord_dy) < 1e-24) {
-        vec3 base = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(0, 1, 0);
-        tangent = normalize(cross(N, base));
-    } else {
-        tangent = normalize(pos_dx * tcoord_dy - pos_dy * tcoord_dx);
-    }
+vec3 reproject(vec3 sceneSpace) {
+    vec3 prevScreenPos = cameraPosition - previousCameraPosition;
 
-    binormal = normalize(cross(tangent, N)); 
+    prevScreenPos = prevScreenPos*0.5;
 
-	
-	return 	  mat3(tangent.x, binormal.x, N.x, tangent.y, binormal.y, N.y, tangent.z, binormal.z, N.z);
+  
+    return prevScreenPos;
+}  
+mat3 getLightmapTBN(vec3 viewPos){
+    mat3 lmTBN = mat3(normalize(dFdx(viewPos)), normalize(dFdy(viewPos)), vec3(0.0));
+    lmTBN[2] = cross(lmTBN[0], lmTBN[1]);
+    return lmTBN;
 }
-
-
-vec3 DetectSmoothEdge(vec3 edge, vec3 junkNorm, vec3 sharpNorm, vec3 edge0, vec3 edge1, vec3 edge2) {
-    edge = max(vec3(0.0), edge - 0.965) * 28;
-
-    float allof = edge.r + edge.g + edge.b;
-    float border = min(1, allof);
-    vec3 edgeN = edge0*edge.r + edge1*edge.g + edge2*edge.b;
-    float junk = min(1, (edge.g*edge.b + edge.r*edge.b + edge.r*edge.g)*2);
-    return   normalize((sharpNorm*(1 - border)+ border*edgeN)*(1 - junk) + junk*(junkNorm));   
-}
-
-
-	float checkerboard(in vec2 uv)
-{
-    vec2 pos = floor(uv);
-  	return mod(pos.x + mod(pos.y, 2.0), 2.0);
-}		
-
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -434,10 +352,11 @@ void main() {
 		vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
 		vec3 viewPos = ToNDC(screenPos);
 		float dither = blueNoise();
-			  dither = fract(frameTimeCounter * 16.0 + dither);
-		vec3 worldPos = toWorldSpace(viewPos);				
-		float fogFactorAbs = 1.0 - clamp(((length(worldPos)-2) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
-		//if (fogFactorAbs < dither) discard;
+		float noise = dither;
+//			  dither = fract(frameTimeCounter * 16.0 + dither);
+//		vec3 worldPos = toWorldSpace(viewPos);				
+//		float fogFactorAbs = 1.0 - clamp(((length(worldPos)-2) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
+//		if (fogFactorAbs < dither) discard;
 		
 		
 	vec3 albedo = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
@@ -453,12 +372,14 @@ void main() {
 
 vec2 lm = lmtexcoord.zw;
 	
+
+
 //////////////////////////////POM//////////////////////////////	
-		float noise = interleaved_gradientNoise();
+
 	vec2 tempOffset=offsets[framemod8];	
 		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));	
 	
-			  mat3 TBN = tbnpom( normal, -fragpos, lmtexcoord.xy );	
+
 #ifdef POM
 
 
@@ -567,7 +488,7 @@ vec2 lm = lmtexcoord.zw;
 	//		normalTex.rgb += FindNormal(texture,lmtexcoord.xy,texelSize-0.0001).rgb;
 	//		normalTex.rg -= FindNormal(texture,lmtexcoord.xy,texelSize-0.0003).rg;
 			normal = applyBump(tbnMatrix,normalTex);
-			
+	#ifdef SSGI
 	#ifdef DLM
 
 	vec3 Q1 = dFdx(viewPos.xyz);
@@ -596,6 +517,7 @@ vec2 lm = lmtexcoord.zw;
 	lm.x =  (pow(lm.x, 0.5));
 	
 							
+	#endif
 	#endif
 
 			data0.rgb*=color.rgb;
@@ -679,7 +601,7 @@ vec2 lm = lmtexcoord.zw;
   #endif
 
 
-	if (data0.a > 0.1) data0.a = normalMat.a;
+  if (data0.a > 0.1) data0.a = normalMat.a;
   else data0.a = 0.0;
 
 
@@ -699,6 +621,9 @@ vec2 lm = lmtexcoord.zw;
 
 
 	#endif
+
+
+	#ifdef SSGI
 	#ifdef DLM
 
 	vec3 Q1 = dFdx(viewPos.xyz);
@@ -709,7 +634,9 @@ vec2 lm = lmtexcoord.zw;
 	st1 /= dot(fwidth(viewPos.xyz), vec3(0.3));
 	st2 /= dot(fwidth(viewPos.xyz), vec3(0.3));
 	vec3 T = (Q1*st2 - Q2*st1);
-	T = normalize(T + normal.xyz * 0.0002);
+
+	T = normalize(T + normal.xyz * 0.0002);		
+
 	T = cross(T, normal.xyz);
 
 	T = normalize(T + normal * 0.01);
@@ -720,7 +647,7 @@ vec2 lm = lmtexcoord.zw;
 	lml += pow(clamp(dot(T, normalMat.xyz) * 0.5 + 1 ,0,1), 1.0) * 0.5;
 	if (dot(T, normal.xyz) > 0.99)
 	{
-	lml = (pow(lml, 2.0)* length(normal)*0.45) ;
+	lml = (pow(lml, 2.0)* length(normal)*0.5) ;
 	}
 	lm.x = lmfaloff(lm.x);
 	lm.x =  (lm.x * lml)*5;					
@@ -728,30 +655,22 @@ vec2 lm = lmtexcoord.zw;
 	
 							
 	#endif
+	#endif
+
 
 	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
-//	vec4 data1 = encode(viewToWorld(normal), lm);
 
 
-		vec4 currentPosition = vec4(lmtexcoord.x * 2.0 - 1.0, lmtexcoord.y * 2.0 - 1.0, 2.0 * gl_FragCoord.z - 1.0, 1.0);
+    vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
 
-		vec4 fragposition = gbufferProjectionInverse * currentPosition;
-		fragposition = gbufferModelViewInverse * fragposition;
-		fragposition /= fragposition.w;
-		fragposition.xyz += cameraPosition;
-
-		vec4 previousPosition = fragposition;
-		previousPosition.xyz -= previousCameraPosition;
-		previousPosition = gbufferPreviousModelView * previousPosition;
-		previousPosition = gbufferPreviousProjection * previousPosition;
-		previousPosition /= previousPosition.w;
-
-
-        vec3 velocity2   =  vec3(velocity);
 
 	gl_FragData[1].a = 0.0;
 	#endif	
+
 	gl_FragData[2].rgb = normal;
+	gl_FragData[3].r = mcentity/15;
+
+
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 
 

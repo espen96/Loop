@@ -14,6 +14,7 @@ varying vec2 texcoord;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
+varying float mcentity;
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
 uniform int entityId; 
@@ -158,11 +159,11 @@ void main() {
 #ifdef water
 	lumaboost = 0.0;
 	float mat = 0.0;
-	if(mc_Entity.x == 8.0 || mc_Entity.x == 9.0) {
+	if(mc_Entity.x == 20) {
     mat = 1.0;
     gl_Position.z -= 1e-4;
   }
-		if (mc_Entity.x == 10005) lumaboost = 5.0;
+		if (mc_Entity.x == 11) lumaboost = 5.0;
 
 	if(mc_Entity.x == 79.0) mat = 0.5;
 		if (mc_Entity.x == 10002) mat = 0.01;
@@ -203,7 +204,7 @@ void main() {
 	#endif
 	#endif
 	
-	velocity = at_velocity / 10000.0;
+	velocity = at_velocity / 1000000.0;
 
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;
@@ -211,4 +212,6 @@ void main() {
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
 	#endif
+	mcentity = 0;
+	if(mc_Entity.x >16) mcentity = mc_Entity.x;
 }

@@ -1,5 +1,6 @@
 
 #define PCF
+#define gbuffer
 
 
      uniform int renderStage; 
@@ -28,13 +29,14 @@
 // 21 Rain and snow
 // 22 World border
 // 23 Translucent handheld objects
-
+uniform float frameTimeCounter;
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
 uniform sampler2D normals;
 uniform sampler2D specular;
 uniform sampler2D texture;
+uniform sampler2D noisetex;
 #ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
 #endif
@@ -43,7 +45,7 @@ uniform vec4 lightCol;
 uniform vec3 sunVec;
 uniform vec3 upVec;
 uniform float lightSign;						
-
+uniform float frameCounter;
 uniform vec2 texelSize;
 uniform float skyIntensityNight;
 uniform float skyIntensity;
@@ -55,6 +57,8 @@ uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 
 #include "/lib/Shadow_Params.glsl"
+#include "/lib/noise.glsl"
+#include "/lib/kernel.glsl"
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){
 	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
@@ -67,11 +71,6 @@ vec3 toScreenSpace(vec3 p) {
     vec3 p3 = p * 2. - 1.;
     vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
     return fragposition.xyz / fragposition.w;
-}
-float interleaved_gradientNoise(float temporal){
-	vec2 coord = gl_FragCoord.xy;
-	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y)+temporal);
-	return noise;
 }
 
 #ifdef PCF
@@ -104,14 +103,6 @@ vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot)
 }
 uniform int framemod8;
 uniform int framecouter;
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
 
 float w0(float a)
 {

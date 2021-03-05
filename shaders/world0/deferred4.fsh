@@ -94,7 +94,7 @@ uniform vec3 cameraPosition;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
 #include "/lib/util.glsl"
-
+#include "/lib/kernel.glsl"
 
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
@@ -110,6 +110,7 @@ vec3 toScreenSpacePrev(vec3 p) {
 }
 
 
+#include "/lib/noise.glsl"
 #include "/lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
@@ -139,9 +140,7 @@ float triangularize(float dither)
     dither = center*inversesqrt(abs(center));
     return clamp(dither-fsign(center),0.0,1.0);
 }
-float interleaved_gradientNoise(float temp){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+temp);
-}
+
 vec3 fp10Dither(vec3 color,float dither){
 	const vec3 mantissaBits = vec3(6.,6.,5.);
 	vec3 exponent = floor(log2(color));
@@ -246,16 +245,7 @@ vec3 BilateralFiltering(sampler2D tex, sampler2D depth,vec2 coord,float frDepth,
 
   return vec3(sampled.x,sampled.yz/sampled.w);
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
-vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
-}
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
-}
+
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -441,32 +431,6 @@ vec3 median2(sampler2D tex1) {
 
 }
 
-vec2 outlineOffsets[24] = vec2[24](
-    vec2(-2.0, -2.0),
-    vec2(-1.0, -2.0),
-    vec2( 0.0, -2.0),
-    vec2( 1.0, -2.0),
-    vec2( 2.0, -2.0),
-    vec2(-2.0, -1.0),
-    vec2(-1.0, -1.0),
-    vec2( 0.0, -1.0),
-    vec2( 1.0, -1.0),
-    vec2( 2.0, -1.0),
-    vec2(-2.0,  0.0),
-    vec2(-1.0,  0.0),
-    vec2( 1.0,  0.0),
-    vec2( 2.0,  0.0),
-    vec2(-2.0,  1.0),
-    vec2(-1.0,  1.0),
-    vec2( 0.0,  1.0),
-    vec2( 1.0,  1.0),
-    vec2( 2.0,  1.0),
-    vec2(-2.0,  2.0),
-    vec2(-1.0,  2.0),
-    vec2( 0.0,  2.0),
-    vec2( 1.0,  2.0),
-    vec2( 2.0,  2.0)
-);
 
 
 vec4 blur5(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
@@ -602,7 +566,6 @@ void main() {
 			//do shadows only if on shadow map
 			if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
 				float rdMul = filtered.x*distortFactor*d0*k/shadowMapResolution;
-				float rdMulcaustic = caustic.x*distortFactor*d0*k/shadowMapResolution*2;
 				const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 				float distortThresh = (sqrt(1.0-NdotLGeom*NdotLGeom)/NdotLGeom+0.7)/distortFactor;
 				#ifdef Variable_Penumbra_Shadows
@@ -612,7 +575,7 @@ void main() {
 				#endif
 				#ifdef POM
 				#ifdef Depth_Write_POM
-					diffthresh += POM_DEPTH*0.0078125*0.25*0.166;
+					diffthresh += POM_DEPTH/128./4./6.0;
 				#endif
 				#endif
 				projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
@@ -621,7 +584,6 @@ void main() {
 					vec2 offsetS = tapLocation(i,SHADOW_FILTER_SAMPLE_COUNT, 0.0,noise,0.0);
 
 					float weight = 1.0+(i+noise)*rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution;
-
 
 
 			#ifdef SHADOWS_ON	
@@ -633,42 +595,24 @@ void main() {
 			#endif	
 				//	float isShadow =shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 
-
-		
-	
-
-
-				//	vec2 offsetS = tapLocation(i,2/2, 0.0,noise,0.0);
-
-				//	float weight = 1.0+(i)*rdMul/2*shadowMapResolution;
-					
 					#ifdef SHADOWS_ON	
 						float shadow1    = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 						float shadow0    = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
-							 shadowCol2  = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x)*0.25),-diffthresh*weight))).xyzw;
-							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.0)),-diffthresh*weight))).xyzw;
-							 shadowCol2 += shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS*(Pow2(filtered.x*1.5)),-diffthresh*weight))).xyzw;
-
-							 shadowCol2.rgb = (shadowCol2.rgb * pow(shadowCol2.a,4))*0.25;
-							 if (luma(shadowCol2.rgb) < 1) shadowCol2 = shadowCol;
-							 if (luma(shadowCol2.rgb) > 3) shadowCol2 = shadowCol;
-							 shadowCol2.rgb = pow(shadowCol2.rgb,vec3(1.0))*0.15;
-
-							 
+							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyzw;
+	
 
 						float transparentshadow = (shadow1-shadow0);	 
-						float transparentshadow2 = (shadow1-shadow0);	 
-							 shadowCol = shadowCol *transparentshadow;
-							 shadowCol2 = shadowCol2 *transparentshadow;
-							// shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0)* (shadowCol2.rgb*10);
-							 shadowCol.rgb = ((shadowCol.rgb * (1-(shadowCol.a*0.5)))*2.0);
-						 
-							transparentshadow -= shadowCol.a;
-		
-						shading += clamp((isShadow+transparentshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
+
+
+						if(shadow0 < 1.0){
+							shadowCol = shadowCol * shadow1;
+						}
+				//	transparentshadow -= shadowCol.a;
+						float tempshadow = shadow0;
+					if(transparentshadow >0.9) tempshadow = 1-shadowCol.a;
+						shading += clamp((tempshadow)/SHADOW_FILTER_SAMPLE_COUNT,0,1);
 					#endif	
-						
+						if(transparentshadow <=0.0) shadowCol.rgb = vec3(shading);
 									
 				}
 			}
@@ -752,9 +696,12 @@ void main() {
 
 
 			//combine all light sources
-			caustic = shadowCol.rgb ;			
+			float shadowmask = luma(shadowCol.rgb * shadowCol.a);
+			if( shadowmask > 0.8 && shadowmask < 0.84) shadowCol.rpg = mix(vec3(1.0), shadowCol.rgb,1-shadowCol.a);			
+			shadowCol.rgb = clamp(shadowCol.rgb * (1.0 - shading) + shading, vec3(0.0), vec3(1.0));
 
-			gl_FragData[0].rgb = (shading * diffuseSun + (caustic*0.2) + SSS ) ;
+			gl_FragData[0].rgb = (shadowCol.rgb * diffuseSun + SSS ) ;
+			gl_FragData[1].rgb = vec3(shadowCol.rgb) ;
 
 
 

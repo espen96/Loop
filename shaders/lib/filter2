@@ -1,0 +1,69 @@
+
+
+
+vec4 computeVariance2(sampler2D tex, ivec2 pos) {
+
+  vec2 texcoord = gl_FragCoord.xy*texelSize;
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture2D(depthtex1, texcoord.st).x - 1.0, 1.0);
+
+		vec4 fragposition = gbufferProjectionInverse * currentPosition;
+		fragposition = gbufferModelViewInverse * fragposition;
+		fragposition /= fragposition.w;
+		fragposition.xyz += cameraPosition;
+		vec4 previousPosition = fragposition;
+		previousPosition.xyz -= previousCameraPosition;
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition /= previousPosition.w;
+		vec2 velocity = (currentPosition - previousPosition).st; 
+        float weightSum = 1.0;
+        int radius = 3; //  7x7 Gaussian Kernel
+        vec2 moment = texelFetch(colortex15, pos, 0).rg;
+        vec4 c = texelFetch(colortex14, pos, 0);
+        float histlen = texelFetch(colortex12, pos, 0).a;
+                float depth = texelFetch(depthtex0, pos, 0).x;
+                        vec3 normal = texelFetch(colortex10, pos, 0).xyz;
+
+for (int yy = -radius; yy <= radius; ++yy)
+{
+    for (int xx = -radius; xx <= radius; ++xx)
+    {
+        //  We already have the center data
+        if (xx != 0 && yy != 0) { continue; }
+
+        //  Sample current point data with current uv
+        ivec2 p = pos + ivec2(xx, yy);
+        vec4 curColor = texelFetch(colortex8, p, 0);
+        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
+
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float l = luma(curColor.rgb);
+
+        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(xx, yy)) + 1.0e-2);
+        float weightNormal = pow(max(0, dot(curNormal, normal)), 16.0);
+
+   //     uint curMeshID =  floatBitsToUint(texelFetch(tMeshID, p, 0).r);
+
+   //     float w = exp(-weightDepth) * weightNormal * (meshID == curMeshID ? 1.0 : 0.0);
+        float w = exp(-weightDepth) * weightNormal *0.01;
+
+        if (isnan(w))
+            w = 0.0;
+
+        weightSum += w;
+
+        moment += vec2(l, l * l) * w;
+        c.rgb += curColor.rgb * w;
+    }
+}
+
+moment /= weightSum;
+	gl_FragData[1].rg = moment;
+c.rgb /= weightSum;
+
+//varianceSpatial = (1.0 + 2.0 * (1.0 - histlen)) * max(0.0, moment.y - moment.x * moment.x);
+return  vec4(c.rgb, (1.0 + 3.0 * (1.0 - histlen)) * max(0.0, moment.y - moment.x * moment.x));
+
+}  

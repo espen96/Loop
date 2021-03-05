@@ -2,19 +2,7 @@
 
 
 
-const ivec2 kernelO_3x3[9]  = ivec2[9](
-    ivec2(-1, -1), ivec2(0, -1), ivec2(1, -1),
-    ivec2(-1, 0),  ivec2(0, 0),  ivec2(1, 0),
-    ivec2(-1, 1),  ivec2(0, 1),  ivec2(1, 1)
-);
 
-const ivec2 kernelO_5x5[25] = ivec2[25] (
-    ivec2(2,  2), ivec2(1,  2), ivec2(0,  2), ivec2(-1,  2), ivec2(-2,  2),
-    ivec2(2,  1), ivec2(1,  1), ivec2(0,  1), ivec2(-1,  1), ivec2(-2,  1),
-    ivec2(2,  0), ivec2(1,  0), ivec2(0,  0), ivec2(-1,  0), ivec2(-2,  0),
-    ivec2(2, -1), ivec2(1, -1), ivec2(0, -1), ivec2(-1, -1), ivec2(-2, -1),
-    ivec2(2, -2), ivec2(1, -2), ivec2(0, -2), ivec2(-1, -2), ivec2(-2, -2)
-);	
 
 
 vec3 screenToViewSpace(vec3 screenpos, mat4 projInv, const bool taaAware) {
@@ -65,23 +53,36 @@ ivec2 clampTexelPos(ivec2 pos) {
 
 
 float computeVariance(sampler2D tex, ivec2 pos) {
+const int radius = 2; //5x5 kernel
+vec2 sigmaVariancePair = vec2(0.0, 0.0);
+float sampCount = 0.0;
+
     float sum_msqr  = 0.0;
     float sum_mean  = 0.0;
 
-    for (int i = 0; i<9; i++) {
-        ivec2 deltaPos     = kernelO_3x3[i];
-        //float weight        = kernelW_5x5[i];
 
-        vec3 col    = texelFetch(tex, pos + deltaPos, 0).rgb;
-        float lum   = luma(col);
+for (int y = -radius; y <= radius; ++y)
+{
+    for (int x = -radius; x <= radius; ++x)
+    {
+        //  Sample current point data with current uv
+        ivec2 p = pos + ivec2(x, y);
+        vec4 curColor = texelFetch(tex, p, 0);
 
-        sum_msqr   += sqr(lum);
-        sum_mean   += lum;
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float samp = luma(curColor.rgb);
+        float sampSquared = samp * samp;
+        sigmaVariancePair += vec2(samp, sampSquared);
+
+        sampCount += 1.0;
     }
-    sum_msqr /= 9.0;
-    sum_mean /= 9.0;
+}
+sigmaVariancePair /= sampCount;
+float variance = max(0.0, sigmaVariancePair.y - sigmaVariancePair.x * sigmaVariancePair.x);
 
-    return abs(sum_msqr - sqr(sum_mean)) * rcp(max(sum_mean, 1e-25));
+
+    return variance;
 }   
 
 #ifdef power
@@ -103,35 +104,6 @@ float Pow16(float x) { x *= x; x *= x; x *= x; return x * x; }
 #endif
 #ifdef denoise
 
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
-
-
-
-
-
-struct TapKey {
-    float csZ;
-    vec3 csPosition;
-    vec3 normal;
-    float glossy;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 uniform sampler2D colortex4;
@@ -139,35 +111,37 @@ uniform sampler2D colortex4;
 
 
 
+
+
+
+
+
+#endif
+
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
+
+    float motionweight = abs(luma(cameraPosition - previousCameraPosition));
+
 
 
     ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
     if (luma(colorCenter) <= 0.0) return colorCenter;	
-    float sumweight = 0.0;	
+
 	float weight = 0.0;
-	
-
 	vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
-
-
     float   c_depth    = normaldepth.a * far;	
 	vec3 origNormal =  normaldepth.rgb;			
-
-
-
-
 
     vec3 totalColor     = colorCenter;
 
     float totalWeight   = 1.0;	
-	
-    float variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
+    float variance2  = computeVariance(colortex8, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
     float var2        = rcp(0.5 + variance2 *4);	
 
+    if (var2 <= 0.0) return colorCenter;	
 
-//#define HQ
+#define HQ
 
 
 
@@ -221,26 +195,6 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
 	
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif
-
-
 
 vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
@@ -316,5 +270,8 @@ vec3 edgefilter(vec2 coord, const int size,sampler2D tex1) {
 
 	
 }
+
+
+
 
 

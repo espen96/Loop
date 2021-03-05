@@ -30,14 +30,7 @@
 #define fbmPower2 3.00	// Lower values increases high frequency details of the cloud shape	[1.50 1.52 1.54 1.56 1.58 1.60 1.62 1.64 1.66 1.68 1.70 1.72 1.74 1.76 1.78 1.80 1.82 1.84 1.86 1.88 1.90 1.92 1.94 1.96 1.98 2.00 2.02 2.04 2.06 2.08 2.10 2.12 2.14 2.16 2.18 2.20 2.22 2.24 2.26 2.28 2.30 2.32 2.34 2.36 2.38 2.40 2.42 2.44 2.46 2.48 2.50 2.52 2.54 2.56 2.58 2.60 2.62 2.64 2.66 2.68 2.70 2.72 2.74 2.76 2.78 2.80 2.82 2.84 2.86 2.88 2.90 2.92 2.94 2.96 2.98 3.00 3.02 3.04 3.06 3.08 3.10 3.12 3.14 3.16 3.18 3.20 3.22 3.24 3.26 3.28 3.30 3.32 3.34 3.36 3.38 3.40 3.42 3.44 3.46 3.48 3.50 3.52 3.54 3.56 3.58 3.60 3.62 3.64 3.66 3.68 3.70 3.72 3.74 3.76 3.78 3.80 3.82 3.84 3.86 3.88 3.90 3.92 3.94 3.96 3.98 4.00]
 
 
-
-
-
-
-
 float cloudSpeed  = (frameTimeCounter);	
-
-
 
 
 vec2 windGenerator(float t) {
@@ -49,11 +42,9 @@ vec2 windGenerator(float t) {
  	return p;
 }
 
-	   
+   
 							  
-vec2 wind = windGenerator(frameTimeCounter*0.001)*20000*CLOUDS_SPEED; 	 
-					   
-					   
+vec2 wind = windGenerator(frameTimeCounter*0.001)*20000*CLOUDS_SPEED; 	 				   
 vec3 cloudSpeed2 =  vec3(frameTimeCounter*wind.x,0.0,frameTimeCounter*wind.y)*0.5;
 
 						  
@@ -208,7 +199,7 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		float total_extinction = 1.0;
 
 
-		float distW = length(worldV);
+//		float distW = length(worldV);
 		worldV = normalize(worldV)*100000. + cameraPosition; //makes max cloud distance not dependant of render distance
 		dV_view = normalize(dV_view);
 
@@ -229,11 +220,13 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 		float mult = length(dV_view);
 
 
-		color = vec3(0.0);
+//		color = vec3(0.0);
 
 		total_extinction = 1.0;
 		float SdotV = dot(sunVec,normalize(fragpositi));
 		float SdotV01 = SdotV*0.5+0.5;
+
+
 		//fake multiple scattering approx 1 (from horizon zero down clouds)
 
 		float mieDay = max(phaseg(SdotV, cloudMieG),phaseg(SdotV, cloudMieG2)*cloudMie2Multiplier);
@@ -293,8 +286,8 @@ vec4 renderClouds(vec3 fragpositi, vec3 color,float dither,vec3 sunColor,vec3 mo
 					float moonShadowMulti = exp(-log(muEshN*0.15+0.5)) * powder;			
 					float sunShadowMulti = exp(-log(muEshD*0.15+0.5)) * powder;					
 					float ambientPowder = mix(1.0,powder,h * ambientMult);
-//					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
-					vec3 S = vec3(sunContribution*sunShadow + sunShadowMulti*sunContributionMulti + moonShadowMulti*moonContributionMulti +  moonShadow*moonContribution+skyCol0*ambientPowder);
+					vec3 S = vec3(sunContribution*sunShadow+moonShadow*moonContribution+skyCol0*ambientPowder);
+//					vec3 S = vec3(sunContribution*sunShadow + sunShadowMulti*sunContributionMulti + moonShadowMulti*moonContributionMulti +  moonShadow*moonContribution+skyCol0*ambientPowder);
 
 
 					vec3 Sint=(S - S * exp(-mult*muE)) / (muE);

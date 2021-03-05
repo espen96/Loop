@@ -86,6 +86,7 @@ vec3 toScreenSpacePrev(vec3 p) {
 #include "/lib/res_params.glsl"
 #include "lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
+#include "/lib/noise.glsl"
 							 
 #include "lib/color_transforms.glsl"
 #include "/lib/sky_gradient.glsl"
@@ -228,17 +229,7 @@ vec3 BilateralFiltering(sampler2D tex, sampler2D depth,vec2 coord,float frDepth,
 
   return vec3(sampled.x,sampled.yz/sampled.w);
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
-vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
-}
 
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
-}
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;

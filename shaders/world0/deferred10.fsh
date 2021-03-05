@@ -56,13 +56,9 @@ uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 uniform sampler2D colortex10;
-uniform sampler2D colortex11;
-
-
 uniform sampler2D colortex12;
-
-
-
+uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
@@ -118,47 +114,31 @@ vec3 toScreenSpacePrev(vec3 p) {
 }
 
 
-
+#include "/lib/noise.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/sky_gradient.glsl"
-#include "/lib/stars.glsl"
 #include "/lib/volumetricClouds.glsl"
+#include "/lib/kernel.glsl"
+#include "/lib/filter.glsl"
+
 
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
 
 uniform sampler2D colortex13;
-#include "/lib/specular.glsl"
-vec3 normVec (vec3 vec){
-	return vec*inversesqrt(dot(vec,vec));
+
+vec3 toClipSpace3(vec3 viewSpacePosition) {
+    return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
-float lengthVec (vec3 vec){
-	return sqrt(dot(vec,vec));
-}
-#define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
-float triangularize(float dither)
-{
-    float center = dither*2.0-1.0;
-    dither = center*inversesqrt(abs(center));
-    return clamp(dither-fsign(center),0.0,1.0);
-}
-float interleaved_gradientNoise(float temp){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+temp);
-}
-vec3 fp10Dither(vec3 color,float dither){
-	const vec3 mantissaBits = vec3(6.,6.,5.);
-	vec3 exponent = floor(log2(color));
-	return color + dither*exp2(-mantissaBits)*exp2(exponent);
+float invLinZ (float lindepth){
+	return -((2.0*near/lindepth)-far-near)/(far-near);
 }
 
 
 
-float facos(float sx){
-    float x = clamp(abs( sx ),0.,1.);
-    return sqrt( 1. - x ) * ( -0.16882 * x + 1.56734 );
-}
+
 vec3 decode (vec2 encn)
 {
     vec3 unenc = vec3(0.0);
@@ -207,31 +187,11 @@ vec3 BilateralFiltering(sampler2D tex, sampler2D depth,vec2 coord,float frDepth,
 
   return vec3(sampled.x,sampled.yz/sampled.w);
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
-vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
-}
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
-}
+
 #define crcp(x) (1.0 / x)
 
 
-float sqr(float x) {
-    return x*x;
-}
-float rcp(float x) {
-    return crcp(x);
-}
-vec2 rcp(vec2 x) {
-    return crcp(x);
-}
-vec3 rcp(vec3 x) {
-    return crcp(x);
-}
+
 vec2 tapLocation(int sampleNumber, float spinAngle,int nb, float nbRot,float r0)
 {
     float alpha = (float(sampleNumber + r0) * (1.0 / (nb)));
@@ -251,11 +211,137 @@ vec2 R2_samples(int n){
 }
 
 //#include "/lib/rsm.glsl"
+vec3 toScreenSpaceVector(vec3 p) {
+	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
+    vec3 p3 = p * 2. - 1.;
+    vec4 fragposition = iProjDiag * p3.xyzz + gbufferProjectionInverse[3];
+    return normalize(fragposition.xyz);
+}
 
+
+#define expf(x) exp2((x) * rlog2)
+
+#define crcp(x) (1.0 / x)
+
+
+
+
+vec4 computeVariance2(sampler2D tex, ivec2 pos) {
+
+  vec2 texcoord = gl_FragCoord.xy*texelSize;
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture2D(depthtex1, texcoord.st).x - 1.0, 1.0);
+
+		vec4 fragposition = gbufferProjectionInverse * currentPosition;
+		fragposition = gbufferModelViewInverse * fragposition;
+		fragposition /= fragposition.w;
+		fragposition.xyz += cameraPosition;
+		vec4 previousPosition = fragposition;
+		previousPosition.xyz -= previousCameraPosition;
+		previousPosition = gbufferPreviousModelView * previousPosition;
+		previousPosition = gbufferPreviousProjection * previousPosition;
+		previousPosition /= previousPosition.w;
+		vec2 velocity = (currentPosition - previousPosition).st; 
+        float weightSum = 1.0;
+        int radius = 3; //  7x7 Gaussian Kernel
+        vec2 moment = velocity;
+        vec4 c = texelFetch(colortex14, pos, 0);
+        float histlen = texelFetch(colortex14, pos, 0).a;
+                float depth = texelFetch(depthtex0, pos, 0).x;
+                        vec3 normal = texelFetch(colortex10, pos, 0).xyz;
+
+for (int yy = -radius; yy <= radius; ++yy)
+{
+    for (int xx = -radius; xx <= radius; ++xx)
+    {
+        //  We already have the center data
+        if (xx != 0 && yy != 0) { continue; }
+
+        //  Sample current point data with current uv
+        ivec2 p = pos + ivec2(xx, yy);
+        vec4 curColor = texelFetch(colortex12, p, 0);
+        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
+
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float l = luma(curColor.rgb);
+
+        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(xx, yy)) + 1.0e-2);
+        float weightNormal = pow(max(0, dot(curNormal, normal)), 16.0);
+
+   //     uint curMeshID =  floatBitsToUint(texelFetch(tMeshID, p, 0).r);
+
+   //     float w = exp(-weightDepth) * weightNormal * (meshID == curMeshID ? 1.0 : 0.0);
+        float w = exp(-weightDepth) * weightNormal *1;
+
+        if (isnan(w))
+            w = 0.0;
+
+        weightSum += w;
+
+        moment += vec2(l, l * l) * w;
+        c.rgb += curColor.rgb * w;
+    }
+}
+
+moment /= weightSum;
+
+c.rgb /= weightSum;
+	gl_FragData[5] = vec4(c.rgb,(1.0 + 3.0 * (1.0 - histlen)) * max(0.0, moment.y - moment.x * moment.x));
+//varianceSpatial = (1.0 + 2.0 * (1.0 - histlen)) * max(0.0, moment.y - moment.x * moment.x);
+return  vec4(c.rgb, (1.0 + 3.0 * (1.0 - histlen)) * max(0.0, moment.y - moment.x * moment.x));
+
+}  
+
+
+#define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
+#define mn3(a, b, c)			s2(a, b); s2(a, c);
+#define mx3(a, b, c)			s2(b, c); s2(a, c);
+
+#define mnmx3(a, b, c)			mx3(a, b, c); s2(a, b);                                   // 3 exchanges
+#define mnmx4(a, b, c, d)		s2(a, b); s2(c, d); s2(a, c); s2(b, d);                   // 4 exchanges
+#define mnmx5(a, b, c, d, e)	s2(a, b); s2(c, d); mn3(a, c, e); mx3(b, d, e);           // 6 exchanges
+#define mnmx6(a, b, c, d, e, f) s2(a, d); s2(b, e); s2(c, f); mn3(a, b, c); mx3(d, e, f); // 7 exchanges
+
+
+#define vec vec3
+#define toVec(x) x.rgb
+vec3 median2(sampler2D tex1) {
+
+    vec v[9];
+    ivec2 ssC = ivec2(gl_FragCoord.xy);
+	
+	
+    // Add the pixels which make up our window to the pixel array.
+	
+	
+    for (int dX = -1; dX <= 1; ++dX) {
+        for (int dY = -1; dY <= 1; ++dY) {
+            ivec2 offset = ivec2(dX, dY);
+
+            // If a pixel in the window is located at (x+dX, y+dY), put it at index (dX + R)(2R + 1) + (dY + R) of the
+            // pixel array. This will fill the pixel array, with the top left pixel of the window at pixel[0] and the
+            // bottom right pixel of the window at pixel[N-1].
+			
+			
+            v[(dX + 1) * 3 + (dY + 1)] = toVec(texelFetch(tex1, ssC + offset, 0));
+        }
+    }
+
+    vec temp;
+    // Starting with a subset of size 6, remove the min and max each time
+    mnmx6(v[0], v[1], v[2], v[3], v[4], v[5]);
+    mnmx5(v[1], v[2], v[3], v[4], v[6]);
+    mnmx4(v[2], v[3], v[4], v[7]);
+    mnmx3(v[3], v[4], v[8]);
+    vec3 result = v[4].rgb;
+	
+	return result;
+
+}
+#ifdef SSGI
 #include "/lib/ssgi.glsl"
-
-
-
+#endif
 
 
 
@@ -331,8 +417,8 @@ vec3 constructNormal(float depthA, vec2 texcoords, sampler2D depthtex) {
     const vec2 offsetB = vec2(0.0,0.001);
     const vec2 offsetC = vec2(0.001,0.0);
   
-    float depthB = texture2D(depthtex, texcoords + offsetB).r;
-    float depthC = texture2D(depthtex, texcoords + offsetC).r;
+    float depthB = texture(depthtex, texcoords + offsetB).r;
+    float depthC = texture(depthtex, texcoords + offsetC).r;
   
     vec3 A = getDepthPoint(texcoords, depthA);
 	vec3 B = getDepthPoint(texcoords + offsetB, depthB);
@@ -418,7 +504,7 @@ vec3 decodeNormal3x16(float encoded){
 void main() {
 	
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
-	float z = texture2D(depthtex1,texcoord).x;
+	float z = texture(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
@@ -431,22 +517,21 @@ void main() {
 	if (z <=1.0) {
 
 		p3 += gbufferModelViewInverse[3].xyz;
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-		vec4 data = texture2D(colortex1,texcoord);
-		vec3 preshade = texture2D(colortex11,texcoord).rgb;
+		vec4 trpData = texture(colortex7,texcoord);
+		bool iswater = texture(colortex7,texcoord).a > 0.99;
+		vec4 data = texture(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
-		vec4 transparent = texture2D(colortex2,texcoord);
+		vec4 transparent = texture(colortex2,texcoord);
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
 //		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));
-		vec3 normalorg = texture2D(colortex10,texcoord).rgb+texture2D(colortex8,texcoord).rgb;
+		vec3 normalorg = texture(colortex10,texcoord).rgb+texture(colortex8,texcoord).rgb;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));		
-    	if (normalorg.r >0.9 && normalorg.g >0.9 && normalorg.b > 0.9) normalorg = constructNormal(texture2D(depthtex0, texcoord.st).r, texcoord, depthtex0);
+    	if (normalorg.r >0.9 && normalorg.g >0.9 && normalorg.b > 0.9) normalorg = constructNormal(texture(depthtex0, texcoord.st).r, texcoord, depthtex0);
 
-
+	gl_FragData[4] = trpData;
 		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
-  		gl_FragData[2].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));		
+  		gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));		
 
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 
@@ -466,11 +551,9 @@ void main() {
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		vec3 filtered = vec3(1.412,1.0,0.0);
 		if (!hand){
-			filtered = texture2D(colortex3,texcoord).rgb;
+			filtered = texture(colortex3,texcoord).rgb;
 		}
-		float shading = 1.0 - filtered.b;
-		
-					vec3 shadowCol = vec3(0.0);
+
 
 		vec3 SSS = vec3(0.0);
 		float sssAmount = 0.0;
@@ -524,16 +607,13 @@ void main() {
 		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*10.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		vec3 custom_lightmap = texture(colortex4,(lightmap*10.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		vec3 ambientLight3 = ambientLight * custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);		
 
 			#ifdef SSGI
-						float lum = luma(albedo);
-			vec3 diff = albedo.rgb-lum;
-			diff = (vec3(lightmap.x) + diff*(1));
 
 				
-			ambientLight2 = rtGI(normal, blueNoise(gl_FragCoord.xy), fragpos, ambientLight* custom_lightmap.x, sssAmount, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)*(1+clamp(transparent.rgb,0,100))), normalize(albedo+1e-5)*0.7,luma(texture2D(colortex5,texcoord/RENDER_SCALE).rgb),ld(z),dataUnpacked1, vec3(0.0),lightmap.xy, emissive, hand, texcoord);
+				     ambientLight2 = rtGI(normal, vec4(blueNoise()), fragpos,sssAmount, ambientLight* custom_lightmap.x, custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*(vec3(TORCH_R,TORCH_G,TORCH_B)), normalize(albedo+1e-5)*0.7,ld(z),lightmap.xy, emissive, hand, texcoord);
 		
 			if(hand) ambientLight2 = ambientLight3;
 		
@@ -547,46 +627,34 @@ void main() {
 				float ao = 1.0;
 				if (!hand)
 					ssao(ao,fragpos,1.0,noise,normalorg,z);
-				gl_FragData[0] *= ao;			
+				ambientLight2 *= ao;			
 		
 			#endif			
 
 	vec4 historyGData    = vec4(1.0);
-	vec4 indirectHistory = vec4(0.0);
-	vec3 indirectCurrent = ambientLight2;;
-#ifdef SSGI
-#ifdef ssgi_temporal
-temporal( indirectCurrent, historyGData, indirectHistory, fragpos, normal2,  z, texcoord ,  hand, ambientLight3);
+	vec4 indirectHistory = vec4(ambientLight2,0);
+	vec3 indirectCurrent = ambientLight2;
+	#ifdef SSGI
+	#ifdef ssgi_temporal
+		if(!hand)	temporal( indirectCurrent, historyGData, indirectHistory, fragpos, normalorg,  z, texcoord ,  hand, ambientLight3, lightmap);
 
-	      gl_FragData[3] = historyGData;
-		  gl_FragData[1] = indirectHistory;
 
-#endif
-#endif
+	gl_FragData[2] = historyGData;
+	gl_FragData[1] = indirectHistory;
 
-gl_FragData[0].rgb = indirectCurrent;
+	#endif
+	#endif
+    float variance2  = computeVariance(colortex12, ivec2(floor(texcoord * vec2(viewWidth, viewHeight))));		
+    float var2        = rcp(0.5 + variance2 *4);	
 
+
+//	vec4 variance3   = computeVariance2(colortex12, ivec2(floor(texcoord * vec2(viewWidth, viewHeight))));		
+
+	gl_FragData[0].rgba = vec4(indirectCurrent,texture(colortex10,texcoord).a);
 
 	}		
-	
-
-	
-	
-
-
-	
-	
-
-	gl_FragData[0].a = texture2D(colortex10,texcoord).a;	
-
-//	gl_FragData[3].r = luma(viewToWorld( texture2D(colortex8,texcoord).rgb));	
 
 
 
-		
-	
-	
-
-
-/* RENDERTARGETS: 8,12,10,9 */
+/* RENDERTARGETS: 8,12,9,10,15 */
 }

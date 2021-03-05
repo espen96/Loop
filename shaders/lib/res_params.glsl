@@ -6,6 +6,8 @@
 
 uniform float frameTime;
 uniform float averageFrameTime;
+uniform float fps;
+uniform float fpsSmooth;
 
 
 #define ssptfilter
@@ -32,8 +34,8 @@ uniform sampler2D colortexF;
 
 #ifdef TAA_DS
 
-   #define RENDER_SCALE_X clamp(1-abs(RENDER_SCALE_MIN + (averageFrameTime - 0.20) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (0.35 - 0.20)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)
-   #define RENDER_SCALE_Y clamp(1-abs(RENDER_SCALE_MIN + (averageFrameTime - 0.20) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (0.35 - 0.20)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)  
+   #define RENDER_SCALE_X clamp(abs(RENDER_SCALE_MIN + (fpsSmooth - 25) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (100 - 30)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)
+   #define RENDER_SCALE_Y RENDER_SCALE_X
    
 
    #define RENDER_SCALE vec2(RENDER_SCALE_X, RENDER_SCALE_Y)

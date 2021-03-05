@@ -1,9 +1,10 @@
 
-
+#define gbuffer
 #ifdef SPEC
 uniform sampler2D specular;
-#endif
 
+#endif
+uniform sampler2D noisetex;
 
 varying vec3 velocity;
 
@@ -101,9 +102,9 @@ uniform mat4 gbufferModelView;
 uniform vec2 texelSize;
 uniform vec4 entityColor;
 uniform mat4 gbufferProjection;
-
-
-
+uniform int frameCounter;
+uniform float frameTimeCounter;
+#include "/lib/noise.glsl"
 vec3 worldToView(vec3 worldPos) {
 
     vec4 pos = vec4(worldPos, 0.0);
@@ -123,11 +124,8 @@ vec3 viewToWorld(vec3 viewPos) {
 }
 
 uniform sampler2D texture;
-uniform float frameTimeCounter;
+
 uniform mat4 gbufferProjectionInverse;
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+frameTimeCounter*51.9521);
-}
 
 vec4 encode (vec3 unenc, vec2 lightmaps)
 {
@@ -478,9 +476,10 @@ vec4 data0 = vec4(0.0);
 	#endif	
 		if (entityId == 18 && normal.g > 0.9) normal =vec3(10.0) ;
 		gl_FragData[2].rgb = vec3(normal);	
-	vec4 velocitymap = vec4( velocity.rgb, data0.a);
+	vec4 velocitymap = vec4(  0.12*velocity.rgb , data0.a);
 
   gl_FragData[4] = velocitymap;
+  gl_FragData[5] = vec4(0,0,0,1);
 
 
 }

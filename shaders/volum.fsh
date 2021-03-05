@@ -76,11 +76,9 @@ float Pow16(float x) { x *= x; x *= x; x *= x; return x * x; }
 #include "/lib/sky_gradient.glsl"
 #include "/lib/res_params.glsl"
 #include "/lib/volumetricClouds.glsl"
+#include "/lib/noise.glsl"
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+tempOffsets);
-}
 
 
 float phaseRayleigh(float cosTheta) {
@@ -284,9 +282,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		}
 		inColor += vL;
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////

@@ -15,6 +15,7 @@ uniform sampler2D colortex11;
 uniform sampler2D colortex12;
 uniform sampler2D colortex13;
 uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 
@@ -69,16 +70,17 @@ vec2 decodeVec2(float a){
 
 #define DENOISE_RANGE1 vec2(32, 30)
 
-#include "/lib/filter.glsl"
+#include "/lib/filter2.glsl"
 void main() {
 
-/* RENDERTARGETS: 8*/
+/* RENDERTARGETS: 8,15,14 */
 
 
 
 
 	float z = texture2D(depthtex1,texcoord).x;
 	vec4 data = texture2D(colortex1,texcoord);	
+	vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 	vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
@@ -87,14 +89,12 @@ void main() {
 	vec4 color = texture2D(colortex8,texcoord).rgba;		
 	
 	
-#ifdef ssptfilter
 
 
-	if (z <1 && !iswater && !emissive && !hand) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,DENOISE_RANGE,colortex8,0.0).rgb,0,10);
+  		color.rgb   = vec3(1.0);		
 
 
 
-#endif
 
 
 
@@ -102,6 +102,7 @@ void main() {
 
 
 	gl_FragData[0] = color;
+
 
 
 

@@ -105,7 +105,7 @@ void main() {
 	gl_Position.z /= 6.0;
 
 	texcoord.xy = gl_MultiTexCoord0.xy;
-	if(mc_Entity.x == 8 || mc_Entity.x == 9) gl_Position.w = -1.0;
+	if(mc_Entity.x == 20) gl_Position.w = -1.0;
   #ifdef SHADOW_FRUSTRUM_CULLING
   }
   else

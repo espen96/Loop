@@ -9,7 +9,7 @@
 #endif
 #endif
      uniform int renderStage; 
-
+varying float mcentity;
 // 0 Undefined
 // 1  Sky
 // 2  Sunset and sunrise overlay
@@ -127,14 +127,6 @@ void main() {
 hspec = hspec = vec4(50,250,000,000);
 nonlabemissive = 0.0;
 
-	if(mc_Entity.x == 10005 ) 	nonlabemissive = 0.1;
-	if(mc_Entity.x == 2000 ) 	nonlabemissive = 0.2;
-	if(mc_Entity.x == 2001 ) 	nonlabemissive = 0.3;
-	if(mc_Entity.x == 2002 ) 	nonlabemissive = 0.4;
-	if(mc_Entity.x == 2003 ) 	nonlabemissive = 0.5;
-	if(mc_Entity.x == 2004 ) 	nonlabemissive = 0.6;
-	if(mc_Entity.x == 2005 ) 	nonlabemissive = 0.7;
-
 
 
 
@@ -184,7 +176,9 @@ nonlabemissive = 0.0;
     position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
 		}
 	#endif
-	if (mc_Entity.x == 10005 || mc_Entity.x == 2000 || mc_Entity.x == 2001 || mc_Entity.x == 2002 || mc_Entity.x == 2003 || mc_Entity.x == 2004|| mc_Entity.x == 2000 ){
+	if (mc_Entity.x == 1 || mc_Entity.x == 2 || mc_Entity.x == 3 || mc_Entity.x == 4 || mc_Entity.x == 5 || mc_Entity.x == 6|| mc_Entity.x == 7 || 
+		mc_Entity.x == 8 || mc_Entity.x == 9 || mc_Entity.x == 9 || mc_Entity.x == 11 || mc_Entity.x == 12|| mc_Entity.x == 13 || 
+		mc_Entity.x == 14 || mc_Entity.x == 15 ){
 		color.rgb = normalize(color.rgb)*sqrt(3.0);
 		normalMat.a = 0.9;
 	}
@@ -208,5 +202,6 @@ nonlabemissive = 0.0;
 
 		velocity = at_velocity / 10000.0;	
 	
-	
+	mcentity = 0;
+	if(mc_Entity.x <16) mcentity = mc_Entity.x;	
 }

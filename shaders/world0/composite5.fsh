@@ -97,7 +97,7 @@ uniform vec3 cameraPosition;
 uniform vec3 sunVec;
 uniform ivec2 eyeBrightnessSmooth;
 #include "/lib/util.glsl"
-
+#include "/lib/kernel.glsl"
 
 vec3 toScreenSpace(vec3 p) {
 	vec4 iProjDiag = vec4(gbufferProjectionInverse[0].x, gbufferProjectionInverse[1].y, gbufferProjectionInverse[2].zw);
@@ -113,6 +113,7 @@ vec3 toScreenSpacePrev(vec3 p) {
 }
 
 
+#include "/lib/noise.glsl"
 #include "/lib/waterOptions.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
@@ -142,9 +143,7 @@ float triangularize(float dither)
     dither = center*inversesqrt(abs(center));
     return clamp(dither-fsign(center),0.0,1.0);
 }
-float interleaved_gradientNoise(float temp){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+temp);
-}
+
 vec3 fp10Dither(vec3 color,float dither){
 	const vec3 mantissaBits = vec3(6.,6.,5.);
 	vec3 exponent = floor(log2(color));
@@ -249,16 +248,7 @@ vec3 BilateralFiltering(sampler2D tex, sampler2D depth,vec2 coord,float frDepth,
 
   return vec3(sampled.x,sampled.yz/sampled.w);
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
-vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
-}
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter);
-}
+
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -490,32 +480,52 @@ vec3 median2(sampler2D tex1) {
 
 }
 
-vec2 outlineOffsets[24] = vec2[24](
-    vec2(-2.0, -2.0),
-    vec2(-1.0, -2.0),
-    vec2( 0.0, -2.0),
-    vec2( 1.0, -2.0),
-    vec2( 2.0, -2.0),
-    vec2(-2.0, -1.0),
-    vec2(-1.0, -1.0),
-    vec2( 0.0, -1.0),
-    vec2( 1.0, -1.0),
-    vec2( 2.0, -1.0),
-    vec2(-2.0,  0.0),
-    vec2(-1.0,  0.0),
-    vec2( 1.0,  0.0),
-    vec2( 2.0,  0.0),
-    vec2(-2.0,  1.0),
-    vec2(-1.0,  1.0),
-    vec2( 0.0,  1.0),
-    vec2( 1.0,  1.0),
-    vec2( 2.0,  1.0),
-    vec2(-2.0,  2.0),
-    vec2(-1.0,  2.0),
-    vec2( 0.0,  2.0),
-    vec2( 1.0,  2.0),
-    vec2( 2.0,  2.0)
-);
+#define t2(a, b)				s2(v[a], v[b]);
+#define t24(a, b, c, d, e, f, g, h)			t2(a, b); t2(c, d); t2(e, f); t2(g, h); 
+#define t25(a, b, c, d, e, f, g, h, i, j)		t24(a, b, c, d, e, f, g, h); t2(i, j);
+
+vec3 median3(sampler2D tex1) {
+
+   vec v[25];
+   ivec2 ssC = ivec2(gl_FragCoord.xy);
+  // Add the pixels which make up our window to the pixel array.
+  for(int dX = -2; dX <= 2; ++dX) {
+    for(int dY = -2; dY <= 2; ++dY) {		
+      vec2 offset = vec2(float(dX), float(dY));
+		    
+      // If a pixel in the window is located at (x+dX, y+dY), put it at index (dX + R)(2R + 1) + (dY + R) of the
+      // pixel array. This will fill the pixel array, with the top left pixel of the window at pixel[0] and the
+      // bottom right pixel of the window at pixel[N-1].
+      v[(dX + 2) * 5 + (dY + 2)] = toVec(texture2D(tex1, ssC + offset * texelSize));
+    }
+  }
+
+  vec temp;
+
+  t25(0, 1,			3, 4,		2, 4,		2, 3,		6, 7);
+  t25(5, 7,			5, 6,		9, 7,		1, 7,		1, 4);
+  t25(12, 13,		11, 13,		11, 12,		15, 16,		14, 16);
+  t25(14, 15,		18, 19,		17, 19,		17, 18,		21, 22);
+  t25(20, 22,		20, 21,		23, 24,		2, 5,		3, 6);
+  t25(0, 6,			0, 3,		4, 7,		1, 7,		1, 4);
+  t25(11, 14,		8, 14,		8, 11,		12, 15,		9, 15);
+  t25(9, 12,		13, 16,		10, 16,		10, 13,		20, 23);
+  t25(17, 23,		17, 20,		21, 24,		18, 24,		18, 21);
+  t25(19, 22,		8, 17,		9, 18,		0, 18,		0, 9);
+  t25(10, 19,		1, 19,		1, 10,		11, 20,		2, 20);
+  t25(2, 11,		12, 21,		3, 21,		3, 12,		13, 22);
+  t25(4, 22,		4, 13,		14, 23,		5, 23,		5, 14);
+  t25(15, 24,		6, 24,		6, 15,		7, 16,		7, 19);
+  t25(3, 11,		5, 17,		11, 17,		9, 17,		4, 10);
+  t25(6, 12,		7, 14,		4, 6,		4, 7,		12, 14);
+  t25(10, 14,		6, 7,		10, 12,		6, 10,		6, 17);
+  t25(12, 17,		7, 17,		7, 10,		12, 18,		7, 12);
+  t24(10, 18,		12, 20,		10, 20,		10, 12);
+
+    vec3 result = v[12].rgb;
+  return result;
+
+}
 
 
 vec4 blur5(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
@@ -595,88 +605,7 @@ vec3 reproject(vec3 sceneSpace, bool hand) {
   	return mod(pos.x + mod(pos.y, 2.0), 2.0);
 }	
 
-vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
-
-    ivec2 pos2     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
-    vec3 colorCenter = texelFetch(tex1, pos2, 0).rgb; 	
-    if (luma(colorCenter) <= 0.0) return colorCenter;	
-    float sumweight = 0.0;	
-	float weight = 0.0;
-	
-
-	vec4 normaldepth = texelFetch(colortex10, pos2, 0).rgba; 
-
-
-    float   c_depth    = normaldepth.a * far;	
-	vec3 origNormal =  normaldepth.rgb;			
-
-
-
-
-
-    vec3 totalColor     = colorCenter;
-
-    float totalWeight   = 1.0;	
-	
-    float variance2  = computeVariance(colortex5, ivec2(floor(coord/RENDER_SCALE * vec2(viewWidth, viewHeight)/RENDER_SCALE)));		
-    float var2        = rcp(0.5 + variance2 *4);	
-
-
-//#define HQ
-
-
-
-#ifdef HQ
-
-    for (int i = 0; i<25; i++) {
-	ivec2 delta  = kernelO_5x5[i] * size;	
-# else 
-    for (int i = 0; i<9; i++) {
-	ivec2 delta  = kernelO_3x3[i] * size;	
-#endif
-
-        if (delta.x == 0 && delta.y == 0) continue;
-		
-        ivec2 d_pos2  = pos2 + delta;
-        if (clamp(d_pos2, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos2) continue;
-	
-
-		vec4 normaldepth2 = texelFetch(colortex10, d_pos2, 0).rgba; 
-        float cu_depth = (normaldepth2.a) * far;
-	
-		vec3 normal = (normaldepth2.rgb);			
-		
-		vec3 color = texelFetch(tex1, d_pos2, 0).rgb;  	
-		
-		float d_weight = abs(cu_depth - c_depth);	
-        float depthWeight = expf(-d_weight);	
-        if (depthWeight < 1e-5 ) continue;
-		
-	
-        float normalWeight = pow(clamp(dot(normal, origNormal),0,1),32);
-
-
-        float weight = normalWeight;			
-		
-
-       
-       weight *= exp(-d_weight - var2);
-	   
-       totalColor += color.rgb * weight;
-
-       totalWeight += weight;
-
-	}
-
-    totalColor *= rcp(max(totalWeight, 1e-25));
-
-
-    return totalColor;
-
-
-	
-}
 
 void main() {
 
@@ -907,7 +836,9 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 
 
 			ambientLight = texture2D(colortex8,texcoord).rgb;
-			ambientLight = mix( median2(colortex8), ambientLight,0.0);
+		#ifdef ssptfilter
+		//	ambientLight = mix( median2(colortex8), ambientLight,0.0);
+		#endif	
 			ambientLight *= (1+clamp(transparent.rgb*10*emitting*2,1,100));					
 					
 
@@ -1078,7 +1009,7 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 		
 			
 		//	vec3 speculars = mix( (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)),vec3(0.0), clamp(rej,0,1.0) );			
-		reflection = mix(atrous3(reprojection.xy*RENDER_SCALE*RENDER_SCALE,4,colortex14,0.0).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
+		reflection = mix(atrous3(reprojection.xy*RENDER_SCALE*RENDER_SCALE,8,colortex14,0.0).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
 	
 		gl_FragData[1].rgb = reflection;
 	//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;

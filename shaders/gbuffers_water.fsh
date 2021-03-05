@@ -1,5 +1,5 @@
 
-
+#define gbuffer
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
@@ -51,25 +51,17 @@ uniform vec3 previousCameraPosition;
 uniform int framemod8;
 uniform int frameCounter;
 uniform int isEyeInWater;
+#include "/lib/noise.glsl"
 #include "/lib/Shadow_Params.glsl"
 #include "/lib/color_transforms.glsl"
 #include "/lib/projections.glsl"
 #include "/lib/sky_gradient.glsl"
 #include "/lib/waterBump.glsl"
+#include "/lib/kernel.glsl"
 
 
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
 
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
+
 float invLinZ (float lindepth){
 	return -((2.0*near/lindepth)-far-near)/(far-near);
 }
@@ -182,7 +174,7 @@ float Pow5(float x) { float x2 = x * x; return x2 * x2 * x; }
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 
-/* RENDERTARGETS: 2,7,8,10 */
+/* RENDERTARGETS: 2,7 */
 void main() {
 	if (gl_FragCoord.x * texelSize.x < RENDER_SCALE.x  && gl_FragCoord.y * texelSize.y < RENDER_SCALE.y )	{
 		vec2 tempOffset=offsets[framemod8];

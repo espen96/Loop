@@ -3,7 +3,7 @@
 #define TAA
 flat varying vec2 TAA_Offset;
 flat varying vec3 WsunVec;
-
+varying vec2 coord;
 uniform sampler2D colortex4;
 
 uniform int frameCounter;
@@ -29,7 +29,7 @@ void main() {
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif
-
+    coord = gl_MultiTexCoord0.xy;
 	WsunVec = (float(sunElevation > 1e-5)*2-1.)*normalize(mat3(gbufferModelViewInverse) *sunPosition);
 
 }

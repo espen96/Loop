@@ -1,4 +1,4 @@
-#version 120
+#version 130
 #extension GL_EXT_gpu_shader4 : enable
 
 #define TAA
@@ -12,9 +12,11 @@ flat varying vec2 TAA_Offset;
 #include "/lib/Shadow_Params.glsl"
 uniform sampler2D depthtex1;
 uniform sampler2D colortex1;
+uniform sampler2D colortex6;
 uniform sampler2D shadow;
 uniform sampler2D noisetex;
 uniform vec3 sunVec;
+uniform vec2 viewSize;
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
 uniform float rainStrength;
@@ -23,7 +25,7 @@ uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
-
+varying vec2 coord;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
@@ -34,6 +36,7 @@ uniform float far;
 uniform float near;
 
 #include "/lib/color_transforms.glsl"
+#include "/lib/noise.glsl"
 
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -55,11 +58,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
 
     return vec2(cos_v, sin_v)*alpha;
 }
-float interleaved_gradientNoise(){
-	vec2 coord = gl_FragCoord.xy;
-	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y));
-	return noise;
-}
+
 vec3 decode (vec2 encn)
 {
     vec3 unenc = vec3(0.0);
@@ -74,13 +73,7 @@ vec2 decodeVec2(float a){
     const float constant2 = 256. / 255.;
     return fract( a * constant1 ) * constant2 ;
 }
-float R2_dither(){
-	vec2 alpha = vec2(0.75487765, 0.56984026);
-	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y);
-}
-float blueNoise(vec2 coord){
-  return texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a;
-}
+
 vec3 worldToView(vec3 worldPos) {
 
     vec4 pos = vec4(worldPos, 0.0);
@@ -98,6 +91,49 @@ vec3 viewToWorld(vec3 viewPos) {
 
     return pos.xyz;
 }
+
+float encode2x8(vec2 toEnc) {
+    uvec2 bitfield = uvec2(toEnc * 255.0 + 0.5);
+    return float(bitfield.x | bitfield.y << 8u) / 65535.0;
+}
+float encode2x8(float toEncA, float toEncB) {
+    uvec2 bitfield = uvec2(vec2(toEncA, toEncB) * 255.0 + 0.5);
+    return float(bitfield.x | bitfield.y << 8u) / 65535.0;
+}
+vec2 decode2x8(float toDec) {
+    uint bitfield = uint(toDec * 65535u);
+    return vec2(bitfield & 255u, bitfield >> 8u) / 255.0;
+}
+float encode2x4(vec2 x){
+	return dot(floor(15.0 * x + 0.5), vec2(1.0 / 255.0, 16.0 / 255.0));
+}
+vec2 decode2x4(float pack){
+	vec2 xy; xy.x = modf(pack * 255.0 / 16.0, xy.y);
+	return vec2(16.0 / 15.0, 1.0 / 15.0) * xy;
+}
+
+float pack4x4(in vec4 toPack) {
+    vec2 A  = vec2(encode2x4(toPack.xy), encode2x4(toPack.zw));
+    return encode2x8(A);
+}
+vec4 unpack4x4(in float data) {
+    vec2 A  = decode2x8(data);
+
+    return vec4(decode2x4(A.x), decode2x4(A.y));
+}
+
+vec4 sampleCheckerboardSmooth(sampler2D tex, vec2 uv) {
+    vec2 pos        = coord * viewSize - 0.5;
+    ivec2 pixelPos  = ivec2(pos);
+
+    vec2 weights    = fract(pos);
+
+    vec4 resultA    = mix(unpack4x4(texelFetch(tex, pixelPos, 0).a)              , unpack4x4(texelFetch(tex, pixelPos + ivec2(1, 0), 0).a), weights.x);
+    vec4 resultB    = mix(unpack4x4(texelFetch(tex, pixelPos + ivec2(0, 1), 0).a), unpack4x4(texelFetch(tex, pixelPos + ivec2(1, 1), 0).a), weights.x);
+
+    return mix(resultA, resultB, weights.y);
+}
+
 void main() {
 /* RENDERTARGETS: 3 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
@@ -116,12 +152,12 @@ void main() {
 		bool translucent2 = abs(dataUnpacked1.w-0.6) <0.01;	// Weak translucency
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 		vec3 albedo = toLinear(vec3(dataUnpacked0.xz,dataUnpacked1.x));
-		gl_FragData[1].rgb = albedo;
+
 
 
 		if (!hand){
 			float NdotL = clamp(dot(normal,WsunVec),0.0,1.0);
-			float bn = blueNoise(gl_FragCoord.xy);
+			float bn = blueNoiseFloat(gl_FragCoord.xy);
 			float noise = fract(bn + frameCounter/1.6180339887);
 			vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
 			#ifdef Variable_Penumbra_Shadows
@@ -135,7 +171,7 @@ void main() {
 				projectedShadowPosition.xy *= distortFactor;
 				//do shadows only if on shadow map
 				if (abs(projectedShadowPosition.x) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.y) < 1.0-1.5/shadowMapResolution && abs(projectedShadowPosition.z) < 6.0){
-					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance*0.0078125,0.95);
+					const float threshMul = max(2048.0/shadowMapResolution*shadowDistance/128.0,0.95);
 					float distortThresh = (sqrt(1.0-NdotL*NdotL)/NdotL+0.7)/distortFactor;
 					float diffthresh = distortThresh/6000.0*threshMul;
 					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
@@ -149,9 +185,9 @@ void main() {
 					float avgDepth = 0.0;
 					for(int i = 0; i < VPS_Search_Samples; i++){
 						vec2 offsetS = tapLocation(i,VPS_Search_Samples, 84.0, noise,0.0);
-						float weight = 3.0 + (i+noise) *rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution*distortFactor*0.37;
+						float weight = 3.0 + (i+noise) *rdMul/SHADOW_FILTER_SAMPLE_COUNT*shadowMapResolution*distortFactor/2.7;
 						float d = texelFetch2D( shadow, ivec2((projectedShadowPosition.xy+offsetS*rdMul)*shadowMapResolution),0).x;
-						float b = smoothstep(weight*diffthresh*0.5, weight*diffthresh, projectedShadowPosition.z - d);
+						float b = smoothstep(weight*diffthresh/2.0, weight*diffthresh, projectedShadowPosition.z - d);
 
 						blockerCount += b;
 						avgDepth += max(projectedShadowPosition.z - d, 0.0)*1000.;
@@ -163,12 +199,11 @@ void main() {
 						avgBlockerDepth /= blockerCount;
 						float ssample = max(projectedShadowPosition.z - avgBlockerDepth,0.0)*1500.0;
 						gl_FragData[0].r = clamp(ssample, scales.x, scales.y)/(scales.y)*(mult-Min_Shadow_Filter_Radius)+Min_Shadow_Filter_Radius;
-						
 					}
 				}
 			}
 		#endif
 		}
-
+		gl_FragData[1].rgb = gl_FragData[0].ggg;
 }
 }

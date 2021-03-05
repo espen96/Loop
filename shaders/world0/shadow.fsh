@@ -22,8 +22,18 @@ void main() {
 	#ifdef SHADOW_DISABLE_ALPHA_MIPMAPS
 	 albedo.a = texture2DLod(tex,texcoord.xy,0).a;
 	#endif
+
+//	if (albedo.a < 0.01) discard;
+
+
+//	albedo.rgb = mix(vec3(1.0), albedo.rgb, 1.0 - pow(1.0 - albedo.a, 3.0));
+//	albedo.rgb *= clamp(1.0 - pow(albedo.a, 64.0),0,1);
+
+
+
+
 	gl_FragData[0] = albedo;
-	if ( albedo.a <= 0.0) discard;	
+
 	
 
 	

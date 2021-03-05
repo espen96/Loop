@@ -6,7 +6,7 @@ flat varying vec3 sunColor;
 flat varying vec3 moonColor;
 flat varying vec3 avgAmbient;
 flat varying float tempOffsets;
-
+varying vec2 coord;
 
 uniform sampler2D colortex4;
 uniform int frameCounter;
@@ -22,5 +22,5 @@ void main() {
 	sunColor = texelFetch2D(colortex4,ivec2(12,37),0).rgb;
 	moonColor = texelFetch2D(colortex4,ivec2(13,37),0).rgb;
 	avgAmbient = texelFetch2D(colortex4,ivec2(11,37),0).rgb;
-
+    coord = gl_MultiTexCoord0.xy;
 }

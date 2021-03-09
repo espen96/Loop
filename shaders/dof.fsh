@@ -2,7 +2,7 @@
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #define Fake_purkinje
-//#define motionblur
+#define motionblur
 
 #define BLOOMY_FOG 0.5 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0 6.0 10.0 15.0 20.0]
 #define BLOOM_STRENGTH  1.0 //[0.0 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 3.0 4.0]
@@ -551,11 +551,13 @@ void main() {
   float lum = dot(col,vec3(0.15,0.3,0.55));
 	float lum2 = dot(col,vec3(0.85,0.7,0.45))/2;
 	float rodLum = lum2*400.;
+	 	 	vec2 moment  =	texture2D(colortex15,texcoord.xy*RENDER_SCALE).rg;	
 	float rodCurve = mix(1.0, rodLum/(2.5+rodLum), purkinje);
 	col = mix(clamp(lum,0.0,0.05)*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+1.5e-3, col, rodCurve);
 //	col =vec3(rodCurve);
 //	if (col.r > 0.85*3.0) col = vec3(100,0.0,0.0);
- //  col = vec3(texture2D(colortex15,texcoord*RENDER_SCALE).rgb);
+ //  col = vec3(moment,0);
+
 	#ifndef USE_ACES_COLORSPACE_APPROXIMATION
   	col = LinearTosRGB(TONEMAP(col));
 

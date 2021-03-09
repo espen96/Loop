@@ -15,6 +15,7 @@ uniform sampler2D colortex11;
 uniform sampler2D colortex12;
 uniform sampler2D colortex13;
 uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 
@@ -72,7 +73,7 @@ vec2 decodeVec2(float a){
 #include "/lib/filter.glsl"
 void main() {
 
-/* RENDERTARGETS: 8*/
+/* RENDERTARGETS: 8 */
 
 
 
@@ -88,12 +89,13 @@ void main() {
 	
 	
 #ifdef ssptfilter
-
+if( FILTER_STEPS >= FILTER_STAGE){
 
 	if (z <1 && !iswater && !emissive && !hand) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,DENOISE_RANGE,colortex8,0.0).rgb,0,10);
 
 
 
+}
 #endif
 
 

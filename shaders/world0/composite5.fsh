@@ -430,7 +430,6 @@ float remap_noise_tri_erp( const float v )
     float f2 = 1.0 - sqrt( r2 - 0.25 );    
     return (v < 0.5) ? f1 : f2;
 }
-#include "/lib/filter.glsl"
 
 
 #define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
@@ -767,7 +766,7 @@ void main() {
 		#endif
 
 
-
+		float labemissive = texture2D(colortex8, texcoord).a;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
 		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 0.166, sssAmount);
@@ -780,11 +779,24 @@ void main() {
 		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
+
+
+
 		if(!hand)	emitting = (luma(albedo)*4.0*Emissive_Strength);
 		if (hand)   emitting = (luma(albedo)*Emissive_Strength)*2-1;
 			custom_lightmap.y = 0.0;
 			emitting = clamp(emitting*(1-luma(transparent.rgb*20)),0.0,10);
+
+
+
+
+
+
 		}
+
+	#ifdef SPEC
+		emitting =  (labemissive*Emissive_Strength);
+	#endif		
 		if ((iswater && isEyeInWater == 0) || (!iswater && isEyeInWater == 1)){
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
@@ -839,13 +851,7 @@ void main() {
 					
 
 
-	#ifdef SPEC
-		float labemissive = texture2D(colortex8, texcoord).a*2;
-		if(emissive) ambientLight *= 0.75;
-		if(emissive) emitting = emitting*0.05 + (labemissive*2);
-		ambientLight += vec3(labemissive);
 
-	#endif
 //	ambientLight*= blur5(colortex15, texcoord, vec2(viewWidth,viewHeight), vec2(1,0) ).r;
 
 			//combine all light sources

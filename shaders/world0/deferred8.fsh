@@ -121,9 +121,49 @@ vec3 toScreenSpacePrev(vec3 p) {
 #include "/lib/sky_gradient.glsl"
 #include "/lib/volumetricClouds.glsl"
 #include "/lib/kernel.glsl"
-#include "/lib/filter.glsl"
 
 
+vec3 screenToViewSpace(vec3 screenpos, mat4 projInv, const bool taaAware) {
+     screenpos   = screenpos*2.0-1.0;
+
+
+vec3 viewpos    = vec3(vec2(projInv[0].x, projInv[1].y)*screenpos.xy + projInv[3].xy, projInv[3].z);
+     viewpos    /= projInv[2].w*screenpos.z + projInv[3].w;
+    
+    return viewpos;
+}
+vec3 screenToViewSpace(vec3 screenpos, mat4 projInv) {    
+    return screenToViewSpace(screenpos, projInv, true);
+}
+
+vec3 screenToViewSpace(vec3 screenpos) {
+    return screenToViewSpace(screenpos, gbufferProjectionInverse);
+}
+vec3 screenToViewSpace(vec3 screenpos, const bool taaAware) {
+    return screenToViewSpace(screenpos, gbufferProjectionInverse, taaAware);
+}	
+float sqr(float x) {
+    return x*x;
+}
+float computeVariance(sampler2D tex, ivec2 pos) {
+    float sum_msqr  = 0.0;
+    float sum_mean  = 0.0;
+
+    for (int i = 0; i<9; i++) {
+        ivec2 deltaPos     = kernelO_3x3[i];
+
+
+        vec3 col    = texelFetch2D(tex, pos + deltaPos, 0).rgb;
+        float lum   = luma(col);
+
+        sum_msqr   += sqr(lum);
+        sum_mean   += lum;
+    }
+    sum_msqr /= 9.0;
+    sum_mean /= 9.0;
+
+    return abs(sum_msqr - sqr(sum_mean)) * 1/(max(sum_mean, 1e-25));
+}
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
@@ -526,7 +566,7 @@ void main() {
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));		
     	if (normalorg.r >0.9 && normalorg.g >0.9 && normalorg.b > 0.9) normalorg = constructNormal(texture(depthtex0, texcoord.st).r, texcoord, depthtex0);
 
-	gl_FragData[4] = trpData;
+		gl_FragData[4] = trpData;
 		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
   		gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture2D(depthtex0,texcoord).r));		
 
@@ -604,7 +644,19 @@ void main() {
 		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 
-		vec3 custom_lightmap = texture(colortex4,(lightmap*10.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		float emitting = 0.0;
+		
+		float labemissive = texture2D(colortex10, texcoord).a;
+		if (emissive || (hand && heldBlockLightValue > 0.1)){
+
+
+
+			custom_lightmap.y = 0.1;
+			custom_lightmap.y += labemissive;
+
+		}
+			
 		vec3 ambientLight3 = ambientLight * custom_lightmap.x + custom_lightmap.z*vec3(0.9,1.0,1.5) + custom_lightmap.y*vec3(TORCH_R,TORCH_G,TORCH_B);		
 
 			#ifdef SSGI
@@ -626,7 +678,11 @@ void main() {
 	vec3 indirectCurrent = ambientLight2;
 	#ifdef SSGI
 	#ifdef ssgi_temporal
+
+
 		if(!hand)	temporal( indirectCurrent, historyGData, indirectHistory, fragpos, normalorg,  z, texcoord ,  hand, ambientLight3, lightmap);
+
+
 
 
 	gl_FragData[2] = historyGData;
@@ -636,6 +692,7 @@ void main() {
 	#endif
     float variance2  = computeVariance(colortex12, ivec2(floor(texcoord * vec2(viewWidth, viewHeight))));		
     float var2        = 1/(0.5 + variance2 *4);	
+
 
 
 //	vec4 variance3   = computeVariance2(colortex12, ivec2(floor(texcoord * vec2(viewWidth, viewHeight))));		

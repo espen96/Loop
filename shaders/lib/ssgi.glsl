@@ -105,8 +105,9 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	float depthmask = ld(z);
 	float stepSize = STEP_LENGTH*clamp(blueNoise(),0.5,1.5);
 //	int maxSteps =   clamp(int(  (clamp((moment.x),0,1)*99)),6,99);
+#if STEPS != Unlimited
 	int maxSteps = STEPS;
-
+#endif
 //	if (emissive) return vec3(1.1);
 	if (hand) return vec3(1.1);
 
@@ -126,10 +127,11 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	vec3 maxLengths = (step(0.,direction)-clipPosition) / direction;
 	float mult = min(min(maxLengths.x,maxLengths.y),maxLengths.z);
 	vec3 stepv = direction/len;
-
+#if STEPS == Unlimited
 	int iterations = int(min(len, mult*len)-2);
-//	int iterations = min(int(min(len, mult*len)-2), maxSteps);
-
+#else	
+	int iterations = min(int(min(len, mult*len)-2), maxSteps);
+#endif
 	
 	//Do one iteration for closest texel (good contact shadows)
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*6.0;
@@ -433,6 +435,43 @@ vec3 fireflyRejectionVariance(vec3 radiance, vec3 variance, vec3 shortMean, vec3
     return radiance - overflow;
 }
 
+
+vec2 moment(ivec2 pos) {
+
+float weightSum = 1.0;
+vec2 moment = texelFetch(colortex15, pos, 0).rg;
+float depth = texelFetch(depthtex0, pos, 0).x;
+vec3 normal = texelFetch(colortex10, pos, 0).xyz;
+    for (int i = 0; i<9; i++) {
+        ivec2 deltaPos     = kernelO_3x3[i]*2;
+        //  We already have the center data
+      //  if (pos != 0 && pos != 0) { continue; }
+
+        // ⬇️ Sample current point data with current uv
+        ivec2 p = pos + deltaPos;
+        vec4 curColor = texelFetch(colortex5, ivec2(p/RENDER_SCALE), 0);
+        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
+
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float l = luma(curColor.rgb);
+
+        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(deltaPos)) + 1.0e-2);
+        float weightNormal = pow(max(0, dot(curNormal, normal)), 32.0);
+        float w = exp(-weightDepth) * weightNormal;
+
+
+        weightSum += w;
+
+        moment += vec2(l, l * l) * w;
+    }
+
+
+moment /= weightSum;
+
+    return  moment;
+}
 void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indirectHistory,vec3 fragpos,vec3 normal2, float z,vec2 texcoord , bool hand, vec3 inderectNoSSGI, vec2 lightmap)
 {
 
@@ -462,8 +501,9 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
         historyGData        = texture2D(colortex9, reprojection.xy);
         float lightmaphistory        = texture2D(colortex15, reprojection.xy).a;
         historyGData.rgb    = historyGData.rgb ;
-
-
+ 	 	vec2 moment  =	moment(ivec2(floor(reprojection.xy * vec2(viewWidth, viewHeight))));	
+		gl_FragData[4].rg =  moment ;
+		bool successfulReprojection = true;
 
 	//		  reprojection.xy +=   (velocity2)/RENDER_SCALE;
 	//		  reprojection.xy =   (texcoord -velocity2)/RENDER_SCALE;
@@ -478,26 +518,28 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
         float normalWeight  = sqr(clamp(dot(historyGData.rgb, currentGData.rgb),0,1));
 
 
-        float accumulationR0        = mix(0.1, 0.02, sqrt(indirectHistory.a));
+    	float accumulationR0        = mix(0.1, 0.02, sqrt(indirectHistory.a));
+    
+    //  float accumulationR0        = (1-indirectHistory.a);
+		float varianceSpatial       = clamp((1.0 + 2.0 * (indirectHistory.a)) * clamp(1-(max(0.0, moment.y - moment.x * moment.x)*10),0,1),0.0,1);
 
+		      varianceSpatial       = varianceSpatial;
         float accumulationWeight    = depthRejection;
-			  accumulationWeight     *= normalWeight;
-			  accumulationWeight     += clamp(((distance(indirectHistory.rgb,indirectCurrent.rgb)/luma(indirectHistory.rgb)) ) *(abs(cameraMovement.r)+abs(cameraMovement.g)+abs(cameraMovement.b)),0,1);	 		
-			
-			 		   
-			  accumulationWeight      = clamp(1.0 - accumulationWeight,0.0,1);		
-			  
-		//  accumulationWeight      = max(accumulationWeight,  accumulationR0);	
+			  accumulationWeight   *= normalWeight;
+			  accumulationWeight   += clamp(((distance(indirectHistory.rgb,indirectCurrent.rgb)/luma(indirectHistory.rgb)) ) *(abs(cameraMovement.r)+abs(cameraMovement.g)+abs(cameraMovement.b)),0,1);	 		 		   
+			  accumulationWeight    = clamp(1.0 - accumulationWeight,0.0,1);		  
+			  if(accumulationWeight <0.1) successfulReprojection = false;
+	    	  accumulationWeight    = max(accumulationWeight,  varianceSpatial);	
 		
-	vec3 closestToCamera = closestToCamera5taps(texcoord);
-	vec3 fragposition = toScreenSpace(closestToCamera);			
+		vec3 closestToCamera = closestToCamera5taps(texcoord);
+		vec3 fragposition = toScreenSpace(closestToCamera);			
 			
-	fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
-	vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
-	previousPosition = toClipSpace3Prev(previousPosition);
-	vec2 velocity = previousPosition.xy - closestToCamera.xy;
+			fragposition = mat3(gbufferModelViewInverse) * fragposition + gbufferModelViewInverse[3].xyz + (cameraPosition - previousCameraPosition);
+		vec3 previousPosition = mat3(gbufferPreviousModelView) * fragposition + gbufferPreviousModelView[3].xyz;
+			previousPosition = toClipSpace3Prev(previousPosition);
+		vec2 velocity = previousPosition.xy - closestToCamera.xy;
 
-	previousPosition.xy = texcoord + velocity;
+			previousPosition.xy = texcoord + velocity;
 
 
 
@@ -520,24 +562,24 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 		vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 		vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
-		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0.1,1))*0.5;	 
+
+		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0.0,1))*0.5;	 
 		vec3 difference = indirectHistory.rgb - indirectCurrent;
-		gl_FragData[4].rgb =vec3(texture2D(colortex15, texcoord).rgb);
-		gl_FragData[4].a = lightmap.x;
 		float lmdiff = clamp(distance(lightmap.x,lightmaphistory)*5,0,1);
 
-		      accumulationWeight = clamp( (accumulationWeight +lmdiff)+isclamped ,0.0,1);	
-			  float motionvecacc = 0.0;
+		      accumulationWeight = clamp( (accumulationWeight)+isclamped,0.0,1);	
+		float motionvecacc = 0.0;
 
 	
         if (!offscreen) { 
 
-			if (length(velocity) > 1e-6) accumulationWeight += 0.1;
+		//	if (length(velocity) > 1e-6) accumulationWeight += 0.1;
             indirectHistory.rgb     = mix(indirectHistory.rgb, indirectCurrent, accumulationWeight );
 
             indirectHistory.a  = mix(0.0, clamp(indirectHistory.a + (1/(30)),0,1), float(distanceDelta < 0.2));
 			if(hand) indirectHistory.a = 1;
 	
+		//	indirectHistory.a = successfulReprojection ? indirectHistory.a + 1.0 : 0.0;
 
  
         } else {

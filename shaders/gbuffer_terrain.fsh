@@ -573,7 +573,7 @@ vec2 lm = lmtexcoord.zw;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
-
+	
 	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);	
 
 	#endif

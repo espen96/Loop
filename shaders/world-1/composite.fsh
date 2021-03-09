@@ -249,7 +249,6 @@ vec2 R2_samples(int n){
 }
 
 //#include "/lib/rsm.glsl"
-#include "/lib/filter.glsl"
 #include "/lib/ssgi.glsl"
 
 

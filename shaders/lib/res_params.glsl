@@ -15,10 +15,7 @@ uniform float fpsSmooth;
 #ifdef ssptfilter
 #define firefly_supression
 
-#define filterpass_0
-#define filterpass_1
-#define filterpass_2
-#define filterpass_3
+#define FILTER_STEPS 5 //[0 1 2 3 4 5]
 
 #endif
 

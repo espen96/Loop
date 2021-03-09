@@ -382,7 +382,6 @@ float remap_noise_tri_erp( const float v )
     float f2 = 1.0 - sqrt( r2 - 0.25 );    
     return (v < 0.5) ? f1 : f2;
 }
-#include "/lib/filter.glsl"
 
 
 #define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
@@ -465,7 +464,42 @@ vec3 reproject(vec3 sceneSpace, bool hand) {
 
     return prevScreenPos;
 }
+vec2 moment(ivec2 pos) {
 
+float weightSum = 1.0;
+vec2 moment = texelFetch(colortex15, pos, 0).rg;
+float depth = texelFetch(depthtex0, pos, 0).x;
+vec3 normal = texelFetch(colortex10, pos, 0).xyz;
+    for (int i = 0; i<9; i++) {
+        ivec2 deltaPos     = kernelO_3x3[i]*4;
+        //  We already have the center data
+      //  if (pos != 0 && pos != 0) { continue; }
+
+        // ⬇️ Sample current point data with current uv
+        ivec2 p = pos + deltaPos;
+        vec4 curColor = texelFetch(colortex5, ivec2(p/RENDER_SCALE), 0);
+        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
+
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float l = luma(curColor.rgb);
+
+        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(deltaPos)) + 1.0e-2);
+        float weightNormal = pow(max(0, dot(curNormal, normal)), 32.0);
+        float w = exp(-weightDepth) * weightNormal;
+
+
+        weightSum += w;
+
+        moment += vec2(l, l * l) * w;
+    }
+
+
+moment /= weightSum;
+
+    return  moment;
+}
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 	
@@ -701,7 +735,7 @@ void main() {
 			shadowCol.rgb = clamp(shadowCol.rgb * (1.0 - shading) + shading, vec3(0.0), vec3(1.0));
 
 			gl_FragData[0].rgb = (shadowCol.rgb * diffuseSun + SSS ) ;
-			gl_FragData[1].rgb = vec3(shadowCol.rgb) ;
+			gl_FragData[1].rg =  moment(ivec2(floor(texcoord * vec2(viewWidth, viewHeight)))) ;
 
 
 
@@ -714,5 +748,5 @@ void main() {
 	}	
 
 
-/* RENDERTARGETS: 11 */
+/* RENDERTARGETS: 11,15 */
 }

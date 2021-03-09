@@ -95,7 +95,8 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
     ivec2 pos     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     vec3 colorCenter = texelFetch(tex1, pos, 0).rgb; 	
     float variance  = computeVariance(colortex8, ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE)));	
-     if (variance <= 0 ) return colorCenter;	   	
+    vec2 moment = texelFetch(colortex15, pos, 0).rg;
+//     if (moment.x <= 0 ) return colorCenter;	   	
 	float weight = 0.0;
 	vec4 normaldepth = texelFetch(colortex10, pos, 0).rgba; 
     float   c_depth    = normaldepth.a * far;	
@@ -122,7 +123,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 	ivec2 delta  = kernelO_3x3[i] * size;	
 #endif
 
- //       if (delta.x == 0 && delta.y == 0) continue;
+        if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos  = pos + delta;
         if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
@@ -134,6 +135,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 		vec3 normal = (normaldepth2.rgb);			
 		
 		vec3 color = texelFetch(tex1, d_pos, 0).rgb;  	
+            float variance2  = computeVariance(colortex8, d_pos);	
 
 
 		float d_weight = abs(cu_depth - c_depth);	
@@ -153,6 +155,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
        totalWeight += weight;
 
 	}
+
 
     totalColor *= 1/(max(totalWeight, 1e-25));
 

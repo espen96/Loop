@@ -431,7 +431,6 @@ float remap_noise_tri_erp( const float v )
     float f2 = 1.0 - sqrt( r2 - 0.25 );    
     return (v < 0.5) ? f1 : f2;
 }
-#include "/lib/filter.glsl"
 
 
 #define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);

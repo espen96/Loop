@@ -326,7 +326,6 @@ vec2 R2_samples(int n){
 	return fract(alpha * n);
 }
 #ifdef SSGI
-#include "/lib/filter.glsl"
 #include "/lib/ssgi.glsl"
 #endif
 

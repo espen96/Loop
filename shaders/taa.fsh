@@ -48,7 +48,7 @@ const int colortex11Format = R11F_G11F_B10F;
 	//Transparent normal for refraction(r) 
 const int colortex12Format = RGBA32F;				
 	//SSPT temporal
-const int colortex13Format =  RGBA32UI;			    
+const int colortex13Format =  RG32UI;			    
 	//motion vectors
 const int colortex14Format = RGBA16F;			    
 	//specular temporal
@@ -92,6 +92,9 @@ uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex6;
 uniform sampler2D noisetex;
+uniform sampler2D colortex15;
+uniform sampler2D colortex2;
+
 
 uniform float near;
 uniform float far;

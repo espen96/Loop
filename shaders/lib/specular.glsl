@@ -87,6 +87,12 @@ vec3 GGX (vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
 vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
+
+
+
+
+
+
 vec3 rayTrace(vec3 viewNormal,vec3 dir,vec3 position,float dither, float quality){
 
     vec3 clipPosition = toClipSpace3(position);
@@ -113,8 +119,7 @@ vec3 rayTrace(vec3 viewNormal,vec3 dir,vec3 position,float dither, float quality
 
 
   for (int i = 0; i <= int(quality); i++) {
-    if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
-      return vec3(1.1);
+    if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0) return vec3(1.1);
 		// decode depth buffer
 		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
     if(sp <= ld(spos.z) && abs(sp-ld(spos.z))/ld(spos.z) < 0.1){
@@ -124,6 +129,11 @@ vec3 rayTrace(vec3 viewNormal,vec3 dir,vec3 position,float dither, float quality
   }
   return vec3(1.1);
 }
+
+
+
+
+
 void frisvad(in vec3 n, out vec3 f, out vec3 r){
     if(n.z < -0.999999) {
         f = vec3(0.,-1,0);

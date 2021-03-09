@@ -40,6 +40,9 @@ uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
+uniform sampler2D colortex13;
+uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 
 uniform vec3 sunVec;
 uniform float far;

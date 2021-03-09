@@ -2,7 +2,7 @@
 //Filter 
 
 #extension GL_EXT_gpu_shader4 : enable
-#define DENOISE_RANGE 8
+#define DENOISE_RANGE 4
 
 
 #include "/filtering.fsh"

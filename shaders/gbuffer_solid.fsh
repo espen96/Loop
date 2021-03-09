@@ -293,7 +293,7 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* RENDERTARGETS: 1,7,10,2,13 */
+/* RENDERTARGETS: 1,7,10,2 */
 void main() {		
 
 
@@ -479,7 +479,7 @@ vec4 data0 = vec4(0.0);
 	vec4 velocitymap = vec4(  0.12*velocity.rgb , data0.a);
 
   gl_FragData[4] = velocitymap;
-  gl_FragData[5] = vec4(0,0,0,1);
+
 
 
 }

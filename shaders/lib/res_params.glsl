@@ -24,7 +24,7 @@ uniform float fpsSmooth;
 
 #define SHADOWS_ON
 //#define SPEC
-#define TAA_DS // Lowers render resolution dynamically.
+//#define TAA_DS // Lowers render resolution dynamically.
 
 uniform sampler2D colortexF;
 
@@ -35,7 +35,7 @@ uniform sampler2D colortexF;
 #ifdef TAA_DS
 
    #define RENDER_SCALE_X clamp(abs(RENDER_SCALE_MIN + (fpsSmooth - 25) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (100 - 30)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)
-   #define RENDER_SCALE_Y RENDER_SCALE_X
+   #define RENDER_SCALE_Y clamp(abs(RENDER_SCALE_MIN + (fpsSmooth - 25) * (RENDER_SCALE_MAX - RENDER_SCALE_MIN) / (100 - 30)),RENDER_SCALE_MIN,RENDER_SCALE_MAX)
    
 
    #define RENDER_SCALE vec2(RENDER_SCALE_X, RENDER_SCALE_Y)
@@ -43,8 +43,8 @@ uniform sampler2D colortexF;
 #else
 
 
-  #define RENDER_SCALE_X 0.7 // X axis render resolution multiplier [0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8  0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9  0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.  ]
-  #define RENDER_SCALE_Y 0.7 // Y axis render resolution multiplier  [0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8  0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9  0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.  ]
+  #define RENDER_SCALE_X 0.5 // X axis render resolution multiplier [0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8  0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9  0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.  ]
+  #define RENDER_SCALE_Y 0.5 // Y axis render resolution multiplier  [0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8  0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9  0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.  ]
   #define RENDER_SCALE vec2(RENDER_SCALE_X, RENDER_SCALE_Y)
 #endif
 

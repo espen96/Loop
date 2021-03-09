@@ -16,6 +16,9 @@ uniform sampler2D depthtex0;
 uniform sampler2D noisetex;
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
+uniform sampler2D colortex13;
+uniform sampler2D colortex15;
+uniform sampler2D colortex2;
 
 uniform vec3 sunVec;
 uniform vec2 texelSize;

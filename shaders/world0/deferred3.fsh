@@ -13,6 +13,10 @@ flat varying vec2 TAA_Offset;
 uniform sampler2D depthtex1;
 uniform sampler2D colortex1;
 uniform sampler2D colortex6;
+uniform sampler2D colortex13;
+uniform sampler2D colortex15;
+uniform sampler2D colortex2;
+
 uniform sampler2D shadow;
 uniform sampler2D noisetex;
 uniform vec3 sunVec;

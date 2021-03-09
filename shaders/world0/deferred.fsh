@@ -37,6 +37,9 @@ flat varying float centerDepth;
 
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
+uniform sampler2D colortex13;
+uniform sampler2D colortex15;
+uniform sampler2D colortex2;
 uniform sampler2D noisetex;
 #ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;

@@ -47,7 +47,7 @@ uniform sampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 uniform sampler2D colortex11;
-
+uniform sampler2D colortex15;
 
 uniform sampler2D colortex12;
 uniform sampler2D colortex14;
@@ -56,6 +56,7 @@ uniform sampler2D colortex6; // Noise
 uniform sampler2D depthtex1;//depth
 uniform sampler2D depthtex0;//depth
 uniform sampler2D noisetex;//depth
+uniform sampler2D colortex13;
 
 
 #ifdef SHADOWS_ON
@@ -122,9 +123,8 @@ vec3 toScreenSpacePrev(vec3 p) {
 float ld(float dist) {
     return (2.0 * near) / (far + near - dist * (far - near));
 }
-#ifdef SPEC
-uniform sampler2D colortex13;
-#endif
+
+
 
 #include "/lib/specular.glsl"
 vec3 normVec (vec3 vec){
@@ -697,7 +697,7 @@ void main() {
 
 			//combine all light sources
 			float shadowmask = luma(shadowCol.rgb * shadowCol.a);
-			if( shadowmask > 0.8 && shadowmask < 0.84) shadowCol.rpg = mix(vec3(1.0), shadowCol.rgb,1-shadowCol.a);			
+			if( shadowmask > 0.8 && shadowmask < 0.84) shadowCol.rgb = mix(vec3(1.0), shadowCol.rgb,1-shadowCol.a);			
 			shadowCol.rgb = clamp(shadowCol.rgb * (1.0 - shading) + shading, vec3(0.0), vec3(1.0));
 
 			gl_FragData[0].rgb = (shadowCol.rgb * diffuseSun + SSS ) ;

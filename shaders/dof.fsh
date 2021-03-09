@@ -404,7 +404,7 @@ vec3 getMotionblur(float depth, bool hand,vec3 color) {
 		vec4 velocity2  =	texture2D(colortex13,texcoord*RENDER_SCALE).rgba;	
 	   	   velocity2.r = 	((velocity2.x/ld(depth)*28)*0.2);
 	   	   velocity2.g = 	((velocity2.y/ld(depth)*28)*0.6);
-		if(velocity2.a > 0) velocity = velocity2.xy*10;
+	//	if(velocity2.a > 0) velocity = velocity2.xy*10;
 		if(hand) velocity *=0.1;
 		velocity *=  1.5 * 0.02;
   		const int motionblurSamples      = int(8);

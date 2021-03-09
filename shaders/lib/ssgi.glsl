@@ -1,8 +1,3 @@
-
-
-
-
-
 vec3 RT2(vec3 dir,vec3 position,float noise){
 	float stepSize = 3;
 	int maxSteps = 90;
@@ -37,12 +32,78 @@ vec3 RT2(vec3 dir,vec3 position,float noise){
 	return vec3(1.1);
 }
 
+
+float minOf(vec2 a)         { return min(a.x, a.y); }
+float minOf(vec3 a)         { return min(a.x, min(a.y, a.z)); }
+float minOf(float a, float b, float c) { return min(a, min(b, c)); }
+
+#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
+
+float depthLinear(float depth) {
+    return (2.0*near) / (far+near-depth * (far-near));
+}
+vec3 RT3(vec3 direction, vec3 position, float noise) {
+    const uint maxSteps     = uint(8);
+    const float stepSize    = 1.57079632679;
+
+    vec3 stepVector         = direction * stepSize;
+
+    vec3 endPosition        = position + stepVector * maxSteps;
+    vec3 endScreenPosition  = viewMAD(gbufferModelViewInverse,endPosition);
+
+    vec2 maxPosXY           = max(abs(endScreenPosition.xy * 2.0 - 1.0), vec2(1.0));
+    float stepMult          = minOf(vec2(1.0) / maxPosXY);
+        stepVector         *= stepMult;
+
+    // closest texel iteration
+    vec3 samplePos          = position;
+    
+        samplePos          += stepVector / 6.0;
+    vec3 screenPos          = viewMAD(gbufferModelViewInverse,samplePos);
+
+
+    if (clamp(screenPos.xy,0,1) == screenPos.xy) {
+		
+        float depthSample   = texelFetch(depthtex0, ivec2(screenPos.xy * viewSize), 0).x;
+        float linearSample  = depthLinear(depthSample);
+        float currentDepth  = depthLinear(screenPos.z);
+        if (linearSample < currentDepth) {
+            float dist      = abs(linearSample - currentDepth) / currentDepth;
+            if (dist <= 0.1) return vec3(screenPos.xy, depthSample);
+        }
+    }
+    
+        samplePos          += stepVector * noise;
+
+    for (uint i = uint(0); i < uint(maxSteps); ++i) {
+        vec3 screenPos      = viewMAD(gbufferModelViewInverse,samplePos);
+            samplePos      += stepVector;
+        if (clamp(screenPos.xy,0,1) != screenPos.xy) break;
+
+        float depthSample   = texelFetch(depthtex0, ivec2(screenPos.xy * viewSize), 0).x;
+        float linearSample  = depthLinear(depthSample);
+        float currentDepth  = depthLinear(screenPos.z);
+	
+        if (linearSample < currentDepth) {
+            float dist      = abs(linearSample - currentDepth) / currentDepth;
+            if (dist <= 0.1) return vec3(screenPos.xy, depthSample);
+        }
+    }
+
+    return vec3(1.1);
+}
+
+
+
+
+
 vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 lightmap, bool emissive, bool hand,float z){
 
 
 
+	float ssptbias = SSPTBIAS;
 	float depthmask = ld(z);
-	float stepSize = STEP_LENGTH;
+	float stepSize = STEP_LENGTH*clamp(blueNoise(),0.5,1.5);
 //	int maxSteps =   clamp(int(  (clamp((moment.x),0,1)*99)),6,99);
 	int maxSteps = STEPS;
 
@@ -54,9 +115,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	bool istranparent = transparent > 0.0;
 	vec3 clipPosition = toClipSpace3(position);
 	
-	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ?
-	   								(-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
-
+	float rayLength = ((position.z + dir.z * sqrt(3.0)*far) > -sqrt(3.0)*near) ? (-sqrt(3.0)*near -position.z) / dir.z : sqrt(3.0)*far;
 
 	vec3 end = toClipSpace3(position+dir*rayLength);
 	vec3 direction = end-clipPosition;  //convert to clip space
@@ -71,8 +130,6 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	int iterations = int(min(len, mult*len)-2);
 //	int iterations = min(int(min(len, mult*len)-2), maxSteps);
 
-			
-	
 	
 	//Do one iteration for closest texel (good contact shadows)
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0) + stepv/stepSize*6.0;
@@ -86,7 +143,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	if( sp < currZ) {
 		float dist = abs(sp-currZ)/currZ;
 		
-		if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+		if (dist <= 0.1) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 
 		
 	}
@@ -95,19 +152,20 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 
 		
 	spos += stepv*noise;
-
-  for(int i = 0; i < iterations; i++){
-
+//	for (uint i = uint(0); i < uint(8); ++i) {
+    for(int i = 0; i < iterations; i++){
+        if (clamp(clipPosition.xy,0,1) != clipPosition.xy) break;
 		// decode depth buffer
 		float sp = sqrt(texelFetch2D(colortex4,ivec2(spos.xy/texelSize/4),0).w/65000.0);
 			
 		float currZ = linZ(spos.z);
-		if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
-	
-
-
+	//	if( sp < currZ && abs(sp-ld(spos.z))/ld(spos.z) < 0.1) {
+		if( sp < currZ ) {
+			if (spos.x < 0.0 || spos.y < 0.0 || spos.z < 0.0 || spos.x > 1.0 || spos.y > 1.0 || spos.z > 1.0) return vec3(1.1);
 			float dist = abs(sp-currZ)/currZ;
-			if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+
+			if (dist <= ssptbias) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+
 		}
 		
 
@@ -121,15 +179,13 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 
 
 
-vec3 cosineHemisphereSample(vec2 Xi)
+vec3 cosineHemisphereSample(vec2 a)
 {
-    float r = sqrt(Xi.x);
-    float theta = 2.0 * 3.14159265359 * Xi.y;
+    float phi = a.y * 2.0 * 3.14159265359;
+    float cosTheta = 1.0 - a.x;
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
-    float x = r * cos(theta);
-    float y = r * sin(theta);
-
-    return vec3(x, y, sqrt(clamp(1.0 - Xi.x,0.,1.)));
+    return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 vec3 TangentToWorld(vec3 N, vec3 H)
 {
@@ -346,7 +402,7 @@ vec4 twoLayerReverseReprojection(vec2 currentScreenCoord,  sampler2D depthBuffer
 
 
 
-#define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
+
 
 vec3 reproject(vec3 sceneSpace, bool hand) {
     vec3 prevScreenPos = hand ? vec3(0.0) : cameraPosition - previousCameraPosition;
@@ -381,9 +437,7 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 {
 
 
-float checkerboard = checkerboard(gl_FragCoord.xy);
-
-
+     
     vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
     vec3 reprojection   = reproject(scenePos, hand);	
 
@@ -395,7 +449,7 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
          currentGData.a  = length(fragpos);	
 		
  	  vec4 velocity2  =	texture2D(colortex13,texcoord).rgba;	
- 	  vec2 moment  =	texture2D(colortex15,texcoord).rg;	
+
 
 //		   velocity2.rgb = reprojection-velocity2.rgb;
 	   	   velocity2.r = 	((velocity2.x/ld(z)*28)*0.2);
@@ -404,13 +458,11 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 //		   velocity2.xy = velocity2.xy*((velocity2.z/ld(z)*far)*0.1);	
 
 	    reprojection.xy *= RENDER_SCALE;  
-//		if(velocity2.a >0.0)	reprojection.xy = texcoord + -velocity2.rg;		
+		if(velocity2.a >0.0)	reprojection.xy = texcoord + -velocity2.rg;		
         historyGData        = texture2D(colortex9, reprojection.xy);
         float lightmaphistory        = texture2D(colortex15, reprojection.xy).a;
         historyGData.rgb    = historyGData.rgb ;
 
-  		float variance2   = computeVariance(colortex12, ivec2(floor(texcoord * vec2(viewWidth, viewHeight))));		
-    	float var2        = rcp(0.5 + variance2 *4);	
 
 
 	//		  reprojection.xy +=   (velocity2)/RENDER_SCALE;
@@ -468,12 +520,13 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 		vec3 albedoPrev = max(FastCatmulRom(colortex12, reprojection.xy,vec4(texelSize, 1.0/texelSize), 0.75).xyz, 0.0);
 		vec3 finalcAcc = clamp(albedoPrev,cMin,cMax);		
 
-		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0.1,1))*0.1;	 
+		float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,1),0.1,1))*0.5;	 
 		vec3 difference = indirectHistory.rgb - indirectCurrent;
-		gl_FragData[4].rgb =vec3(distance(lightmap.x,lightmaphistory));
+		gl_FragData[4].rgb =vec3(texture2D(colortex15, texcoord).rgb);
 		gl_FragData[4].a = lightmap.x;
 		float lmdiff = clamp(distance(lightmap.x,lightmaphistory)*5,0,1);
-		      accumulationWeight = clamp( (accumulationWeight +lmdiff)+isclamped ,0.0004,1);	
+
+		      accumulationWeight = clamp( (accumulationWeight +lmdiff)+isclamped ,0.0,1);	
 			  float motionvecacc = 0.0;
 
 	
@@ -482,7 +535,7 @@ float checkerboard = checkerboard(gl_FragCoord.xy);
 			if (length(velocity) > 1e-6) accumulationWeight += 0.1;
             indirectHistory.rgb     = mix(indirectHistory.rgb, indirectCurrent, accumulationWeight );
 
-            indirectHistory.a       = mix(0.0, clamp(indirectHistory.a + rcp(30),0,1), float(distanceDelta < 0.2));
+            indirectHistory.a  = mix(0.0, clamp(indirectHistory.a + (1/(30)),0,1), float(distanceDelta < 0.2));
 			if(hand) indirectHistory.a = 1;
 	
 
@@ -505,16 +558,75 @@ indirectHistory = indirectHistory;
 
 
 //////////////////////////////SSGI//////////////////////////////
-					
+const float PI 		= acos(-1.0);
+const float TAU 	= PI * 2.0;
+const float hPI 	= PI * 0.5;
+const float rPI 	= 1.0 / PI;
+const float rTAU 	= 1.0 / TAU;
 
-vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, vec3 torch, vec3 albedo,float z,vec2 lightmap, bool emissive,bool hand, vec2 texcoord){
+const float PHI		= sqrt(5.0) * 0.5 + 0.5;
+const float rLOG2	= 1.0 / log(2.0);
+
+const float goldenAngle = TAU / PHI / PHI;
+vec2 fermatsSpiralGoldenN(float index, float total) {
+	float theta = index * goldenAngle;
+	return vec2(sin(theta), cos(theta)) * sqrt(index / total);
+}
+
+vec2 sincos(float x) {
+    return vec2(sin(x), cos(x));
+}
+	vec3 genUnitVector(vec2 p) {
+    p.x *= 6.283185307179586; p.y = p.y * 2.0 - 1.0;
+    return vec3(sincos(p.x) * sqrt(1.0 - p.y * p.y), p.y);
+}
+vec3 GenerateCosineVectorSafe(vec3 vector, vec2 xy) {
+	// Apparently this is actually this simple.
+	// http://www.amietia.com/lambertnotangent.html
+	// (cosine lobe around vector = lambertian BRDF)
+	// This one deals with ther rare case where cosineVector == (0,0,0)
+	// Can just normalize it instead if you are sure that won't be a problem
+	vec3 cosineVector = vector + genUnitVector(xy);
+	float lenSq = dot(cosineVector, cosineVector);
+	return lenSq > 0.0 ? cosineVector * inversesqrt(lenSq) : vector;
+}
+#define HASHSCALE3 vec3(.1031, .1030, .0973)
+
+vec2 hash22(vec2 p) {
+	vec3 p3 = fract(vec3(p.xyx) * HASHSCALE3);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+vec3 sphereMap(vec2 a) {
+    float phi = a.y * 2.0 * PI;
+    float cosTheta = 1.0 - a.x;
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+
+
+float ditherBluenoise() {
+    ivec2 coord = ivec2(fract(gl_FragCoord.xy/256.0)*256.0);
+    float noise = texelFetch(noisetex, coord, 0).a;
+        noise   = fract(noise+float(frameCounter)/PI);
+
+    return noise;
+}
+const float rho     = 1.32471795724474602596090885447809;   // plastic constant
+vec3 rtGI(vec3 normal,vec3 normal2,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, vec3 torch, vec3 albedo,float z,vec2 lightmap, bool emissive,bool hand, vec2 texcoord){
+
+        vec3 sceneNormal    = normal2 * 2.0 - 1.0;	
+	    vec3 viewNormal = mat3(gbufferModelView) * sceneNormal;
 
 	vec4    historyGData    = vec4(1.0);
 	vec4   indirectHistory = vec4(0.0);
 	vec4    indirectCurrent = texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgba;
 	float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
 
- 
+    vec3 viewPos    = screenToViewSpace(vec3(coord, sceneDepth),gbufferProjectionInverse);
+    vec3 viewDir    = normalize(viewPos);
+
     vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
 
     vec3 reprojection   = reproject(scenePos, hand);	
@@ -544,23 +656,34 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, 
 	if (depthmask >1) nrays = 1;
 
 
+    const float a1 = 1.0 / rho;
+    const float a2 = a1 * a1;
+    vec2 quasirandomCurr = 0.5 + fract(vec2(a1, a2) * frameCounter + 0.5);
 
-	
+	    vec2 noiseCurr      = hash22(gl_FragCoord.xy + frameCounter);
 
 
 	for (int i = 0; i < nrays; i++){ 
-	
+		++quasirandomCurr;
+        noiseCurr += hash22(vec2(gl_FragCoord.xy + vec2(cos(quasirandomCurr.x), sin(quasirandomCurr.y))));
+
+        vec2 vectorXY   = fract(sqrt(2.0) * quasirandomCurr + noiseCurr);
 	
 		int seed = (frameCounter%40000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
-	//		 ij.xy *= clamp(1+lightmap.x,1.0,2);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
-			
+		vec3 rayDirection   = GenerateCosineVectorSafe(normal, ij);
+             rayDirection    = normalize(mat3(gbufferModelView) * rayDirection);
+
+
 		rayDir = TangentToWorld(normal,rayDir);
 		rayDir = mat3(gbufferModelView)*rayDir;
+        if (dot(rayDir, normal2) < 0.0) rayDir = -rayDir;
+		//rayDir = reflect(normalize(fragpos), normal);
 
-		
+
 	//	vec3 rayHit = RT2(rayDir, fragpos, fract(seed/1.6180339887 + noise.b));	
+	//	vec3 rayHit = RT3(rayDir, fragpos, fract(seed/1.6180339887 + noise.b));	
 		vec3 rayHit = RT(rayDir, fragpos, fract(seed/1.6180339887 + noise.b), mat3(gbufferModelView)*normal,0,lightmap,emissive,hand,z);
 
 
@@ -570,20 +693,18 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, 
 		if (rayHit.z < 1.0){
  
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0){
-				#ifdef NETHER
-				intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb*(1+(lightmap.x*4)))  + ambient*albedo*translucent) ;
-				#else
-			if(!hand)	intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb*(1+(lightmap.x*2)))  + ambient*albedo*translucent) ;
-		//	if(!hand)	intRadiance = vec3(texture2D(colortex15,previousPosition.xy*RENDER_SCALE).r)*5 ;
-	//						intRadiance += texture2D(colortex5,previousPosition.xy).rgb;
-				#endif
+
+		//	if(!hand)	intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb*(1+(lightmap.x*2)))  + ambient*albedo*translucent) ;
+			if(!hand)	intRadiance += ((texture2D(colortex5,previousPosition.xy).rgb )  + ambient*albedo*translucent) ;
+
+
 
 		#ifdef ssgi_staturation
 				float lum = luma(intRadiance);
 				vec3 diff = intRadiance-lum;
 				intRadiance = (intRadiance + diff*(0.1));
 		#endif		
-		torch = vec3(0);
+
 				}
 						
 			else{
@@ -592,13 +713,13 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, 
 				intRadiance += ambient + ambient *translucent*albedo;
 			
 				}
-					occlusion += 1;
+					occlusion += 1.0;
 				
 		}		
 		else {
 						float bounceAmount = float(rayDir.y > 0.0);
 			vec3 sky_c = skyCloudsFromTex(rayDir,colortex4).rgb*8/3./150. * bounceAmount;
-				 sky_c *= clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0);		
+			//	 sky_c *= clamp(eyeBrightnessSmooth.y/255.0 + lightmap.y,0.0,1.0);		
 				 sky_c *= lightmap.y;	
 
 			intRadiance += sky_c;
@@ -612,15 +733,13 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, float translucent, vec3 ambient, 
 	if (hand) occlusion =0.0;
 
 	#ifdef NETHER
-	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)* ( ( (torch*0.5) + (ambient*0.15) ))  ));	
+	intRadiance.rgb =  (intRadiance  /nrays + (1.0-(occlusion)/nrays)*(torch*0.5));	
 	#else
-	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)* ( ( (torch*1.0) + (ambient*1.0) ))  ));	
-//	intRadiance.rgb =  ((intRadiance  /nrays + (1.0-(occlusion*2)/nrays)* ( ( (torch*0) + (ambient*0) ))  ));	
+	intRadiance.rgb =  (intRadiance  /nrays + (1.0-(occlusion)/nrays)*(torch*SSPTambient));	
 	#endif
 
-
-		
-	return vec3(intRadiance).rgb*(1.0-(occlusion)/nrays);
+	
+	return vec3(intRadiance).rgb*(1.0-(occlusion*0.3)/nrays);
 
 
 

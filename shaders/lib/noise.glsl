@@ -17,7 +17,7 @@ float blueNoiseFloat(vec2 coord){
 }
 
 vec4 blueNoise(vec2 coord){
-  return texelFetch2D(colortex6, ivec2(coord)%512, 0);
+  return texelFetch2D(colortex2, ivec2(coord)%512, 0);
 }
 float R2_dither(){
 	vec2 alpha = vec2(0.75487765, 0.56984026);

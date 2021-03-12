@@ -10,9 +10,12 @@ flat varying vec3 WsunVec;
 flat varying vec2 TAA_Offset;
 #include "/lib/res_params.glsl"
 #include "/lib/Shadow_Params.glsl"
+uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D colortex1;
+uniform sampler2D colortex5;
 uniform sampler2D colortex6;
+uniform sampler2D colortex10;
 uniform sampler2D colortex13;
 uniform sampler2D colortex15;
 uniform sampler2D colortex2;
@@ -41,6 +44,8 @@ uniform float near;
 
 #include "/lib/color_transforms.glsl"
 #include "/lib/noise.glsl"
+#include "/lib/encode.glsl"
+#include "/lib/kernel.glsl"
 
 #define ffstep(x,y) clamp((y - x) * 1e35,0.0,1.0)
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -63,20 +68,7 @@ vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter,float distort
     return vec2(cos_v, sin_v)*alpha;
 }
 
-vec3 decode (vec2 encn)
-{
-    vec3 unenc = vec3(0.0);
-    encn = encn * 2.0 - 1.0;
-    unenc.xy = abs(encn);
-    unenc.z = 1.0 - unenc.x - unenc.y;
-    unenc.xy = unenc.z <= 0.0 ? (1.0 - unenc.yx) * sign(encn) : encn;
-    return normalize(unenc.xyz);
-}
-vec2 decodeVec2(float a){
-    const vec2 constant1 = 65535. / vec2( 256., 65536.);
-    const float constant2 = 256. / 255.;
-    return fract( a * constant1 ) * constant2 ;
-}
+
 
 vec3 worldToView(vec3 worldPos) {
 
@@ -96,52 +88,49 @@ vec3 viewToWorld(vec3 viewPos) {
     return pos.xyz;
 }
 
-float encode2x8(vec2 toEnc) {
-    uvec2 bitfield = uvec2(toEnc * 255.0 + 0.5);
-    return float(bitfield.x | bitfield.y << 8u) / 65535.0;
-}
-float encode2x8(float toEncA, float toEncB) {
-    uvec2 bitfield = uvec2(vec2(toEncA, toEncB) * 255.0 + 0.5);
-    return float(bitfield.x | bitfield.y << 8u) / 65535.0;
-}
-vec2 decode2x8(float toDec) {
-    uint bitfield = uint(toDec * 65535u);
-    return vec2(bitfield & 255u, bitfield >> 8u) / 255.0;
-}
-float encode2x4(vec2 x){
-	return dot(floor(15.0 * x + 0.5), vec2(1.0 / 255.0, 16.0 / 255.0));
-}
-vec2 decode2x4(float pack){
-	vec2 xy; xy.x = modf(pack * 255.0 / 16.0, xy.y);
-	return vec2(16.0 / 15.0, 1.0 / 15.0) * xy;
+
+vec2 moment(ivec2 pos) {
+
+float weightSum = 1.0;
+vec2 moment = texelFetch(colortex15, pos, 0).rg;
+float depth = texelFetch(depthtex0, pos, 0).x;
+vec3 normal = texelFetch(colortex10, pos, 0).xyz;
+    for (int i = 0; i<9; i++) {
+        ivec2 deltaPos     = kernelO_3x3[i]*8;
+        //  We already have the center data
+//        if (pos != 0 && pos != 0) { continue; }
+
+        // ⬇️ Sample current point data with current uv
+        ivec2 p = pos + deltaPos;
+        vec4 curColor = texelFetch(colortex5, ivec2(p/RENDER_SCALE), 0);
+        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
+
+        //  Determine the average brightness of this sample
+        //  Using International Telecommunications Union's ITU BT.601 encoding params
+        float l = luma(curColor.rgb);
+
+        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(deltaPos)) + 1.0e-2);
+        float weightNormal = pow(max(0, dot(curNormal, normal)), 32.0);
+        float w = exp(-weightDepth) * weightNormal;
+
+
+        weightSum += w;
+
+        moment += vec2(l) * w;
+    }
+
+
+moment /= weightSum;
+
+    return  moment;
 }
 
-float pack4x4(in vec4 toPack) {
-    vec2 A  = vec2(encode2x4(toPack.xy), encode2x4(toPack.zw));
-    return encode2x8(A);
-}
-vec4 unpack4x4(in float data) {
-    vec2 A  = decode2x8(data);
-
-    return vec4(decode2x4(A.x), decode2x4(A.y));
-}
-
-vec4 sampleCheckerboardSmooth(sampler2D tex, vec2 uv) {
-    vec2 pos        = coord * viewSize - 0.5;
-    ivec2 pixelPos  = ivec2(pos);
-
-    vec2 weights    = fract(pos);
-
-    vec4 resultA    = mix(unpack4x4(texelFetch(tex, pixelPos, 0).a)              , unpack4x4(texelFetch(tex, pixelPos + ivec2(1, 0), 0).a), weights.x);
-    vec4 resultB    = mix(unpack4x4(texelFetch(tex, pixelPos + ivec2(0, 1), 0).a), unpack4x4(texelFetch(tex, pixelPos + ivec2(1, 1), 0).a), weights.x);
-
-    return mix(resultA, resultB, weights.y);
-}
 
 void main() {
 /* RENDERTARGETS: 3 */
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
-
+//	gl_FragData[1].rg =  moment(ivec2(floor(texcoord * vec2(viewWidth, viewHeight)))) ;
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.1, 0.0, 0.0);
 	float z = texture2D(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
@@ -164,7 +153,7 @@ void main() {
 			float bn = blueNoiseFloat(gl_FragCoord.xy);
 			float noise = fract(bn + frameCounter/1.6180339887);
 			vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z));
-			#ifdef Variable_Penumbra_Shadows
+		#ifdef Variable_Penumbra_Shadows
 				if (NdotL > 0.001 || translucent || translucent2) {
 				vec3 p3 = mat3(gbufferModelViewInverse) * fragpos + gbufferModelViewInverse[3].xyz;
 				vec3 projectedShadowPosition = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -208,6 +197,6 @@ void main() {
 			}
 		#endif
 		}
-		gl_FragData[1].rgb = gl_FragData[0].ggg;
+
 }
 }

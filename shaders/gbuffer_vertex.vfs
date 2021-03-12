@@ -7,7 +7,7 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 varying vec3 velocity;
-attribute vec3 at_velocity;   
+//attribute vec3 at_velocity;   
 
 
 varying vec2 texcoord;
@@ -204,7 +204,8 @@ void main() {
 	#endif
 	#endif
 	
-	velocity = at_velocity / 1000000.0;
+//	velocity = at_velocity / 1000000.0;
+	velocity = vec3(0.0);
 
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;

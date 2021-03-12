@@ -39,62 +39,6 @@ float minOf(float a, float b, float c) { return min(a, min(b, c)); }
 
 #define viewMAD(m, v) (mat3(m) * (v) + (m)[3].xyz)
 
-float depthLinear(float depth) {
-    return (2.0*near) / (far+near-depth * (far-near));
-}
-vec3 RT3(vec3 direction, vec3 position, float noise) {
-    const uint maxSteps     = uint(8);
-    const float stepSize    = 1.57079632679;
-
-    vec3 stepVector         = direction * stepSize;
-
-    vec3 endPosition        = position + stepVector * maxSteps;
-    vec3 endScreenPosition  = viewMAD(gbufferModelViewInverse,endPosition);
-
-    vec2 maxPosXY           = max(abs(endScreenPosition.xy * 2.0 - 1.0), vec2(1.0));
-    float stepMult          = minOf(vec2(1.0) / maxPosXY);
-        stepVector         *= stepMult;
-
-    // closest texel iteration
-    vec3 samplePos          = position;
-    
-        samplePos          += stepVector / 6.0;
-    vec3 screenPos          = viewMAD(gbufferModelViewInverse,samplePos);
-
-
-    if (clamp(screenPos.xy,0,1) == screenPos.xy) {
-		
-        float depthSample   = texelFetch(depthtex0, ivec2(screenPos.xy * viewSize), 0).x;
-        float linearSample  = depthLinear(depthSample);
-        float currentDepth  = depthLinear(screenPos.z);
-        if (linearSample < currentDepth) {
-            float dist      = abs(linearSample - currentDepth) / currentDepth;
-            if (dist <= 0.1) return vec3(screenPos.xy, depthSample);
-        }
-    }
-    
-        samplePos          += stepVector * noise;
-
-    for (uint i = uint(0); i < uint(maxSteps); ++i) {
-        vec3 screenPos      = viewMAD(gbufferModelViewInverse,samplePos);
-            samplePos      += stepVector;
-        if (clamp(screenPos.xy,0,1) != screenPos.xy) break;
-
-        float depthSample   = texelFetch(depthtex0, ivec2(screenPos.xy * viewSize), 0).x;
-        float linearSample  = depthLinear(depthSample);
-        float currentDepth  = depthLinear(screenPos.z);
-	
-        if (linearSample < currentDepth) {
-            float dist      = abs(linearSample - currentDepth) / currentDepth;
-            if (dist <= 0.1) return vec3(screenPos.xy, depthSample);
-        }
-    }
-
-    return vec3(1.1);
-}
-
-
-
 
 
 vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 lightmap, bool emissive, bool hand,float z){
@@ -145,7 +89,7 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 	if( sp < currZ) {
 		float dist = abs(sp-currZ)/currZ;
 		
-		if (dist <= 0.1) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
+		if (dist <= 0.035) return vec3(spos.xy, invLinZ(sp))/vec3(RENDER_SCALE,1.0);
 
 		
 	}
@@ -173,7 +117,13 @@ vec3 RT(vec3 dir,vec3 position,float noise, vec3 N,float transparent, vec2 light
 
 			spos += stepv;	
 
+		gl_FragData[5].r = 1 ;			
+
 	}
+
+
+
+
 	return vec3(1.1);
 
 	
@@ -444,12 +394,10 @@ float depth = texelFetch(depthtex0, pos, 0).x;
 vec3 normal = texelFetch(colortex10, pos, 0).xyz;
     for (int i = 0; i<9; i++) {
         ivec2 deltaPos     = kernelO_3x3[i]*2;
-        //  We already have the center data
-      //  if (pos != 0 && pos != 0) { continue; }
 
         // ⬇️ Sample current point data with current uv
         ivec2 p = pos + deltaPos;
-        vec4 curColor = texelFetch(colortex5, ivec2(p/RENDER_SCALE), 0);
+        vec4 curColor = texelFetch(colortex12, ivec2(p), 0);
         float curDepth = texelFetch(depthtex0, p, 0).x;
         vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
 
@@ -497,13 +445,13 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 //		   velocity2.xy = velocity2.xy*((velocity2.z/ld(z)*far)*0.1);	
 
 	    reprojection.xy *= RENDER_SCALE;  
-		if(velocity2.a >0.0)	reprojection.xy = texcoord + -velocity2.rg;		
+//		if(velocity2.a >0.0)	reprojection.xy = texcoord + -velocity2.rg;		
         historyGData        = texture2D(colortex9, reprojection.xy);
         float lightmaphistory        = texture2D(colortex15, reprojection.xy).a;
         historyGData.rgb    = historyGData.rgb ;
  	 	vec2 moment  =	moment(ivec2(floor(reprojection.xy * vec2(viewWidth, viewHeight))));	
 		gl_FragData[4].rg =  moment ;
-		bool successfulReprojection = true;
+
 
 	//		  reprojection.xy +=   (velocity2)/RENDER_SCALE;
 	//		  reprojection.xy =   (texcoord -velocity2)/RENDER_SCALE;
@@ -520,15 +468,13 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 
     	float accumulationR0        = mix(0.1, 0.02, sqrt(indirectHistory.a));
     
-    //  float accumulationR0        = (1-indirectHistory.a);
-		float varianceSpatial       = clamp((1.0 + 2.0 * (indirectHistory.a)) * clamp(1-(max(0.0, moment.y - moment.x * moment.x)*10),0,1),0.0,1);
+		float varianceSpatial       = clamp((max(0.0, moment.y - moment.x * moment.x)*10),0,1);
 
-		      varianceSpatial       = varianceSpatial;
+		      varianceSpatial       = accumulationR0+varianceSpatial;
         float accumulationWeight    = depthRejection;
 			  accumulationWeight   *= normalWeight;
 			  accumulationWeight   += clamp(((distance(indirectHistory.rgb,indirectCurrent.rgb)/luma(indirectHistory.rgb)) ) *(abs(cameraMovement.r)+abs(cameraMovement.g)+abs(cameraMovement.b)),0,1);	 		 		   
 			  accumulationWeight    = clamp(1.0 - accumulationWeight,0.0,1);		  
-			  if(accumulationWeight <0.1) successfulReprojection = false;
 	    	  accumulationWeight    = max(accumulationWeight,  varianceSpatial);	
 		
 		vec3 closestToCamera = closestToCamera5taps(texcoord);
@@ -578,10 +524,7 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 
             indirectHistory.a  = mix(0.0, clamp(indirectHistory.a + (1/(30)),0,1), float(distanceDelta < 0.2));
 			if(hand) indirectHistory.a = 1;
-	
-		//	indirectHistory.a = successfulReprojection ? indirectHistory.a + 1.0 : 0.0;
 
- 
         } else {
             indirectHistory         = vec4(mix(indirectHistory.rgb, indirectCurrent, 0.9 ), 0.0);
         }	
@@ -663,8 +606,7 @@ vec3 rtGI(vec3 normal,vec3 normal2,vec4 noise,vec3 fragpos, float translucent, v
 
 	vec4    historyGData    = vec4(1.0);
 	vec4   indirectHistory = vec4(0.0);
-	vec4    indirectCurrent = texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgba;
-	float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
+		float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
 
     vec3 viewPos    = screenToViewSpace(vec3(coord, sceneDepth),gbufferProjectionInverse);
     vec3 viewDir    = normalize(viewPos);
@@ -697,26 +639,11 @@ vec3 rtGI(vec3 normal,vec3 normal2,vec4 noise,vec3 fragpos, float translucent, v
 	float depthmask = ((z*z*z)*2);
 	if (depthmask >1) nrays = 1;
 
-
-    const float a1 = 1.0 / rho;
-    const float a2 = a1 * a1;
-    vec2 quasirandomCurr = 0.5 + fract(vec2(a1, a2) * frameCounter + 0.5);
-
-	    vec2 noiseCurr      = hash22(gl_FragCoord.xy + frameCounter);
-
-
 	for (int i = 0; i < nrays; i++){ 
-		++quasirandomCurr;
-        noiseCurr += hash22(vec2(gl_FragCoord.xy + vec2(cos(quasirandomCurr.x), sin(quasirandomCurr.y))));
 
-        vec2 vectorXY   = fract(sqrt(2.0) * quasirandomCurr + noiseCurr);
-	
 		int seed = (frameCounter%40000)*nrays+i;
 		vec2 ij = fract(R2_samples(seed) + noise.rg);
 		vec3 rayDir = normalize(cosineHemisphereSample(ij));
-		vec3 rayDirection   = GenerateCosineVectorSafe(normal, ij);
-             rayDirection    = normalize(mat3(gbufferModelView) * rayDirection);
-
 
 		rayDir = TangentToWorld(normal,rayDir);
 		rayDir = mat3(gbufferModelView)*rayDir;
@@ -755,8 +682,8 @@ vec3 rtGI(vec3 normal,vec3 normal2,vec4 noise,vec3 fragpos, float translucent, v
 				intRadiance += ambient + ambient *translucent*albedo;
 			
 				}
-					occlusion += 1.0;
-				
+					
+				occlusion += 1.0;
 		}		
 		else {
 						float bounceAmount = float(rayDir.y > 0.0);
@@ -780,7 +707,9 @@ vec3 rtGI(vec3 normal,vec3 normal2,vec4 noise,vec3 fragpos, float translucent, v
 	intRadiance.rgb =  (intRadiance  /nrays + (1.0-(occlusion)/nrays)*(torch*SSPTambient));	
 	#endif
 
-	
+
+	gl_FragData[5].g = texture2D(colortex11, gl_FragCoord.xy*texelSize).g ;	
+
 	return vec3(intRadiance).rgb*(1.0-(occlusion*0.3)/nrays);
 
 

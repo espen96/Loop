@@ -44,7 +44,7 @@ varying float nonlabemissive;
 #define MAX_ITERATIONS 50 // [5 10 15 20 25 30 40 50 60 70 80 90 100 125 150 200 400] //Improves quality at grazing angles (reduces performance)
 #define MAX_DIST 25.0 // [5.0 10.0 15.0 20.0 25.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0 125.0 150.0 200.0 400.0] //Increases distance at which POM is calculated
 //#define AutoGeneratePOMTextures	//Can generate POM on any texturepack (may look weird in some cases)
-#define Texture_MipMap_Bias -0.5 // Uses a another mip level for textures. When reduced will increase texture detail but may induce a lot of shimmering. [-5.00 -4.75 -4.50 -4.25 -4.00 -3.75 -3.50 -3.25 -3.00 -2.75 -2.50 -2.25 -2.00 -1.75 -1.50 -1.25 -1.00 -0.75 -0.50 -0.25 0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00]
+#define Texture_MipMap_Bias 0.00 // Uses a another mip level for textures. When reduced will increase texture detail but may induce a lot of shimmering. [-5.00 -4.75 -4.50 -4.25 -4.00 -3.75 -3.50 -3.25 -3.00 -2.75 -2.50 -2.25 -2.00 -1.75 -1.50 -1.25 -1.00 -0.75 -0.50 -0.25 0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00 4.25 4.50 4.75 5.00]
 //#define DISABLE_ALPHA_MIPMAPS //Disables mipmaps on the transparency of alpha-tested things like foliage, may cost a few fps in some cases
 #ifndef AutoGeneratePOMTextures
 
@@ -342,7 +342,7 @@ mat3 getLightmapTBN(vec3 viewPos){
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
-/* RENDERTARGETS: 1,7,10 */
+/* RENDERTARGETS: 1,7,10,11 */
 void main() {
 
 
@@ -386,7 +386,9 @@ vec2 lm = lmtexcoord.zw;
 	
 		vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
 
-		
+
+
+	
 
 
 		  vec3 coord = vec3(vtexcoord.st, 1.0);
@@ -479,14 +481,15 @@ vec2 lm = lmtexcoord.zw;
 		  else data0.a = 0.0;
 
 			vec3 normalTex = texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz;
+			gl_FragData[3].g = 1*normalTex.z;
 			  lm *= normalTex.b;
 			normalTex.xy = normalTex.xy*2.0-1.0;
 
 			
 			normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 			normalTex.z = clamp(normalTex.z,0,1);	
-	//		normalTex.rgb += FindNormal(texture,lmtexcoord.xy,texelSize-0.0001).rgb;
-	//		normalTex.rg -= FindNormal(texture,lmtexcoord.xy,texelSize-0.0003).rg;
+//			normalTex.rgb += FindNormal(texture,lmtexcoord.xy,texelSize-0.0001).rgb;
+//			normalTex.rg -= FindNormal(texture,lmtexcoord.xy,texelSize-0.0003).rg;
 			normal = applyBump(tbnMatrix,normalTex);
 	#ifdef SSGI
 	#ifdef DLM
@@ -577,23 +580,15 @@ vec2 lm = lmtexcoord.zw;
 	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);	
 
 	#endif
-	
-	float emissivelevel = 0;
-	if (nonlabemissive > 0.09 && nonlabemissive< 0.11) emissivelevel = luma(data0.rgb)*2-0.5;
+				float emissivelevel = 0;
+	if (mcentity == 15) emissivelevel = luma(data0.rgb);
 
-	if (nonlabemissive > 0.19 && nonlabemissive< 0.21) emissivelevel = (luma(data0.rgb)*2-1.1)*0.5;
-	if (nonlabemissive > 0.29 && nonlabemissive< 0.31) emissivelevel = (luma(data0.rgb)*2-0.9)*0.5;
-	if (nonlabemissive > 0.39 && nonlabemissive< 0.41 && data0.r >0.78) emissivelevel = (luma(data0.rgb));
-	if (nonlabemissive > 0.49 && nonlabemissive< 0.51 && data0.b >0.50) emissivelevel = (luma(data0.rgb))*0.25;
-	if (nonlabemissive > 0.59 && nonlabemissive< 0.61 ) emissivelevel = (luma(data0.rgb*2-0.25))*0.1;
-	if (nonlabemissive > 0.69 && nonlabemissive< 0.71) emissivelevel = luma(data0.rgb)*2-1;
-	
 //	gl_FragData[2].a = clamp(emissivelevel,0,1);
 
 
 	data0.rgb*=color.rgb;
-    float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-    data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+//    float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//    data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 
   
   #ifdef DISABLE_ALPHA_MIPMAPS
@@ -608,14 +603,14 @@ vec2 lm = lmtexcoord.zw;
 		
 	#ifdef MC_NORMAL_MAP
 		vec3 normalTex = texture2D(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
-
+gl_FragData[3].g = 1*normalTex.z;
 		lm *= normalTex.b;
 		vec2 lm2 = lm * normalTex.b;
 		normalTex.xy = normalTex.xy*2.0-1.0;
 
 		normalTex.z = sqrt(1.0 - dot(normalTex.xy, normalTex.xy));
 		normalTex.z = clamp(normalTex.z,0,1);	
-
+	
 		normal = applyBump(tbnMatrix,normalTex);
 
 
@@ -668,7 +663,7 @@ vec2 lm = lmtexcoord.zw;
 	#endif	
 
 	gl_FragData[2].rgb = normal;
-	gl_FragData[3].r = mcentity/15;
+
 
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));

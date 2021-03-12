@@ -71,6 +71,10 @@ vec2 decodeVec2(float a){
 #define DENOISE_RANGE1 vec2(32, 30)
 
 #include "/lib/filter.glsl"
+
+
+
+
 void main() {
 
 /* RENDERTARGETS: 8 */
@@ -91,8 +95,16 @@ void main() {
 #ifdef ssptfilter
 if( FILTER_STEPS >= FILTER_STAGE){
 
-	if (z <1 && !iswater && !emissive && !hand) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,DENOISE_RANGE,colortex8,0.0).rgb,0,10);
+		float rtao = texture2D(colortex11,texcoord).r;
+		if(FILTER_STAGE == 5) rtao = clamp(rtao,0.95,1);
+		if(FILTER_STAGE == 4) rtao = clamp(rtao,0.95,1);
+		if(FILTER_STAGE == 3) rtao = clamp(rtao,0.95,1);
+		if(FILTER_STAGE == 2) rtao = clamp(rtao,0.95,1);
+		if(FILTER_STAGE == 1) rtao = clamp(rtao,0.95,1);
+		if(emissive) rtao =1;
+			if (z <1 && !iswater  && !hand) color.rgb = clamp(atrous3(texcoord.xy*RENDER_SCALE,DENOISE_RANGE,colortex8,0.0).rgb,0,10);
 
+		color.rgb *= rtao;
 
 
 }

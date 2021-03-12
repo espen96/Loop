@@ -88,15 +88,12 @@ uniform sampler2D colortex4;
 
 vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
-    float motionweight = abs(luma(cameraPosition - previousCameraPosition));
-
-
 
     ivec2 pos     = ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE));
     vec3 colorCenter = texelFetch(tex1, pos, 0).rgb; 	
     float variance  = computeVariance(colortex8, ivec2(floor(coord * vec2(viewWidth, viewHeight)/RENDER_SCALE)));	
     vec2 moment = texelFetch(colortex15, pos, 0).rg;
-//     if (moment.x <= 0 ) return colorCenter;	   	
+    if(variance == 0) return colorCenter;
 	float weight = 0.0;
 	vec4 normaldepth = texelFetch(colortex10, pos, 0).rgba; 
     float   c_depth    = normaldepth.a * far;	
@@ -106,16 +103,14 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 
     float totalWeight   = 1.0;	
 
-    float var2        = 1/(0.5 + variance *5);	
-
+    float var2        = 1/(0.5 + variance *4);	
 
 
 //#define HQ
 
-
+	const int r = 1;
 
 #ifdef HQ
-
     for (int i = 0; i<25; i++) {
 	ivec2 delta  = kernelO_5x5[i] * size;	
 # else 
@@ -126,8 +121,6 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
         if (delta.x == 0 && delta.y == 0) continue;
 		
         ivec2 d_pos  = pos + delta;
-        if (clamp(d_pos, ivec2(0), ivec2(vec2(viewWidth, viewHeight))-1) != d_pos) continue;
-	
 
 		vec4 normaldepth2 = texelFetch(colortex10, d_pos, 0).rgba; 
         float cu_depth = (normaldepth2.a) * far;
@@ -135,6 +128,7 @@ vec3 atrous3(vec2 coord, const int size,sampler2D tex1 , float extraweight) {
 		vec3 normal = (normaldepth2.rgb);			
 		
 		vec3 color = texelFetch(tex1, d_pos, 0).rgb;  	
+        if (distance(luma(color),luma(colorCenter)) < 0.0 )   return totalColor;
             float variance2  = computeVariance(colortex8, d_pos);	
 
 

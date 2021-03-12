@@ -13,7 +13,7 @@ uniform float fpsSmooth;
 #define ssptfilter
 
 #ifdef ssptfilter
-#define firefly_supression
+//#define firefly_supression
 
 #define FILTER_STEPS 5 //[0 1 2 3 4 5]
 
@@ -21,7 +21,7 @@ uniform float fpsSmooth;
 
 #define SHADOWS_ON
 //#define SPEC
-//#define TAA_DS // Lowers render resolution dynamically.
+#define TAA_DS // Lowers render resolution dynamically.
 
 uniform sampler2D colortexF;
 

@@ -473,12 +473,12 @@ vec3 normal = texelFetch(colortex10, pos, 0).xyz;
     for (int i = 0; i<9; i++) {
         ivec2 deltaPos     = kernelO_3x3[i]*4;
         //  We already have the center data
-      //  if (pos != 0 && pos != 0) { continue; }
+//        if (pos != 0 && pos != 0) { continue; }
 
-        // ⬇️ Sample current point data with current uv
+        //  Sample current point data with current uv
         ivec2 p = pos + deltaPos;
-        vec4 curColor = texelFetch(colortex5, ivec2(p/RENDER_SCALE), 0);
-        float curDepth = texelFetch(depthtex0, p, 0).x;
+        vec4 curColor = texelFetch(colortex12, ivec2(p), 0);       
+		float curDepth = texelFetch(depthtex0, p, 0).x;
         vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
 
         //  Determine the average brightness of this sample
@@ -500,6 +500,20 @@ moment /= weightSum;
 
     return  moment;
 }
+
+float encodeVec2v2(vec2 a){
+    ivec2 bf = ivec2(a*255.);
+    return float( bf.x|(bf.y<<8) ) / 65535.;
+}
+
+
+
+
+
+
+
+
+
 void main() {
 	vec2 texcoord = gl_FragCoord.xy*texelSize;
 	
@@ -575,8 +589,9 @@ void main() {
 		if (!hand){
 			filtered = texture2D(colortex3,texcoord).rgb;
 		}
+		
 		float shading = 1.0 - filtered.b;
-		float pShadow = filtered.b*2.0-1.0;
+	
 
 		vec3 SSS = vec3(0.0);
 		float sssAmount = 0.0;
@@ -734,8 +749,9 @@ void main() {
 			if( shadowmask > 0.8 && shadowmask < 0.84) shadowCol.rgb = mix(vec3(1.0), shadowCol.rgb,1-shadowCol.a);			
 			shadowCol.rgb = clamp(shadowCol.rgb * (1.0 - shading) + shading, vec3(0.0), vec3(1.0));
 
-			gl_FragData[0].rgb = (shadowCol.rgb * diffuseSun + SSS ) ;
+			shadowCol.rgb = (shadowCol.rgb * diffuseSun + SSS ) ;
 			gl_FragData[1].rg =  moment(ivec2(floor(texcoord * vec2(viewWidth, viewHeight)))) ;
+			gl_FragData[0] =  vec4(shadowCol.rgb, encodeVec2v2(filtered.yz)) ;
 
 
 
@@ -748,5 +764,5 @@ void main() {
 	}	
 
 
-/* RENDERTARGETS: 11,15 */
+/* RENDERTARGETS: 3*/
 }

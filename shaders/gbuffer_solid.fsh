@@ -412,8 +412,8 @@ vec4 data0 = vec4(0.0);
 	#endif	 
 	 
 	 
-	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);  
+//	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);  
   
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;

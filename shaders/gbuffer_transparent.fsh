@@ -205,8 +205,9 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
 	vec2 tempOffset=offsets[framemod8];
 #ifdef textured
-	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+//	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
+	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb),0.0,1.0);
 #endif	
 	
 	

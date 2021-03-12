@@ -1,4 +1,4 @@
-#version 120
+#version 130
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 //#define BICUBIC_UPSCALING //Provides a better interpolation when using a render quality different of 1.0, slower
@@ -10,14 +10,59 @@ varying vec2 texcoord;
 
 uniform sampler2D colortex7;
 uniform vec2 texelSize;
+uniform vec2 viewSize;
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float frameTimeCounter;
 uniform int frameCounter;
 uniform int isEyeInWater;
+uniform int   hideGUI;
 #include "/lib/color_transforms.glsl"
 #include "/lib/color_dither.glsl"
 #include "/lib/res_params.glsl"
+#include "/lib/Shadow_Params.glsl"
+
+
+
+
+
+
+
+
+
+#define DEBUG
+#define DEBUG_PROGRAM 50 // [-10 -1 30 31 32 50]
+#define DEBUG_BRIGHTNESS 1.0 // [1/65536.0 1/32768.0 1/16384.0 1/8192.0 1/4096.0 1/2048.0 1/1024.0 1/512.0 1/256.0 1/128.0 1/64.0 1/32.0 1/16.0 1/8.0 1/4.0 1/2.0 1.0 2.0 4.0 8.0 16.0 32.0 64.0 128.0 256.0 512.0 1024.0 2048.0 4096.0 8192.0 16384.0 32768.0 65536.0]
+#define DRAW_DEBUG_VALUE
+
+vec3 Debug = vec3(0.0);
+
+// Write the direct variable onto the screen
+void show( bool x) { Debug = vec3(float(x)); }
+void show(float x) { Debug = vec3(x); }
+void show( vec2 x) { Debug = vec3(x, 0.0); }
+void show( vec3 x) { Debug = x; }
+void show( vec4 x) { Debug = x.rgb; }
+
+
+void inc( bool x) { Debug += vec3(float(x)); }
+void inc(float x) { Debug += vec3(x); }
+void inc( vec2 x) { Debug += vec3(x, 0.0); }
+void inc( vec3 x) { Debug += x; }
+void inc( vec4 x) { Debug += x.rgb; }
+
+#ifdef DRAW_DEBUG_VALUE
+	// Display the value of the variable on the debug value viewer
+	#define showval(x) if (all(equal(ivec2(gl_FragCoord.xy), ivec2(viewSize/2)))) show(x);
+	#define incval(x)  if (all(equal(ivec2(gl_FragCoord.xy), ivec2(viewSize/2)))) inc(x);
+#else
+	#define showval(x)
+	#define incval(x)
+#endif
+
+
+
+
 vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
@@ -67,7 +112,190 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
 
     return result;
 }
+/***********************************************************************/
+/* Text Rendering */
+const int
+	_A    = 0x64bd29, _B    = 0x749d27, _C    = 0xe0842e, _D    = 0x74a527,
+	_E    = 0xf09c2f, _F    = 0xf09c21, _G    = 0xe0b526, _H    = 0x94bd29,
+	_I    = 0xf2108f, _J    = 0x842526, _K    = 0x9284a9, _L    = 0x10842f,
+	_M    = 0x97a529, _N    = 0x95b529, _O    = 0x64a526, _P    = 0x74a4e1,
+	_Q    = 0x64acaa, _R    = 0x749ca9, _S    = 0xe09907, _T    = 0xf21084,
+	_U    = 0x94a526, _V    = 0x94a544, _W    = 0x94a5e9, _X    = 0x949929,
+	_Y    = 0x94b90e, _Z    = 0xf4106f, _0    = 0x65b526, _1    = 0x431084,
+	_2    = 0x64904f, _3    = 0x649126, _4    = 0x94bd08, _5    = 0xf09907,
+	_6    = 0x609d26, _7    = 0xf41041, _8    = 0x649926, _9    = 0x64b904,
+	_APST = 0x631000, _PI   = 0x07a949, _UNDS = 0x00000f, _HYPH = 0x001800,
+	_TILD = 0x051400, _PLUS = 0x011c40, _EQUL = 0x0781e0, _SLSH = 0x041041,
+	_EXCL = 0x318c03, _QUES = 0x649004, _COMM = 0x000062, _FSTP = 0x000002,
+	_QUOT = 0x528000, _BLNK = 0x000000, _COLN = 0x000802, _LPAR = 0x410844,
+	_RPAR = 0x221082;
 
+const ivec2 MAP_SIZE = ivec2(5, 5);
+
+int GetBit(int bitMap, int index) {
+	return (bitMap >> index) & 1;
+}
+
+float DrawChar(int charBitMap, inout vec2 anchor, vec2 charSize, vec2 uv) {
+	uv = (uv - anchor) / charSize;
+	
+	anchor.x += charSize.x;
+	
+	if (!all(lessThan(abs(uv - vec2(0.5)), vec2(0.5))))
+		return 0.0;
+	
+	uv *= MAP_SIZE;
+	
+	int index = int(uv.x) % MAP_SIZE.x + int(uv.y)*MAP_SIZE.x;
+	
+	return GetBit(charBitMap, index);
+}
+
+const int STRING_LENGTH = 15;
+int[STRING_LENGTH] drawString;
+
+float DrawString(inout vec2 anchor, vec2 charSize, int stringLength, vec2 uv) {
+	uv = (uv - anchor) / charSize;
+	
+	anchor.x += charSize.x * stringLength;
+	
+	if (!all(lessThan(abs(uv / vec2(stringLength, 1.0) - vec2(0.5)), vec2(0.5))))
+		return 0.0;
+	
+	int charBitMap = drawString[int(uv.x)];
+	
+	uv *= MAP_SIZE;
+	
+	int index = int(uv.x) % MAP_SIZE.x + int(uv.y)*MAP_SIZE.x;
+	
+	return GetBit(charBitMap, index);
+}
+
+#define log10(x) (log2(x) / log2(10.0))
+
+float DrawInt(int val, inout vec2 anchor, vec2 charSize, vec2 uv) {
+	if (val == 0) return DrawChar(_0, anchor, charSize, uv);
+	
+	const int _DIGITS[10] = int[10](_0,_1,_2,_3,_4,_5,_6,_7,_8,_9);
+	
+	bool isNegative = val < 0.0;
+	
+	if (isNegative) drawString[0] = _HYPH;
+	
+	val = abs(val);
+	
+	int posPlaces = int(ceil(log10(abs(val) + 0.001)));
+	int strIndex = posPlaces - int(!isNegative);
+	
+	while (val > 0) {
+		drawString[strIndex--] = _DIGITS[val % 10];
+		val /= 10;
+	}
+	
+	return DrawString(anchor, charSize, posPlaces + int(isNegative), texcoord);
+}
+
+float DrawFloat(float val, inout vec2 anchor, vec2 charSize, int negPlaces, vec2 uv) {
+	int whole = int(val);
+	int part  = int(fract(abs(val)) * pow(10, negPlaces));
+	
+	int posPlaces = max(int(ceil(log10(abs(val)))), 1);
+	
+	anchor.x -= charSize.x * (posPlaces + int(val < 0) + 0.25);
+	float ret = 0.0;
+	ret += DrawInt(whole, anchor, charSize, uv);
+	ret += DrawChar(_FSTP, anchor, charSize, texcoord);
+	anchor.x -= charSize.x * 0.3;
+	ret += DrawInt(part, anchor, charSize, uv);
+	
+	return ret;
+}
+
+void DrawDebugText() {
+	#if (defined DEBUG) && (defined DRAW_DEBUG_VALUE) && (DEBUG_PROGRAM != 50)
+		vec2 charSize = vec2(0.009) * viewSize.yy / viewSize;
+		vec2 texPos = vec2(charSize.x / 1.5, 1.0 - charSize.y * 2.0);
+		
+		if (hideGUI != 0
+		 || texcoord.x > charSize.x * 12.0
+		 || texcoord.y < 1 - charSize.y * 12)
+		{ return; }
+		
+		vec3 color = vec3(gl_FragColor.rgb)*1;
+		float text = 0.0;
+		
+		vec3 val = texelFetch(colortex7, ivec2(viewSize/2.0), 0).rgb;
+		
+		drawString = int[STRING_LENGTH](_D,_E,_B,_U,_G,0,_S,_T,_A,_T,_S,0,0,0,0);
+		text += DrawString(texPos, charSize, 11, texcoord);
+		color += text * vec3(1.0, 1.0, 1.0)* sqrt(clamp(abs(val.b), 0.2, 1.0));
+		
+		texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y *2;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_R,_COLN, 0,0,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 2, texcoord);
+		texPos.x += charSize.x * 5.0;
+		text += DrawFloat(val.r, texPos, charSize, 3, texcoord);
+		color += text * vec3(1.0, 0.0, 0.0) * sqrt(clamp(abs(val.r), 0.2, 1.0));
+
+		texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y * 1.4;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_G,_COLN, 0,0,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 2, texcoord);
+		texPos.x += charSize.x * 5.0;
+		text += DrawFloat(val.g, texPos, charSize, 3, texcoord);
+		color += text * vec3(0.0, 1.0, 0.0) * sqrt(clamp(abs(val.g), 0.2, 1.0));
+		
+		texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y * 1.4;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_B,_COLN, 0,0,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 2, texcoord);
+		texPos.x += charSize.x * 5.0;
+		text += DrawFloat(val.b, texPos, charSize, 3, texcoord);
+		color += text * vec3(0.0, 0.8, 1.0)* sqrt(clamp(abs(val.b), 0.2, 1.0));
+
+    
+		texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y * 1.4;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_F,_P,_S,_COLN,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 4, texcoord);
+		texPos.x += charSize.x * 4.0;
+		text += DrawFloat(fps, texPos, charSize, 2, texcoord);
+		color += text * vec3(1.0, 1.0, 1.0)* sqrt(clamp(abs(val.b), 0.2, 1.0));
+		
+		texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y * 1.4;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_R,_E,_S,_COLN,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 4, texcoord);
+		texPos.x += charSize.x * 3.0;
+		text += DrawFloat(RENDER_SCALE_X, texPos, charSize, 3, texcoord);
+		color += text * vec3(1.0, 1.0, 1.0)* sqrt(clamp(abs(val.b), 0.2, 1.0));
+
+  	texPos.x = charSize.x / 1.0, 1.0;
+		texPos.y -= charSize.y * 1.4;
+		
+		text = 0.0;
+		drawString = int[STRING_LENGTH](_R,_A,_Y,_COLN,0,0,0,0,0,0,0,0,0,0,0);
+		text += DrawString(texPos, charSize, 4, texcoord);
+		texPos.x += charSize.x * 3.0;
+		text += DrawFloat(RAY_COUNT, texPos, charSize, 3, texcoord);
+		color += text * vec3(1.0, 1.0, 1.0)* sqrt(clamp(abs(val.b), 0.2, 1.0));
+			
+
+		gl_FragColor.rgb = color;
+	#endif
+}
+/***********************************************************************/
 void main() {
   #ifdef BICUBIC_UPSCALING
     vec3 col = SampleTextureCatmullRom(colortex7,texcoord,1.0/texelSize).rgb;
@@ -98,5 +326,5 @@ void main() {
 	gl_FragColor.rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
   //gl_FragColor.rgb = vec3(contrast);
   //gl_FragColor.rgb = vec3(contrast);
-  
+  	DrawDebugText();
 }

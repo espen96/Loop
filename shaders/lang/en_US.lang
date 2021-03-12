@@ -1,6 +1,26 @@
 #shaders/lang/en_US.lang
 
+option.DEBUG=Debug
+option.DEBUG_PROGRAM=Debug Program
+option.CRASH_DANGLING_SHOW=Crash Dangling Show()
+option.CRASH_DANGLING_SHOW.comment=Cause the shader to crash if there are any show() leftover in the code when Debug is turned off
+value.DEBUG_PROGRAM.-10=gbuffers_shadow
+value.DEBUG_PROGRAM.-1=gbuffers_opaque
+value.DEBUG_PROGRAM.0=deferred0
+value.DEBUG_PROGRAM.20=gbuffers_transparent
+value.DEBUG_PROGRAM.30=composite0
+value.DEBUG_PROGRAM.31=composite1
+value.DEBUG_PROGRAM.50=final
 
+option.DEBUG_PRESET=Debug Preset
+value.DEBUG_PRESET.NONE=None
+value.DEBUG_PRESET.VM_STEPS_BW=Ray steps
+value.DEBUG_PRESET.VM_STEPS_LOD=Ray steps + LOD
+value.DEBUG_PRESET.VM_DIFFUSE=VoxelMarch Diffuse
+
+option.DEBUG_BRIGHTNESS=Debug Brightness
+
+option.DRAW_DEBUG_VALUE=Draw Debug Value
 
 screen.General=Global Settings
 screen.Overworld=Overworld

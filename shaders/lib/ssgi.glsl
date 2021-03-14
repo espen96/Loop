@@ -468,7 +468,7 @@ void temporal(inout vec3 indirectCurrent,inout vec4 historyGData,inout vec4 indi
 
     	float accumulationR0        = mix(0.1, 0.02, sqrt(indirectHistory.a));
     
-		float varianceSpatial       = clamp((max(0.0, moment.y - moment.x * moment.x)*10),0,1);
+		float varianceSpatial       = clamp((max(0.0, moment.y - moment.x * moment.x)*100),0,1);
 
 		      varianceSpatial       = accumulationR0+varianceSpatial;
         float accumulationWeight    = depthRejection;

@@ -892,7 +892,8 @@ void main() {
 
 			//combine all light sources
 	#ifdef SSGI
-	float labao =	texture2D(colortex11, gl_FragCoord.xy*texelSize).g;
+//	float labao =	texture2D(colortex11, gl_FragCoord.xy*texelSize).g;
+	float labao =	1;
 	#else 
 	float labao = 1;
 	#endif

@@ -603,7 +603,7 @@ vec2 lm = lmtexcoord.zw;
 		
 	#ifdef MC_NORMAL_MAP
 		vec3 normalTex = texture2D(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
-gl_FragData[3].g = 1*normalTex.z;
+	gl_FragData[3].g = 1*normalTex.z;
 		lm *= normalTex.b;
 		vec2 lm2 = lm * normalTex.b;
 		normalTex.xy = normalTex.xy*2.0-1.0;

@@ -603,42 +603,7 @@ vec3 reproject(vec3 sceneSpace, bool hand) {
   	return mod(pos.x + mod(pos.y, 2.0), 2.0);
 }	
 
-float rtao(ivec2 pos) {
 
-float weightSum = 1.0;
-float rtao = texelFetch(colortex11, pos, 0).r;
-float depth = texelFetch(depthtex0, pos, 0).x;
-vec3 normal = texelFetch(colortex10, pos, 0).xyz;
-    for (int i = 0; i<9; i++) {
-        ivec2 deltaPos     = kernelO_3x3[i];
-        //  We already have the center data
-        if (pos != 0 && pos != 0) { continue; }
-
-        // ⬇️ Sample current point data with current uv
-        ivec2 p = pos + deltaPos;
-        vec4 curColor = texelFetch(colortex11, ivec2(p), 0);
-        float curDepth = texelFetch(depthtex0, p, 0).x;
-        vec3 curNormal = texelFetch(colortex10, p, 0).xyz;
-
-        //  Determine the average brightness of this sample
-        //  Using International Telecommunications Union's ITU BT.601 encoding params
-
-
-        float weightDepth = abs(curDepth - depth) / (depth * length(vec2(deltaPos)) + 1.0e-2);
-        float weightNormal = pow(max(0, dot(curNormal, normal)), 32.0);
-        float w = exp(-weightDepth) * weightNormal;
-
-
-        weightSum += w;
-
-        rtao += curColor * w;
-    }
-
-
-rtao /= weightSum;
-
-    return  rtao;
-}
 
 void main() {
 

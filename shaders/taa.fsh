@@ -107,6 +107,7 @@ uniform sampler2D colortex14;
 
 uniform sampler2D colortex13;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
 
 uniform vec2 texelSize;
 uniform float frameTimeCounter;
@@ -145,11 +146,11 @@ vec3 closestToCamera5taps(vec2 texcoord)
 	vec2 du = vec2(texelSize.x*2., 0.0);
 	vec2 dv = vec2(0.0, texelSize.y*2.);
 
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex1, texcoord - dv - du).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex1, texcoord - dv + du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex1, texcoord).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex1, texcoord + dv - du).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex1, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
 	dmin = dmin.z > dtr.z? dtr : dmin;
@@ -292,7 +293,7 @@ vec3 TAA_hq(){
 	#endif
 
 	#ifndef CLOSEST_VELOCITY
-	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex0,adjTC).x);
+	vec3 closestToCamera = vec3(texcoord,texture2D(depthtex1,adjTC).x);
 	#endif
 
 	vec4 data = texture2D(colortex1,adjTC);

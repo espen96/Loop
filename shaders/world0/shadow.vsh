@@ -6,7 +6,7 @@ This code is from Chocapic13' shaders
 Read the terms of modification and sharing before changing something below please !
 !! DO NOT REMOVE !!
 */
-#define SHADOW_FRUSTRUM_CULLING   // If enabled, removes most of the blocks during shadow rendering that would not cast shadows on the player field of view. Improves performance but can be sometimes incorrect and causes flickering shadows on distant occluders
+//#define SHADOW_FRUSTRUM_CULLING   // If enabled, removes most of the blocks during shadow rendering that would not cast shadows on the player field of view. Improves performance but can be sometimes incorrect and causes flickering shadows on distant occluders
 #define WAVY_PLANTS
 #define WAVY_STRENGTH 1.0 //[0.1 0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0]
 #define WAVY_SPEED 1.0 //[0.001 0.01 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0 1.25 1.5 2.0 3.0 4.0]

@@ -150,7 +150,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		//Mie phase + somewhat simulates multiple scattering (Horizon zero down cloud approx)
 		float mie = mix(phaseg(SdotV,fog_mieg1),phaseg(SdotV,fog_mieg2),0.5);
 		float rayL = phaseRayleigh(SdotV);
-	//	wpos.y = clamp(wpos.y,0.0,1.0);
+
 
 		vec3 ambientCoefs = dVWorld/dot(abs(dVWorld),vec3(1.));
 

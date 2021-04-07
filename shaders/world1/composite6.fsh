@@ -1,4 +1,4 @@
-#version 120
+#version 130
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
 
@@ -56,12 +56,9 @@ uniform vec2 texelSize;
 #include "lib/projections.glsl"
 #include "lib/sky_gradient.glsl"
 #include "/lib/res_params.glsl"
-
+#include "/lib/noise.glsl"
 #define fsign(a)  (clamp((a)*1e35,0.,1.)*2.-1.)
 
-float interleaved_gradientNoise(){
-	return fract(52.9829189*fract(0.06711056*gl_FragCoord.x + 0.00583715*gl_FragCoord.y)+tempOffsets);
-}
 
 
 float phaseg(float x, float g){
@@ -195,9 +192,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 		}
 		inColor += vL;
 }
-float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
-}
+
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -205,7 +200,7 @@ float blueNoise(){
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-/* DRAWBUFFERS:0 */
+/* RENDERTARGETS: 0 */
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
 		float z = texture2D(depthtex0,tc).x;

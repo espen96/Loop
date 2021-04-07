@@ -6,11 +6,11 @@
 #define Exposure_Speed 1.0 //[0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 2.25 2.5 2.75 3.0 4.0 5.0]
 #define DoF_Adaptation_Speed 1.00 // [0.20 0.21 0.23 0.24 0.25 0.27 0.29 0.30 0.32 0.34 0.36 0.39 0.41 0.43 0.46 0.49 0.52 0.55 0.59 0.62 0.66 0.70 0.74 0.79 0.84 0.89 0.94 1.00 1.06 1.13 1.20 1.27 1.35 1.43 1.52 1.61 1.71 1.82 1.93 2.05 2.18 2.31 2.45 2.60 2.76 2.93 3.11 3.30 3.51 3.72 3.95 4.19 4.45 4.73 5.02 5.33 5.65 6.00]
 //#define CLOUDS_SHADOWS
-#define BASE_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
+#define BASE_FOG_AMOUNT 2.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
 #define CLOUDY_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0]
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
-#include "/lib/res_params.glsl"							
+#include "/lib/res_params.glsl"
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;
@@ -32,11 +32,12 @@ flat varying float rodExposure;
 flat varying float fogAmount;
 flat varying float VFAmount;
 flat varying float avgL2;
-flat varying float centerDepth;							   
+flat varying float centerDepth;
 
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
 uniform sampler2D depthtex0;
+
 
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
@@ -45,15 +46,16 @@ uniform float rainStrength;
 uniform float sunElevation;
 uniform float nightVision;
 uniform float near;
-uniform float far;				  
+uniform float far;
+//uniform float frameTime;
 uniform float eyeAltitude;
 uniform int frameCounter;
 uniform int worldTime;
-vec3 sunVec = vec3(0.0,1.0,0.0);
+vec3 sunVec = normalize(mat3(gbufferModelViewInverse) *sunPosition);
 
 
 
-#include "lib/sky_gradient.glsl"
+#include "/lib/sky_gradient.glsl"
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
 vec3 rodSample(vec2 Xi)
@@ -77,10 +79,6 @@ vec3 cosineHemisphereSample(vec2 Xi)
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
-vec3 toLinear(vec3 sRGB){
-	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
-}
-
 
 vec2 tapLocation(int sampleNumber,int nb, float nbRot,float jitter)
 {
@@ -100,9 +98,12 @@ vec2 R2_samples(int n){
 	vec2 alpha = vec2(0.75487765, 0.56984026);
 	return fract(alpha * n);
 }
+float tanh(float x){
+	return (exp(x) - exp(-x))/(exp(x) + exp(-x));
+}
 float ld(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
-}			 
+}
 void main() {
 
 	gl_Position = ftransform()*0.5+0.5;
@@ -118,92 +119,132 @@ void main() {
 	ambientB = vec3(0.0);
 	ambientF = vec3(0.0);
 	avgSky = vec3(0.0);
+	//Integrate sky light for each block side
+	int maxIT = 10;
+	for (int i = 0; i < maxIT; i++) {
+			vec2 ij = R2_samples((frameCounter%1000)*maxIT+i);
+			vec3 pos = normalize(rodSample(ij));
 
+
+			vec3 samplee = 1.72*skyFromTex(pos,colortex4).rgb/maxIT/150.;
+			avgSky += samplee/1.72;
+			ambientUp += samplee*(pos.y+abs(pos.x)/7.+abs(pos.z)/7.);
+			ambientLeft += samplee*(clamp(-pos.x,0.0,1.0)+clamp(pos.y/7.,0.0,1.0)+abs(pos.z)/7.);
+			ambientRight += samplee*(clamp(pos.x,0.0,1.0)+clamp(pos.y/7.,0.0,1.0)+abs(pos.z)/7.);
+			ambientB += samplee*(clamp(pos.z,0.0,1.0)+abs(pos.x)/7.+clamp(pos.y/7.,0.0,1.0));
+			ambientF += samplee*(clamp(-pos.z,0.0,1.0)+abs(pos.x)/7.+clamp(pos.y/7.,0.0,1.0));
+			ambientDown += samplee*(clamp(pos.y/6.,0.0,1.0)+abs(pos.x)/7.+abs(pos.z)/7.);
+
+			/*
+			ambientUp += samplee*(pos.y);
+			ambientLeft += samplee*(clamp(-pos.x,0.0,1.0));
+			ambientRight += samplee*(clamp(pos.x,0.0,1.0));
+			ambientB += samplee*(clamp(pos.z,0.0,1.0));
+			ambientF += samplee*(clamp(-pos.z,0.0,1.0));
+			ambientDown += samplee*(clamp(pos.y/6.,0.0,1.0))*0;
+			*/
+
+	}
+
+
+	vec2 planetSphere = vec2(0.0);
+	vec3 sky = vec3(0.0);
+	vec3 skyAbsorb = vec3(0.0);
+
+	float sunVis = clamp(sunElevation,0.0,0.05)/0.05*clamp(sunElevation,0.0,0.05)/0.05;
+	float moonVis = clamp(-sunElevation,0.0,0.05)/0.05*clamp(-sunElevation,0.0,0.05)/0.05;
+
+	zenithColor = calculateAtmosphere(vec3(0.0), vec3(0.0,1.0,0.0), vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,tempOffsets.x);
+	skyAbsorb = vec3(0.0);
+	vec3 absorb = vec3(0.0);
+	sunColor = calculateAtmosphere(vec3(0.0), sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.0);
+	sunColor = sunColorBase/4000. * skyAbsorb;
+
+	skyAbsorb = vec3(1.0);
+	float dSun = 0.03;
+	vec3 modSunVec = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	vec3 modSunVec2 = sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
+	sunColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.);
+	sunColorCloud = sunColorBase/4000. * skyAbsorb ;
+
+	skyAbsorb = vec3(1.0);
+	moonColor = calculateAtmosphere(vec3(0.0), -sunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
+	moonColor = moonColorBase/4000.0*skyAbsorb;
+
+	skyAbsorb = vec3(1.0);
+	modSunVec = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	modSunVec2 = -sunVec*(1.0-dSun)+vec3(0.0,dSun,0.0);
+	if (modSunVec2.y > modSunVec.y) modSunVec = modSunVec2;
+	moonColorCloud = calculateAtmosphere(vec3(0.0), modSunVec, vec3(0.0,1.0,0.0), sunVec, -sunVec, planetSphere, skyAbsorb, 25,0.5);
+
+	moonColorCloud = moonColorBase/4000.0*0.55;
+	#ifndef CLOUDS_SHADOWS
+	sunColor *= (1.0-rainStrength*vec3(0.96));
+	moonColor *= (1.0-rainStrength*vec3(0.96));
+	#endif
+	lightSourceColor = sunVis >= 1e-5 ? sunColor * sunVis : moonColor * moonVis;
+
+	float lightDir = float( sunVis >= 1e-5)*2.0-1.0;
 
 
 	//Fake bounced sunlight
-	vec3 bouncedSun = clamp(gl_Fog.color.rgb*pow(luma(gl_Fog.color.rgb),-0.75)*0.65,0.0,1.0)/4000.*0.08;
-	ambientUp += bouncedSun*clamp(-sunVec.y+5.,0.,6.0);
-	ambientLeft += bouncedSun*clamp(sunVec.x+5.,0.0,6.);
-	ambientRight += bouncedSun*clamp(-sunVec.x+5.,0.0,6.);
-	ambientB += bouncedSun*clamp(-sunVec.z+5.,0.0,6.);
-	ambientF += bouncedSun*clamp(sunVec.z+5.,0.0,6.);
-	ambientDown += bouncedSun*clamp(sunVec.y+5.,0.0,6.);
+	vec3 bouncedSun = lightSourceColor*0.1/4*0.5*clamp(lightDir*sunVec.y,0.0,1.0)*clamp(lightDir*sunVec.y,0.0,1.0);
+	vec3 cloudAmbientSun = (sunColorCloud)*0.007*(1.0-rainStrength*0.5);
+	vec3 cloudAmbientMoon = (moonColorCloud)*0.007*(1.0-rainStrength*0.5);
+	ambientUp += bouncedSun*clamp(-lightDir*sunVec.y+4.,0.,4.0) + cloudAmbientSun*clamp(sunVec.y+2.,0.,4.0) + cloudAmbientMoon*clamp(-sunVec.y+2.,0.,4.0);
+	ambientLeft += bouncedSun*clamp(lightDir*sunVec.x+4.,0.0,4.) + cloudAmbientSun*clamp(-sunVec.x+2.,0.0,4.)*0.7 + cloudAmbientMoon*clamp(sunVec.x+2.,0.0,4.)*0.7;
+	ambientRight += bouncedSun*clamp(-lightDir*sunVec.x+4.,0.0,4.) + cloudAmbientSun*clamp(sunVec.x+2.,0.0,4.)*0.7 + cloudAmbientMoon*clamp(-sunVec.x+2.,0.0,4.)*0.7;
+	ambientB += bouncedSun*clamp(-lightDir*sunVec.z+4.,0.0,4.) + cloudAmbientSun*clamp(sunVec.z+2.,0.0,4.)*0.7 + cloudAmbientMoon*clamp(-sunVec.z+2.,0.0,4.)*0.7;
+	ambientF += bouncedSun*clamp(lightDir*sunVec.z+4.,0.0,4.) + cloudAmbientSun*clamp(-sunVec.z+2.,0.0,4.)*0.7 + cloudAmbientMoon*clamp(sunVec.z+2.,0.0,4.)*0.7;
+	ambientDown += bouncedSun*clamp(lightDir*sunVec.y+4.,0.0,4.)*0.7 + cloudAmbientSun*clamp(-sunVec.y+2.,0.0,4.)*0.5 + cloudAmbientMoon*clamp(sunVec.y+2.,0.0,4.)*0.5;
+	avgSky += bouncedSun*2.5;
 
+	vec3 rainNightBoost = moonColorCloud*rainStrength*0.05;
+	ambientUp += rainNightBoost;
+	ambientLeft += rainNightBoost;
+	ambientRight += rainNightBoost;
+	ambientB += rainNightBoost;
+	ambientF += rainNightBoost;
+	ambientDown += rainNightBoost;
+	avgSky += rainNightBoost;
 
 	float avgLuma = 0.0;
 	float m2 = 0.0;
 	int n=100;
 	vec2 clampedRes = max(1.0/texelSize,vec2(1920.0,1080.));
 	float avgExp = 0.0;
-	vec2 resScale = vec2(1920.,1080.)/clampedRes;
-	float v[25];
-	float temp;
-	// 5x5 Median filter by morgan mcguire
-	// We take the median value of the most blurred bloom buffer
-	#define s2(a, b)				temp = a; a = min(a, b); b = max(temp, b);
-	#define t2(a, b)				s2(v[a], v[b]);
-	#define t24(a, b, c, d, e, f, g, h)			t2(a, b); t2(c, d); t2(e, f); t2(g, h);
-	#define t25(a, b, c, d, e, f, g, h, i, j)		t24(a, b, c, d, e, f, g, h); t2(i, j);
-	for (int i = 0; i < 5; i++){
-		for (int j = 0; j < 5; j++){
-			vec2 tc = 0.5 + vec2(i-2,j-2)/2.0 * 0.35;
-			v[i+j*5] = luma(texture2D(colortex6,tc/128. * resScale+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb);
-		}
+	float avgB = 0.0;
+	vec2 resScale = vec2(1920.,1080.)/clampedRes*BLOOM_QUALITY;
+	const int maxITexp = 50;
+	float w = 0.0;
+	for (int i = 0; i < maxITexp; i++){
+			vec2 ij = R2_samples((frameCounter%2000)*maxITexp+i);
+			vec2 tc = 0.5 + (ij-0.5) * 0.7;
+			vec3 sp = texture2D(colortex6,tc/16. * resScale+vec2(0.375*resScale.x+4.5*texelSize.x,.0)).rgb;
+			avgExp += log(luma(sp));
+			avgB += log(min(dot(sp,vec3(0.07,0.22,0.71)),8e-2));
 	}
-	t25(0, 1,			3, 4,		2, 4,		2, 3,		6, 7);
-  t25(5, 7,			5, 6,		9, 7,		1, 7,		1, 4);
-  t25(12, 13,		11, 13,		11, 12,		15, 16,		14, 16);
-  t25(14, 15,		18, 19,		17, 19,		17, 18,		21, 22);
-  t25(20, 22,		20, 21,		23, 24,		2, 5,		3, 6);
-  t25(0, 6,			0, 3,		4, 7,		1, 7,		1, 4);
-  t25(11, 14,		8, 14,		8, 11,		12, 15,		9, 15);
-  t25(9, 12,		13, 16,		10, 16,		10, 13,		20, 23);
-  t25(17, 23,		17, 20,		21, 24,		18, 24,		18, 21);
-  t25(19, 22,		8, 17,		9, 18,		0, 18,		0, 9);
-  t25(10, 19,		1, 19,		1, 10,		11, 20,		2, 20);
-  t25(2, 11,		12, 21,		3, 21,		3, 12,		13, 22);
-  t25(4, 22,		4, 13,		14, 23,		5, 23,		5, 14);
-  t25(15, 24,		6, 24,		6, 15,		7, 16,		7, 19);
-  t25(3, 11,		5, 17,		11, 17,		9, 17,		4, 10);
-  t25(6, 12,		7, 14,		4, 6,		4, 7,		12, 14);
-  t25(10, 14,		6, 7,		10, 12,		6, 10,		6, 17);
-  t25(12, 17,		7, 17,		7, 10,		12, 18,		7, 12);
-  t24(10, 18,		12, 20,		10, 20,		10, 12);
-	avgExp = v[12];		// Median value
 
+	avgExp = exp(avgExp/maxITexp);
+	avgB = exp(avgB/maxITexp);
 
 	avgBrightness = clamp(mix(avgExp,texelFetch2D(colortex4,ivec2(10,37),0).g,0.95),0.00003051757,65000.0);
 
-	float currentExposure = texelFetch2D(colortex4,ivec2(10,37),0).b;
 	float L = max(avgBrightness,1e-8);
-	float keyVal = 1.03-2.0/(log(L+1.0)/log(10.0)+2.0);
-	float targetExposure = 1.0*keyVal/L;
+	float keyVal = 1.03-2.0/(log(L*4000/150.*8./3.0+1.0)/log(10.0)+2.0);
+	float targetExposure = 0.18/log2(L*2.5+1.040-nightVision*0.038)*1.1;
 
-	float targetrodExposure = clamp(log(targetExposure*2.0+1.0)-0.1,0.0,2.0);
-	float currentrodExposure = texelFetch2D(colortex4,ivec2(14,37),0).r;
+	avgL2 = clamp(mix(avgB,texelFetch2D(colortex4,ivec2(10,37),0).b,0.985),0.00003051757,65000.0);
+	float targetrodExposure = max(0.012/log2(avgL2+1.002)-0.1,0.0)*1.2;
 
-	targetExposure = clamp(targetExposure,2.0,3.0);
-	float rad = sqrt(currentExposure);
-	float rtarget = sqrt(targetExposure);
-	float dir = sign(rtarget-rad);
-	float dist = abs(rtarget-rad);
-	float maxApertureChange = 0.0032*frameTime/0.016666*Exposure_Speed * exp2(max(rad,rtarget)*0.5);
 
-	maxApertureChange *= 1.0+nightVision*4.;
-	rad = rad+dir*min(dist,maxApertureChange);
-
-	exposureF = rad*rad;
-	exposure=exposureF*EXPOSURE_MULTIPLIER;
+	exposure=targetExposure*EXPOSURE_MULTIPLIER;
 	float currCenterDepth = ld(texture2D(depthtex0, vec2(0.5)*RENDER_SCALE).r);
 	centerDepth = mix(sqrt(texelFetch2D(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
 	centerDepth = centerDepth * centerDepth * 65000.0;
 
-	dir = sign(targetrodExposure-currentrodExposure);
-	dist = abs(targetrodExposure-currentrodExposure);
-	maxApertureChange = 0.0032*frameTime/0.016666*Exposure_Speed * exp2(max(rad,rtarget)*0.5);
-
-	rodExposure = currentrodExposure + dir * min(dist,maxApertureChange);
+	rodExposure = targetrodExposure;
 
 	#ifndef AUTO_EXPOSURE
 	 exposure = Manual_exposure_value;
@@ -211,7 +252,7 @@ void main() {
 	#endif
 	float modWT = (worldTime%24000)*1.0;
 
-	float fogAmount0 = 1/3000.+FOG_TOD_MULTIPLIER*(1/180.*(clamp(modWT-11000.,0.,2000.0)/2000.+(1.0-clamp(modWT,0.,3000.0)/3000.))*(clamp(modWT-11000.,0.,2000.0)/2000.+(1.0-clamp(modWT,0.,3000.0)/3000.)) + 1/200.*clamp(modWT-13000.,0.,1000.0)/1000.*(1.0-clamp(modWT-23000.,0.,1000.0)/1000.));
-	VFAmount = CLOUDY_FOG_AMOUNT*(fogAmount0*fogAmount0+FOG_RAIN_MULTIPLIER*1.8/20000.*rainStrength);
-	fogAmount = BASE_FOG_AMOUNT*(fogAmount0+max(FOG_RAIN_MULTIPLIER*1/15.*rainStrength , FOG_TOD_MULTIPLIER*1/50.*clamp(modWT-13000.,0.,1000.0)/1000.*(1.0-clamp(modWT-23000.,0.,1000.0)/1000.)));
+	float fogAmount0 = 1/3000.+FOG_TOD_MULTIPLIER*(1/100.*(clamp(modWT-11000.,0.,2000.0)/2000.+(1.0-clamp(modWT,0.,3000.0)/3000.))*(clamp(modWT-11000.,0.,2000.0)/2000.+(1.0-clamp(modWT,0.,3000.0)/3000.)) + 1/120.*clamp(modWT-13000.,0.,1000.0)/1000.*(1.0-clamp(modWT-23000.,0.,1000.0)/1000.));
+	VFAmount = CLOUDY_FOG_AMOUNT*(fogAmount0*fogAmount0+FOG_RAIN_MULTIPLIER*1.0/20000.*rainStrength);
+	fogAmount = BASE_FOG_AMOUNT*(fogAmount0+max(FOG_RAIN_MULTIPLIER*1/10.*rainStrength , FOG_TOD_MULTIPLIER*1/50.*clamp(modWT-13000.,0.,1000.0)/1000.*(1.0-clamp(modWT-23000.,0.,1000.0)/1000.)));
 }

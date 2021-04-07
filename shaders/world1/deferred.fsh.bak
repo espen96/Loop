@@ -1,4 +1,4 @@
-#version 130
+#version 120
 #extension GL_EXT_gpu_shader4 : enable
 
 
@@ -36,10 +36,6 @@ flat varying float VFAmount;
 flat varying float centerDepth;
 
 uniform sampler2D colortex4;
-uniform sampler2D colortex6;
-uniform sampler2D colortex13;
-uniform sampler2D colortex15;
-uniform sampler2D colortex2;
 uniform sampler2D noisetex;
 #ifdef SHADOWS_ON
 uniform sampler2DShadow shadow;
@@ -62,13 +58,8 @@ uniform float sunElevation;
 uniform vec3 cameraPosition;
 uniform float far;
 uniform ivec2 eyeBrightnessSmooth;
-
-#include "/lib/Shadow_Params.glsl"
 #include "/lib/util.glsl"
 #include "/lib/ROBOBO_sky.glsl"
-#include "/lib/sky_gradient.glsl"
-#include "/lib/volumetricClouds.glsl"
-#include "/lib/noise.glsl"
 vec3 toShadowSpaceProjected(vec3 p3){
     p3 = mat3(gbufferModelViewInverse) * p3 + gbufferModelViewInverse[3].xyz;
     p3 = mat3(shadowModelView) * p3 + shadowModelView[3].xyz;
@@ -76,43 +67,29 @@ vec3 toShadowSpaceProjected(vec3 p3){
 
     return p3;
 }
-vec3 toLinear(vec3 sRGB){
-	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+float interleaved_gradientNoise(){
+	vec2 coord = gl_FragCoord.xy;
+	float noise = fract(52.9829189*fract(0.06711056*coord.x + 0.00583715*coord.y)+frameCounter/1.6180339887);
+	return noise;
 }
-
+float blueNoise(){
+  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+}
 vec4 lightCol = vec4(lightSourceColor, float(sunElevation > 1e-5)*2-1.);
-#include "/lib/volumetricFog.glsl"
 const float[17] Slightmap = float[17](14.0,17.,19.0,22.0,24.0,28.0,31.0,40.0,60.0,79.0,93.0,110.0,132.0,160.0,197.0,249.0,249.0);
 
-
-
-
-float checkerboard(in vec2 uv)
-{
-    vec2 pos = floor(uv);
-  	return mod(pos.x + mod(pos.y, 2.0), 2.0);
-}		
-
-
-
 void main() {
-/* RENDERTARGETS: 4 */
-
-
-float checkerboard = checkerboard(gl_FragCoord.xy);
-
-
+/* DRAWBUFFERS:4 */
 gl_FragData[0] = vec4(0.0);
-float minLight = MIN_LIGHT_AMOUNT * 0.007/ (exposure + rodExposure/(rodExposure+1.0)*exposure*1);
 //Lightmap for forward shading (contains average integrated sky color across all faces + torch + min ambient)
 vec3 avgAmbient = (ambientUp + ambientLeft + ambientRight + ambientB + ambientF + ambientDown)/6.;
 if (gl_FragCoord.x < 17. && gl_FragCoord.y < 17.){
   float torchLut = clamp(16.0-gl_FragCoord.x,0.5,15.5);
   torchLut = torchLut+0.712;
-  float torch_lightmap = max(1.0/torchLut/torchLut - 1/16.212/16.212,0.0);
-  torch_lightmap = torch_lightmap*TORCH_AMOUNT*10.;
-  float sky_lightmap = (Slightmap[int(gl_FragCoord.y)]-14.0)/235.;
-  vec3 ambient = avgAmbient*sky_lightmap+torch_lightmap*vec3(TORCH_R,TORCH_G,TORCH_B)*TORCH_AMOUNT+minLight;
+  float torch_lightmap = max(1.0/torchLut/torchLut - 1/16.21/16.21,0.0);
+  torch_lightmap = torch_lightmap*TORCH_AMOUNT*5.0;
+  float sky_lightmap = 0.5*150.0;
+  vec3 ambient = avgAmbient*sky_lightmap+torch_lightmap*vec3(TORCH_R,TORCH_G,TORCH_B)*TORCH_AMOUNT+MIN_LIGHT_AMOUNT*0.005/(exposureF+clamp(rodExposure*exposureF/10.,0.0,10000.0));
   gl_FragData[0] = vec4(ambient*Ambient_Mult,1.0);
 }
 
@@ -120,10 +97,10 @@ if (gl_FragCoord.x < 17. && gl_FragCoord.y < 17.){
 if (gl_FragCoord.x < 17. && gl_FragCoord.y > 19. && gl_FragCoord.y < 19.+17. ){
 	float torchLut = clamp(16.0-gl_FragCoord.x,0.5,15.5);
   torchLut = torchLut+0.712;
-  float torch_lightmap = max(1.0/torchLut/torchLut - 1/16.212/16.212,0.0);
-  float ambient = torch_lightmap*TORCH_AMOUNT*10.;
-  float sky_lightmap = (Slightmap[int(gl_FragCoord.y-19.0)]-14.0)/235./150.;
-  gl_FragData[0] = vec4(sky_lightmap,ambient,minLight,1.0)*Ambient_Mult;
+  float torch_lightmap = max(1.0/torchLut/torchLut - 1/16.21/16.21,0.0);
+  float ambient = torch_lightmap*TORCH_AMOUNT*5.;
+  float sky_lightmap = 0.5;
+  gl_FragData[0] = vec4(sky_lightmap,ambient,MIN_LIGHT_AMOUNT*0.005/(exposureF+clamp(rodExposure*exposureF/10.,0.0,10000.0)),1.0)*Ambient_Mult;
 }
 
 //Save light values
@@ -143,78 +120,11 @@ if (gl_FragCoord.x > 6. && gl_FragCoord.x < 7.  && gl_FragCoord.y > 19.+18. && g
 gl_FragData[0] = vec4(lightSourceColor,1.0);
 if (gl_FragCoord.x > 7. && gl_FragCoord.x < 8.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
 gl_FragData[0] = vec4(avgAmbient,1.0);
-if (gl_FragCoord.x > 8. && gl_FragCoord.x < 9.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(sunColor,1.0);
-if (gl_FragCoord.x > 9. && gl_FragCoord.x < 10.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(moonColor,1.0);
-if (gl_FragCoord.x > 11. && gl_FragCoord.x < 12.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(avgSky,1.0);
-if (gl_FragCoord.x > 12. && gl_FragCoord.x < 13.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(sunColorCloud,1.0);
-if (gl_FragCoord.x > 13. && gl_FragCoord.x < 14.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(moonColorCloud,1.0);
+
 //Sky gradient (no clouds)
 const float pi = 3.141592653589793238462643383279502884197169;
 if (gl_FragCoord.x > 18. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257){
-  vec2 p = clamp(floor(gl_FragCoord.xy-vec2(18.,1.))/256.+tempOffsets/256.,0.0,1.0);
-  vec3 viewVector = cartToSphere(p);
-
-	vec2 planetSphere = vec2(0.0);
-	vec3 sky = vec3(0.0);
-	vec3 skyAbsorb = vec3(0.0);
-  vec3 WsunVec = mat3(gbufferModelViewInverse)*sunVec;
-	sky = calculateAtmosphere(avgSky*4000./2.0, viewVector, vec3(0.0,1.0,0.0), WsunVec, -WsunVec, planetSphere, skyAbsorb, 10, blueNoise());
-	
-	
-	    vec3 color = atmosphere(
-        normalize(viewVector),           // normalized ray direction
-        vec3(0,6372e3,0),               // ray origin
-        WsunVec,                        // position of the sun
-        22.0,                                   // intensity of the sun
-        6371e3,                           // radius of the planet in meters
-        6371e3 + 100e3,                   // radius of the atmosphere in meters
-        vec3(5.5e-6, 13.0e-6, 22.4e-6),         // Rayleigh scattering coefficient
-        21e-6,                                  // Mie scattering coefficient
-        8e3,                                    // Rayleigh scale height
-        1.2e3,                                  // Mie scale height
-        0.758                                   // Mie preferred scattering direction
-    );
-
-    // Apply exposure.
-
-     
-
-	 color = (1.0 - exp(-1.0 * color));
-	  float lum = luma(color);
-	  vec3 diff = color-lum;
-  //    sky = color + diff*(-lum*-0.5 + 0);	
-	
-	
-  /*
-  float rainPhase = max(sky_miePhase(dot(viewVector, WsunVec ),0.4),sky_miePhase(dot(viewVector, WsunVec ),0.1)*0.3);
-	float L = 2000.;
-	float rainDensity = 800.*rainStrength;
-	vec3 rainCoef = 2e-5*vec3(0.1);
-	vec3 scatterRain = 4000.*sunColorCloud*rainPhase*sky_coefficientMie*rainDensity*5.*vec3(0.2);
-	scatterRain = (scatterRain-scatterRain*exp(-(rainCoef)*rainDensity*L)) / ((rainCoef)*rainDensity+0.00001);
-	sky = sky *exp(-(rainCoef)*rainDensity*L) + scatterRain;
-  */
-  sky = mix(sky, vec3(0.02,0.022,0.025)*dot(sunColorCloud+moonColorCloud, vec3(0.21,0.72,0.07))*4000.0, rainStrength*0.99);
-//	transmittance *= exp(-(rainCoef)*rainDensity*L);
-  gl_FragData[0] = vec4(sky/4000.*Sky_Brightness,1.0); //ROBOBO 
-//  gl_FragData[0] = vec4(sky*Sky_Brightness,1.0)*7.5;
-}
-
-//Sky gradient with clouds
-if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+257.){
-	vec2 p = clamp(floor(gl_FragCoord.xy-vec2(18.+257,1.))/256.+tempOffsets/256.,0.0,1.0);
-	vec3 viewVector = cartToSphere(p);
-	vec4 clouds = renderClouds(mat3(gbufferModelView)*viewVector*1024.,vec3(0.), blueNoise(),sunColorCloud,moonColor,avgSky);
-  mat2x3 vL = getVolumetricRays(fract(frameCounter/1.6180339887),mat3(gbufferModelView)*viewVector*1024.);
-  float absorbance = dot(vL[1],vec3(0.22,0.71,0.07));
-  vec3 skytex = texelFetch2D(colortex4,ivec2(gl_FragCoord.xy)-ivec2(257,0),0).rgb/150.;
-  skytex = skytex*clouds.a + clouds.rgb;
-	gl_FragData[0] = vec4(skytex*absorbance+vL[0].rgb,1.0);
+  gl_FragData[0] = vec4(vec3(1.0,0.4,0.12)*100.,1.0);
 }
 
 //Temporally accumulate sky and light values
@@ -224,7 +134,7 @@ gl_FragData[0].rgb = clamp(mix(temp,curr,0.06),0.0,65000.);
 
 //Exposure values
 if (gl_FragCoord.x > 10. && gl_FragCoord.x < 11.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
-gl_FragData[0] = vec4(exposure,avgBrightness,avgL2,1.0);
+gl_FragData[0] = vec4(exposure,avgBrightness,exposureF,1.0);
 if (gl_FragCoord.x > 14. && gl_FragCoord.x < 15.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )
 gl_FragData[0] = vec4(rodExposure,centerDepth,0.0, 1.0);
 

@@ -20,21 +20,15 @@ flat varying vec3 refractedSunVec;
 flat varying vec4 exposure;
 uniform sampler2D colortex4;
 
+flat varying vec2 coord;
+
 uniform float far;
 uniform float near;
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
 uniform float sunElevation;
 uniform int frameCounter;
-
-const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-							vec2(-1.,3.)/8.,
-							vec2(5.0,1.)/8.,
-							vec2(-3,-5.)/8.,
-							vec2(-5.,5.)/8.,
-							vec2(-7.,-1.)/8.,
-							vec2(3,7.)/8.,
-							vec2(7.,-7.)/8.);
+#include "/lib/kernel.glsl"
 
 
 #include "/lib/util.glsl"
@@ -54,7 +48,7 @@ void main() {
 	#ifndef TAA
 	TAA_Offset = vec2(0.0);
 	#endif
-
+    coord = gl_MultiTexCoord0.xy;
 	vec3 sc = texelFetch2D(colortex4,ivec2(6,37),0).rgb;
 	ambientUp = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
 	ambientDown = texelFetch2D(colortex4,ivec2(1,37),0).rgb;

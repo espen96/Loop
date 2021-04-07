@@ -10,8 +10,9 @@ vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 
 float getWaterHeightmap(vec2 posxz, float iswater) {
 	vec2 pos = posxz;
-  float moving = clamp(iswater*2.-1.0,0.0,1.0);
-	vec2 movement = vec2(-0.005*frameTimeCounter*moving,0.0);
+	float wavespeed = frameTimeCounter;
+    float moving = clamp(iswater*2.-1.0,0.0,1.0);
+	vec2 movement = vec2(-0.005*wavespeed*moving,0.0);
 	float caustic = 0.0;
 	float weightSum = 0.0;
 	float radiance =  2.39996;
@@ -27,8 +28,9 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 }
 vec3 getWaveHeight(vec2 posxz, float iswater){
 	vec2 pos = posxz;
-  float moving = clamp(iswater*2.-1.0,0.0,1.0);
-	vec2 movement = vec2(-0.005*frameTimeCounter*moving,0.0);
+	float wavespeed = frameTimeCounter;
+    float moving = clamp(iswater*2.-1.0,0.0,1.0);
+	vec2 movement = vec2(-0.005*wavespeed*moving,0.0);
 	vec3 caustic = vec3(0.0);
 	float weightSum = 0.0;
 	float radiance =  2.39996;

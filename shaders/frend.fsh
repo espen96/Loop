@@ -226,7 +226,8 @@ void main() {
   }  
   else
 
-    color += vl.rgb;
+
+    color += vl.rgb*(1-transparencies.a);
 
 	
 

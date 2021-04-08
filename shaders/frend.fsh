@@ -2,6 +2,7 @@
 uniform mat4 gbufferModelView;
 flat varying vec3 zMults;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
 uniform sampler2D colortex7;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
@@ -129,9 +130,9 @@ void main() {
   vec4 trpData = texture2D(colortex7,texcoord);
   bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
-  float z = texture2D(depthtex0,texcoord).x;
+  float z = texture2D(depthtex1,texcoord).x;
   float frDepth = ld(z);
-  vec4 vl = BilateralUpscale(colortex0,depthtex0,gl_FragCoord.xy,frDepth);
+  vec4 vl = BilateralUpscale(colortex0,depthtex1,gl_FragCoord.xy,frDepth);
   bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
 
 
@@ -224,19 +225,11 @@ void main() {
     vl.a = 0.0;
   }  
   else
-  
+
     color += vl.rgb;
-	
 
 	
-	float fogFactorAbs = 1.0 - clamp((length(fragpos) - gl_Fog.start) * gl_Fog.scale, 0.0, 1.0);
-   fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(0.0)*texelSize*0.5,z));	
-	vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
-	vec3 np3 = normalize(p3);
 
-    vec3 fogColor = mix(skyCloudsFromTex(np3, colortex4).rgb, vec3(2.0), fogFactorAbs)*8/3./150.0;
-//	if(z <1.0)   color.rgb = mix(fogColor, color, fogFactorAbs);
-  
 
   gl_FragData[0].r = vl.a;
   gl_FragData[0].a = trpData.a;

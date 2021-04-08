@@ -32,6 +32,7 @@ flat varying float fogAmount;
 flat varying float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
+uniform sampler2D depthtex1;
 uniform sampler2DShadow shadow;
 flat varying vec3 refractedSunVec;
 flat varying vec3 WsunVec;
@@ -287,7 +288,7 @@ void main() {
 /* RENDERTARGETS: 0 */
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-		float z = texture2D(depthtex0,tc).x;
+		float z = texture2D(depthtex1,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise()*VL_RENDER_RESOLUTION;
 		mat2x3 vl = getVolumetricRays(noise,fragpos);

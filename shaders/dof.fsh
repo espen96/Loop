@@ -555,7 +555,7 @@ void main() {
 	col = mix(clamp(lum,0.0,0.05)*Purkinje_Multiplier*vec3(Purkinje_R, Purkinje_G, Purkinje_B)+1.5e-3, col, rodCurve);
 //	col =vec3(rodCurve);
 //	if (col.r > 0.85*3.0) col = vec3(100,0.0,0.0);
-//   col = vec3(texture2D(colortex15,texcoord*RENDER_SCALE).rg,0);
+//   col = vec3(VL_abs);
 	#ifndef USE_ACES_COLORSPACE_APPROXIMATION
   	col = LinearTosRGB(TONEMAP(col));
 

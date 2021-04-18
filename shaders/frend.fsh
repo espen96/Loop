@@ -146,7 +146,7 @@ void main() {
 		
    vec2 refractedCoord = texcoord; 
      #ifdef NETHER 
-        vec2 p_m = texcoord;
+    vec2 p_m = texcoord;
     vec2 p_d = p_m;
     p_d.xy -= frameTimeCounter * 0.1;
     vec2 dst_map_val = vec2(noise(p_d.xy));

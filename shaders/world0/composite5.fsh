@@ -908,7 +908,7 @@ void main() {
 			vec3 reflection = vec3(0.0);
 
 			// Sun specular
-			vec3 specTerm = shading * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
+			vec3 specTerm = shading * lightmap.y * GGX2(normal, -np3,  WsunVec, roughness+0.05*0.95, f0) * 8./150./3.;
 
 			vec3 indirectSpecular = vec3(0.0);
 			const int nSpecularSamples = SPEC_SSR_QUALITY;

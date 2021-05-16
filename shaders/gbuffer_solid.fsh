@@ -427,10 +427,6 @@ vec4 data0 = vec4(0.0);
 	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
 #endif
 	else data0.a = 0.0;
-#else
-	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
-	if (data0.a > 0.3) data0.a = normalMat.a;
-	else data0.a = 0.0;
 
 
 

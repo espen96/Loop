@@ -8,7 +8,7 @@ uniform sampler2D noisetex;
 
 varying vec3 velocity;
 
-uniform int renderStage;
+uniform int renderStage; 
 
 // 0 Undefined
 // 1  Sky
@@ -37,7 +37,7 @@ uniform int renderStage;
 
 
 
-//////////////////////////////POM//////////////////////////////
+//////////////////////////////POM//////////////////////////////	
 #define DLM
 //#define POM
 #define labspec
@@ -83,17 +83,17 @@ vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 
 
 
-uniform ivec2 atlasSize;
+uniform ivec2 atlasSize;  
 
 
 
 
 
 varying vec2 taajitter;
-//////////////////////////////POM//////////////////////////////
+//////////////////////////////POM//////////////////////////////	
 uniform int framemod8;
 uniform sampler2D normals;
-uniform int entityId;
+uniform int entityId;					 
 varying vec4 lmtexcoord;
 varying vec4 color;
 varying vec4 normalMat;
@@ -132,7 +132,7 @@ vec4 encode (vec3 unenc, vec2 lightmaps)
 	unenc.xy = unenc.xy / dot(abs(unenc), vec3(1.0)) + 0.00390625;
 	unenc.xy = unenc.z <= 0.0 ? (1.0 - abs(unenc.yx)) * sign(unenc.xy) : unenc.xy;
     vec2 encn = unenc.xy * 0.5 + 0.5;
-
+	
     return vec4((encn),vec2(lightmaps.x,lightmaps.y));
 }
 
@@ -157,12 +157,12 @@ mat3 cotangent( vec3 N, vec3 p, vec2 uv )
     vec3 dp2  = dFdy(p);
     vec2 duv1 = dFdx(uv);
     vec2 duv2 = dFdy(uv);
-
+ 
     vec3 dp2perp = cross( dp2, N );
     vec3 dp1perp = cross( N, dp1 );
     vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
     vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
+ 
 
     float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
     return mat3( T * invmax, B * invmax, N );
@@ -174,14 +174,14 @@ mat3 tbnpom( vec3 N, vec3 p, vec2 uv )
 vec3 binormal = vec3(0.0);
 vec3 tangent = vec3(0.0);
 
-
-
+	
+	
     vec3 pos_dx = dFdx(p);
     vec3 pos_dy = dFdy(p);
     float tcoord_dx = dFdx(uv.y);
-    float tcoord_dy = dFdy(uv.y);
-
-
+    float tcoord_dy = dFdy(uv.y); 
+ 
+ 
     // Fix issues when the texture coordinate is wrong, this happens when
     // two adjacent vertices have the same texture coordinate, as the gradient
     // is 0 then. We just assume some hard-coded tangent and binormal then
@@ -192,9 +192,9 @@ vec3 tangent = vec3(0.0);
         tangent = normalize(pos_dx * tcoord_dy - pos_dy * tcoord_dx);
     }
 
-    binormal = normalize(cross(tangent, N));
+    binormal = normalize(cross(tangent, N)); 
 
-
+	
 	return 	  mat3(tangent.x, binormal.x, N.x, tangent.y, binormal.y, N.y, tangent.z, binormal.z, N.z);
 }
 
@@ -243,7 +243,7 @@ vec4 readNormal(in vec2 coord)
 	return vec4(smoothDepth(coord));
 #else
 	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
-#endif
+#endif	
 }
 vec4 readTexture(in vec2 coord)
 {
@@ -294,32 +294,32 @@ vec3 toScreenSpace(vec3 p) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 /* RENDERTARGETS: 1,7,10,2 */
-void main() {
+void main() {		
 
 
-
+																														 
 	vec2 tempOffset=offsets[framemod8];
 	vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
-	vec2 lm = lmtexcoord.zw;
+	vec2 lm = lmtexcoord.zw;		
 
 vec4 data0 = vec4(0.0);
 
 	float noise = interleaved_gradientNoise();
 	vec3 normal = normalMat.xyz;
+	
 
 
-
-
-	//////////////////////////////POM//////////////////////////////
-#ifdef block
+	
+	//////////////////////////////POM//////////////////////////////	
+#ifdef block	
 
 #ifdef POM
-	mat3 TBNPOM = tbnpom( normal, -fragpos, lmtexcoord.xy );
+	mat3 TBNPOM = tbnpom( normal, -fragpos, lmtexcoord.xy );	
 	vec2 adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
-	vec3 coord = vec3(vtexcoord.st, 1.0);
-
-
-		vec3 viewVector = normalize(TBNPOM*fragpos);
+	vec3 coord = vec3(vtexcoord.st, 1.0);	
+	
+	
+		vec3 viewVector = normalize(TBNPOM*fragpos);	
 		float dist = length(fragpos);
 		#ifdef Depth_Write_POM
 		gl_FragDepth = gl_FragCoord.z;
@@ -331,8 +331,8 @@ vec4 data0 = vec4(0.0);
 			  vec2 atlasAspect = vec2(atlasSize.y/float(atlasSize.x),atlasSize.x/float(atlasSize.y));
 				vec2 viewCorrection = max(vec2((vtexcoordam.q)/(vtexcoordam.p)*atlasAspect.x,1.0), vec2(1.0,(vtexcoordam.p)/(vtexcoordam.q)*atlasAspect.y));
 					interval.xy *= viewCorrection;
-
-
+			
+			  
 			  coord += noise*interval;
 					float sumVec = noise;
 			  for (int loopCount = 0;
@@ -341,29 +341,29 @@ vec4 data0 = vec4(0.0);
 					   coord = coord+interval;
 									 sumVec += 1.0;
 			  }
-
-
+			  
+			  
 			  if (coord.t < mincoord) {
 				if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
-
+						
 				  coord.t = mincoord;
-
+		
 				  discard;
 				}
 			  }
-
+	
 			  adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st , adjustedTexCoord , max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
 
-
-
-
+	  
+			
+			  
 
 			  #ifdef Depth_Write_POM
-			  vec3 truePos = fragpos + sumVec*inverse(TBNPOM)*interval;
+			  vec3 truePos = fragpos + sumVec*inverse(TBNPOM)*interval;	  
 			  gl_FragDepth = toClipSpace3(truePos).z;
 			  #endif
 			}
-
+				
 		  #else
 			if ( viewVector.z < 0.0) {
 				vec3 interval = viewVector.xyz/-viewVector.z/MAX_OCCLUSION_POINTS*POM_DEPTH;
@@ -387,89 +387,95 @@ vec4 data0 = vec4(0.0);
 
 
 				#ifdef Depth_Write_POM
-				vec3 truePos = fragpos + sumVec*inverse(TBNPOM)*(interval);
+				vec3 truePos = fragpos + sumVec*inverse(TBNPOM)*(interval);		
 				gl_FragDepth = toClipSpace3(truePos).z;
 				#endif
-
-
+					
+				
 			}
 
 		  #endif
 
-		  }
+		  }	
 		 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
-#endif
+#endif	
 
 #endif
-	//////////////////////////////POM//////////////////////////////
-
+	//////////////////////////////POM//////////////////////////////	  
+	
 	#ifdef block
-
+	
   	 data0 = texture2D(texture, lmtexcoord.xy)*color;
-
+	 
 	 #else
 	   	 data0 = texture2D(texture, lmtexcoord.xy)*color;
-	#endif
-
-
+	#endif	 
+	 
+	 
 //	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
-//    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
-
+//    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);  
+  
   #ifdef DISABLE_ALPHA_MIPMAPS
   data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;
   #endif
 
-
+#ifndef entity  
 	data0.rgb*=color.rgb;
-
+#ifndef hands	
 	if (data0.a > 0.1) data0.a = normalMat.a;
+#else
+	if (data0.a > 0.1) data0.a = normalMat.a*0.5+0.5;
+#endif	
 	else data0.a = 0.0;
-
-
-
-
-
-//	based on code from Christian Schüler
+#else
+	data0.rgb = mix(data0.rgb,entityColor.rgb,entityColor.a);
+	if (data0.a > 0.3) data0.a = normalMat.a;
+	else data0.a = 0.0;
+#endif
+	
+	
+	
+//	based on code from Christian Schüler	
 	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
-
+	
     normalTex.z = sqrt( 1.0 - dot( normalTex.xy, normalTex.xy ) );
     normalTex.y = -normalTex.y;
     normalTex.x = -normalTex.x;
 
     mat3 TBN = cotangent( normal, -fragpos, lmtexcoord.xy );
-    normal = normalize( TBN * clamp(normalTex,-1,1) );
-
-
+    normal = normalize( TBN * clamp(normalTex,-1,1) );	
+	
+	
 	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
-
-
-#ifdef entity
+	
+	
+#if 0											 
 	float lightningBolt = float(entityId == 58);
-	if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;
+	if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
 
-	if (lightningBolt > 0.5) gl_FragData[3] = vec4(1.0);
-#endif
+	if (lightningBolt > 0.5) gl_FragData[3] = vec4(1.0);	
+#endif	
 
 
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
-
+	
 	#ifdef SPEC
 		float labemissive = texture2DLod(specular, lmtexcoord.xy, 0).a;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
 
-
+	
 	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
 		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
-
-	#else
+		
+	#else	
 		gl_FragData[1] = vec4(0.0);
-	#endif
+	#endif	
 		if (entityId == 18 && normal.g > 0.9) normal =vec3(10.0) ;
-		gl_FragData[2].rgb = vec3(normal);
+		gl_FragData[2].rgb = vec3(normal);	
 	vec4 velocitymap = vec4(  0.12*velocity.rgb , data0.a);
 
   gl_FragData[4] = velocitymap;

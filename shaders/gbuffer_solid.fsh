@@ -451,7 +451,7 @@ vec4 data0 = vec4(0.0);
 	vec4 data1 = clamp(noise/256.+encode(viewToWorld(normal), lm),0.,1.0);
 	
 	
-#ifdef entity											 
+#if 0											 
 	float lightningBolt = float(entityId == 58);
 	if (lightningBolt > 0.5) data0.rgb = vec3(1.0), data0.a = 0.5;	
 

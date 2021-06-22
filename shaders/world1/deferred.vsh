@@ -6,11 +6,11 @@
 #define Exposure_Speed 1.0 //[0.25 0.5 0.75 1.0 1.25 1.5 1.75 2.0 2.25 2.5 2.75 3.0 4.0 5.0]
 #define DoF_Adaptation_Speed 1.00 // [0.20 0.21 0.23 0.24 0.25 0.27 0.29 0.30 0.32 0.34 0.36 0.39 0.41 0.43 0.46 0.49 0.52 0.55 0.59 0.62 0.66 0.70 0.74 0.79 0.84 0.89 0.94 1.00 1.06 1.13 1.20 1.27 1.35 1.43 1.52 1.61 1.71 1.82 1.93 2.05 2.18 2.31 2.45 2.60 2.76 2.93 3.11 3.30 3.51 3.72 3.95 4.19 4.45 4.73 5.02 5.33 5.65 6.00]
 //#define CLOUDS_SHADOWS
-#define BASE_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
+#define BASE_FOG_AMOUNT 2.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0 10.0 20.0 30.0 50.0 100.0 150.0 200.0]  Base fog amount amount (does not change the "cloudy" fog)
 #define CLOUDY_FOG_AMOUNT 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0]
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
-#include "/lib/res_params.glsl"							
+#include "/lib/res_params.glsl"
 flat varying vec3 ambientUp;
 flat varying vec3 ambientLeft;
 flat varying vec3 ambientRight;
@@ -32,7 +32,7 @@ flat varying float rodExposure;
 flat varying float fogAmount;
 flat varying float VFAmount;
 flat varying float avgL2;
-flat varying float centerDepth;							   
+flat varying float centerDepth;
 
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
@@ -45,7 +45,7 @@ uniform float rainStrength;
 uniform float sunElevation;
 uniform float nightVision;
 uniform float near;
-uniform float far;				  
+uniform float far;
 
 uniform float eyeAltitude;
 uniform int frameCounter;
@@ -101,7 +101,7 @@ vec2 R2_samples(int n){
 }
 float ld(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));		// (-depth * (far - near)) = (2.0 * near)/ld - far - near
-}			 
+}
 void main() {
 
 	gl_Position = ftransform()*0.5+0.5;

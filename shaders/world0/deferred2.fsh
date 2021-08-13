@@ -5,7 +5,7 @@ uniform sampler2D depthtex1;
 
 uniform float near;
 uniform float far;
-varying vec4 hspec;
+in vec4 hspec;
 
 float linZ(float depth) {
     return (2.0 * near) / (far + near - depth * (far - near));

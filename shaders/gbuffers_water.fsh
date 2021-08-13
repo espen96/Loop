@@ -1,14 +1,14 @@
 
 #define gbuffer
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
+in vec4 lmtexcoord;
+in vec4 color;
+in vec4 normalMat;
 uniform sampler2D normals;
-varying vec3 binormal;
-varying vec3 tangent;
-varying vec3 viewVector;
-varying float dist;
-varying float lumaboost;
+in vec3 binormal;
+in vec3 tangent;
+in vec3 viewVector;
+in float dist;
+in float lumaboost;
 #include "/lib/res_params.glsl"
 #define SCREENSPACE_REFLECTIONS	//can be really expensive at high resolutions/render quality, especially on ice
 #define SSR_STEPS 10 //[10 15 20 25 30 35 40 50 100 200 400]

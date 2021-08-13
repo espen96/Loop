@@ -16,17 +16,17 @@
 #define Emissive_Strength 2.00 // [0.00 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00 1.10 1.20 1.30 1.40 1.50 1.60 1.70 1.80 1.90 2.00 2.10 2.20 2.30 2.40 2.50 2.60 2.70 2.80 2.90 3.00 3.10 3.20 3.30 3.40 3.50 3.60 3.70 3.80 3.90 4.00 4.10 4.20 4.30 4.40 4.50 4.60 4.70 4.80 4.90 5.00 5.10 5.20 5.30 5.40 5.50 5.60 5.70 5.80 5.90 6.00 6.10 6.20 6.30 6.40 6.50 6.60 6.70 6.80 6.90 7.00 7.10 7.20 7.30 7.40 7.50 7.60 7.70 7.80 7.90 8.00 8.10 8.20 8.30 8.40 8.50 8.60 8.70 8.80 8.90 9.00 9.10 9.20 9.30 9.40 9.50 9.60 9.70 9.80 9.90 10.00 15.00 20.00 30.00 50.00 100.00 150.00 200.00]
 
 
-flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
-flat varying vec3 ambientUp;
-flat varying vec3 ambientLeft;
-flat varying vec3 ambientRight;
-flat varying vec3 ambientB;
-flat varying vec3 ambientF;
-flat varying vec3 ambientDown;
-flat varying vec3 WsunVec;
-flat varying vec2 TAA_Offset;
-flat varying float tempOffsets;
-flat varying vec3 refractedSunVec;
+flat in vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
+flat in vec3 ambientUp;
+flat in vec3 ambientLeft;
+flat in vec3 ambientRight;
+flat in vec3 ambientB;
+flat in vec3 ambientF;
+flat in vec3 ambientDown;
+flat in vec3 WsunVec;
+flat in vec2 TAA_Offset;
+flat in float tempOffsets;
+flat in vec3 refractedSunVec;
 uniform sampler2D colortex0;//clouds
 uniform sampler2D colortex1;//albedo(rgb),material(alpha) RGBA16
 uniform sampler2D colortex4;//Skybox

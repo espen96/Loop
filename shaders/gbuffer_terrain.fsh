@@ -1,6 +1,6 @@
 #define gbuffer
      uniform int renderStage; 
-varying float mcentity;
+in float mcentity;
 // 0 Undefined
 // 1  Sky
 // 2  Sunset and sunrise overlay
@@ -30,9 +30,9 @@ uniform mat4 gbufferPreviousProjection;
 uniform mat4 gbufferPreviousModelView;
 uniform vec3 previousCameraPosition;
 uniform vec3 cameraPosition;
-varying vec3 velocity;
+in vec3 velocity;
 #define DLM
-varying float nonlabemissive;
+in float nonlabemissive;
 //#define POM
 #define labspec
 #define bumpmultiplier 1.0
@@ -62,7 +62,7 @@ uniform sampler2D specular;
 
 #if defined (POM)||  defined (DLM)
 
-varying vec4 vertexPos;
+in vec4 vertexPos;
 #define MC_NORMAL_MAP
 
 const float mincoord = 1.0/4096.0;
@@ -72,8 +72,8 @@ const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
 const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
 const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
+in vec4 vtexcoordam; // .st for add, .pq for mul
+in vec4 vtexcoord;
 
 uniform int framemod8;
 
@@ -81,18 +81,18 @@ vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 #endif
 
-varying vec2 taajitter;
+in vec2 taajitter;
 
 #ifdef MC_NORMAL_MAP
-varying vec4 tangent;
+in vec4 tangent;
 uniform float wetness;
 uniform sampler2D normals;
 #endif
 uniform sampler2D noisetex;//depth
 uniform float far;
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
+in vec4 lmtexcoord;
+in vec4 color;
+in vec4 normalMat;
 uniform vec2 texelSize;
 uniform sampler2D texture;
 uniform sampler2D gaux1;
@@ -103,7 +103,7 @@ uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
-varying vec4 hspec;
+in vec4 hspec;
 
 uniform ivec2 atlasSize;  
 

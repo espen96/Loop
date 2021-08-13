@@ -27,11 +27,11 @@
 
 const bool shadowHardwareFiltering = true;
 
-flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
-flat varying vec3 WsunVec;
-flat varying vec2 TAA_Offset;
-flat varying float tempOffsets;
-flat varying vec3 refractedSunVec;
+flat in vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
+flat in vec3 WsunVec;
+flat in vec2 TAA_Offset;
+flat in float tempOffsets;
+flat in vec3 refractedSunVec;
 
 
 

@@ -1,4 +1,4 @@
-#version 130
+#version 150
 #extension GL_EXT_gpu_shader4 : enable
 #define EXPOSURE_MULTIPLIER 1.0 //[0.25 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 2.0 3.0 4.0]
 #define AUTO_EXPOSURE		//Highly recommended to keep it on unless you want to take screenshots
@@ -11,33 +11,44 @@
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
 #include "/lib/res_params.glsl"
-flat varying vec3 ambientUp;
-flat varying vec3 ambientLeft;
-flat varying vec3 ambientRight;
-flat varying vec3 ambientB;
-flat varying vec3 ambientF;
-flat varying vec3 ambientDown;
-flat varying vec3 zenithColor;
-flat varying vec3 sunColor;
-flat varying vec3 sunColorCloud;
-flat varying vec3 moonColor;
-flat varying vec3 moonColorCloud;
-flat varying vec3 lightSourceColor;
-flat varying vec3 avgSky;
-flat varying vec2 tempOffsets;
-flat varying float exposure;
-flat varying float avgBrightness;
-flat varying float exposureF;
-flat varying float rodExposure;
-flat varying float fogAmount;
-flat varying float VFAmount;
-flat varying float avgL2;
-flat varying float centerDepth;
+flat out vec3 ambientUp;
+flat out vec3 ambientLeft;
+flat out vec3 ambientRight;
+flat out vec3 ambientB;
+flat out vec3 ambientF;
+flat out vec3 ambientDown;
+flat out vec3 zenithColor;
+flat out vec3 sunColor;
+flat out vec3 sunColorCloud;
+flat out vec3 moonColor;
+flat out vec3 moonColorCloud;
+flat out vec3 lightSourceColor;
+flat out vec3 avgSky;
+flat out vec2 tempOffsets;
+flat out float exposure;
+flat out float avgBrightness;
+flat out float exposureF;
+flat out float rodExposure;
+flat out float fogAmount;
+flat out float VFAmount;
+flat out float avgL2;
+flat out float centerDepth;
 
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
 uniform sampler2D depthtex0;
-
+// Compatibility
+#extension GL_EXT_gpu_shader4 : enable
+in vec3 vaPosition;
+in vec4 vaColor;
+in vec2 vaUV0;
+in ivec2 vaUV2;
+in vec3 vaNormal;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textureMatrix = mat4(1.0);
+uniform mat3 normalMatrix;
+uniform vec3 chunkOffset;
 
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
@@ -106,7 +117,7 @@ float ld(float depth) {
 }
 void main() {
 
-	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0)*0.5+0.5;
+	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0)*0.5+0.5;
 	gl_Position.xy = gl_Position.xy*vec2(18.+258*2,258.)*texelSize;
 	gl_Position.xy = gl_Position.xy*2.-1.0;
 

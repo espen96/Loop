@@ -29,7 +29,7 @@ uniform mat4 gbufferPreviousModelView;
 
 uniform sampler2D noisetex;//depth
 uniform int frameCounter;
-flat varying vec2 TAA_Offset;
+flat in vec2 TAA_Offset;
 uniform vec2 texelSize;
 uniform vec2 viewSize;
 uniform float frameTimeCounter;

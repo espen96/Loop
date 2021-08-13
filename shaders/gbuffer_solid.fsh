@@ -6,7 +6,7 @@ uniform sampler2D specular;
 #endif
 uniform sampler2D noisetex;
 
-varying vec3 velocity;
+in vec3 velocity;
 
 uniform int renderStage; 
 
@@ -63,7 +63,7 @@ uniform int renderStage;
 
 #if defined (POM)||  defined (DLM)
 
-varying vec4 vertexPos;
+in vec4 vertexPos;
 #define MC_NORMAL_MAP
 
 const float mincoord = 1.0/4096.0;
@@ -73,8 +73,8 @@ const float MAX_OCCLUSION_DISTANCE = MAX_DIST;
 const float MIX_OCCLUSION_DISTANCE = MAX_DIST*0.9;
 const int   MAX_OCCLUSION_POINTS   = MAX_ITERATIONS;
 
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
+in vec4 vtexcoordam; // .st for add, .pq for mul
+in vec4 vtexcoord;
 
 
 vec2 dcdx = dFdx(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
@@ -89,14 +89,14 @@ uniform ivec2 atlasSize;
 
 
 
-varying vec2 taajitter;
+in vec2 taajitter;
 //////////////////////////////POM//////////////////////////////	
 uniform int framemod8;
 uniform sampler2D normals;
 uniform int entityId;					 
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
+in vec4 lmtexcoord;
+in vec4 color;
+in vec4 normalMat;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 uniform vec2 texelSize;

@@ -5,7 +5,7 @@
 
 uniform sampler2D colortex6;
 uniform vec2 texelSize;
-varying vec2 texcoord;
+in vec2 texcoord;
 uniform float viewWidth;
 uniform float viewHeight;
 vec2 resScale = vec2(1920.,1080.)/max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))*BLOOM_QUALITY;

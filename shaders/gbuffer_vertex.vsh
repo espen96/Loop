@@ -6,24 +6,35 @@ This code is from Chocapic13' shaders
 Read the terms of modification and sharing before changing something below please !
 !! DO NOT REMOVE !!
 */
-varying vec3 velocity;
+out vec3 velocity;
 //attribute vec3 at_velocity;   
+// Compatibility
+#extension GL_EXT_gpu_shader4 : enable
+in vec3 vaPosition;
+in vec4 vaColor;
+in vec2 vaUV0;
+in ivec2 vaUV2;
+in vec3 vaNormal;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textureMatrix = mat4(1.0);
+uniform mat3 normalMatrix;
+uniform vec3 chunkOffset;
 
-
-varying vec2 texcoord;
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
-varying float mcentity;
+out vec2 texcoord;
+out vec4 lmtexcoord;
+out vec4 color;
+out vec4 normalMat;
+out float mcentity;
 attribute vec4 mc_Entity;
 attribute vec4 mc_midTexCoord;
 uniform int entityId; 
 #ifdef water
-varying vec3 binormal;
-varying vec3 tangent;					 
-varying float dist;
-varying float lumaboost;
-varying vec3 viewVector;
+out vec3 binormal;
+out vec3 tangent;					 
+out float dist;
+out float lumaboost;
+out vec3 viewVector;
 
 
 attribute vec4 at_tangent;
@@ -31,7 +42,7 @@ uniform mat4 gbufferModelViewInverse;
 #else
 
 #ifdef MC_NORMAL_MAP
-varying vec4 tangent;
+out vec4 tangent;
 attribute vec4 at_tangent;
 #endif
 #endif
@@ -74,8 +85,8 @@ uniform float frameTimeCounter;
 
 //#define POM							
 #if defined (POM)||  defined (DLM)
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
+out vec4 vtexcoordam; // .st for add, .pq for mul
+out vec4 vtexcoord;
 #endif					   
 uniform vec2 texelSize;
 uniform int framemod8;
@@ -94,7 +105,7 @@ uniform int framemod8;
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
+    return vec4(projMAD(projectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }														
 								   
 
@@ -108,9 +119,9 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
 void main() {
 
 											
-	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
+	vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy/255.;
   #if defined (POM)||  defined (DLM)
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	vec2 midcoord = (textureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
@@ -125,18 +136,18 @@ void main() {
 
 
 #ifdef glint 
-		lmtexcoord.xy = (gl_TextureMatrix[0] * gl_MultiTexCoord0).st;	
+		lmtexcoord.xy = (textureMatrix[0] * vec4(vaUV0, 0.0, 1.0)).st;	
 	#else	
-		lmtexcoord.xy = (gl_MultiTexCoord0).xy;	
+		lmtexcoord.xy = (vaUV0).xy;	
 #endif
 
 
-	texcoord = (gl_MultiTexCoord0).xy;
+	texcoord = (vaUV0).xy;
 	
 #if defined(solid1) || defined(water) || defined(hand)			
-	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;	
+	vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;	
 #else
-	gl_Position = toClipSpace3(mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz);
+	gl_Position = toClipSpace3(mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz);
 #endif	
 	
 #ifdef solid1	
@@ -154,7 +165,7 @@ void main() {
 #endif  
 	
 
-	color = gl_Color;
+	color = vaColor;
 
 #ifdef water
 	lumaboost = 0.0;
@@ -167,9 +178,9 @@ void main() {
 
 	if(mc_Entity.x == 79.0) mat = 0.5;
 		if (mc_Entity.x == 10002) mat = 0.01;
-	normalMat = vec4(normalize( gl_NormalMatrix*gl_Normal),mat);
+	normalMat = vec4(normalize( normalMatrix*vaNormal),mat);
 
-	tangent = normalize( gl_NormalMatrix *at_tangent.rgb);
+	tangent = normalize( normalMatrix *at_tangent.rgb);
 	binormal = normalize(cross(tangent.rgb,normalMat.xyz)*at_tangent.w);
 
 	mat3 tbnMatrix = mat3(tangent.x, binormal.x, normalMat.x,
@@ -177,29 +188,29 @@ void main() {
 						     	  tangent.z, binormal.z, normalMat.z);
 
 
-		dist = length(gl_ModelViewMatrix * gl_Vertex);
+		dist = length(modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0));
 	   
 
-	viewVector = ( gl_ModelViewMatrix * gl_Vertex).xyz;
+	viewVector = ( modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0)).xyz;
 	viewVector = normalize(tbnMatrix * viewVector);
 	#endif
 	
 	
 	#ifndef water
 	#ifdef MC_NORMAL_MAP
-		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
+		tangent = vec4(normalize(normalMatrix *at_tangent.rgb),at_tangent.w);
 	#endif
 	#endif
 	#ifdef normal1
-		normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),blockEntityId==10006? 1.0:1.0);	
-		if (entityId == 18)	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),1.0);
+		normalMat = vec4(normalize(normalMatrix *vaNormal),blockEntityId==10006? 1.0:1.0);	
+		if (entityId == 18)	normalMat = vec4(normalize(normalMatrix *vaNormal),1.0);
 	#else
 	#ifndef water
 	#ifdef hand
 	
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.5);
+	normalMat = vec4(normalize(normalMatrix *vaNormal),0.5);
 	#else
-		normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),0.0);
+		normalMat = vec4(normalize(normalMatrix *vaNormal),0.0);
 	#endif
 	#endif
 	#endif

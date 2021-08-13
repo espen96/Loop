@@ -9,8 +9,8 @@ Read the terms of modification and sharing before changing something below pleas
 
 /* RENDERTARGETS: 1 */
 
-varying vec4 color;
-varying vec2 texcoord;
+in vec4 color;
+in vec2 texcoord;
 //faster and actually more precise than pow 2.2
 vec3 toLinear(vec3 sRGB){
 	return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);

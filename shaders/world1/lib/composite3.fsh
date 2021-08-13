@@ -4,8 +4,8 @@
 
 
 
-varying vec2 texcoord;
-flat varying vec3 zMults;
+in vec2 texcoord;
+flat in vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D colortex3;
 uniform sampler2D colortex2;

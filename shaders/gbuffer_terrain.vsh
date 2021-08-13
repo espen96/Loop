@@ -3,13 +3,26 @@
 //#define POM
 //#define USE_LUMINANCE_AS_HEIGHTMAP	//Can generate POM on any texturepack (may look weird in some cases)
 
+// Compatibility
+#extension GL_EXT_gpu_shader4 : enable
+in vec3 vaPosition;
+in vec4 vaColor;
+in vec2 vaUV0;
+in ivec2 vaUV2;
+in vec3 vaNormal;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textureMatrix = mat4(1.0);
+uniform mat3 normalMatrix;
+uniform vec3 chunkOffset;
+
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
 #undef POM
 #endif
 #endif
      uniform int renderStage; 
-varying float mcentity;
+out float mcentity;
 // 0 Undefined
 // 1  Sky
 // 2  Sunset and sunrise overlay
@@ -38,7 +51,7 @@ varying float mcentity;
 #define MC_NORMAL_MAP
 #endif
 //attribute vec3 at_velocity;
-varying vec3 velocity;
+out vec3 velocity;
 /*
 !! DO NOT REMOVE !!
 This code is from Chocapic13' shaders
@@ -46,18 +59,18 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
-varying vec4 hspec;
-varying float nonlabemissive;
+out vec4 lmtexcoord;
+out vec4 color;
+out vec4 normalMat;
+out vec4 hspec;
+out float nonlabemissive;
 #if defined (POM)||  defined (DLM)
-varying vec4 vtexcoordam; // .st for add, .pq for mul
-varying vec4 vtexcoord;
+out vec4 vtexcoordam; // .st for add, .pq for mul
+out vec4 vtexcoord;
 #endif
 
 #ifdef MC_NORMAL_MAP
-varying vec4 tangent;
+out vec4 tangent;
 attribute vec4 at_tangent;
 #endif
 
@@ -69,7 +82,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 attribute vec4 mc_midTexCoord;
 uniform vec3 cameraPosition;
-varying vec2 taajitter;
+out vec2 taajitter;
 uniform vec2 texelSize;
 uniform int framemod8;
 const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
@@ -83,7 +96,7 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
+    return vec4(projMAD(projectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
 	#ifdef WAVY_PLANTS
 vec2 calcWave(in vec3 pos) {
@@ -147,28 +160,28 @@ nonlabemissive = 0.0;
 
   
 
-	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
+	lmtexcoord.xy = (vaUV0).xy;
 #if defined (POM)||  defined (DLM)
-	vec2 midcoord = (gl_TextureMatrix[0] *  mc_midTexCoord).st;
+	vec2 midcoord = (textureMatrix[0] *  mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
 	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
 	#endif
-	vec2 lmcoord = gl_MultiTexCoord1.xy/255.;
+	vec2 lmcoord = vaUV2.xy/255.;
 	lmtexcoord.zw = lmcoord;
 
-	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;
+	vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
 
-	color = gl_Color;
+	color = vaColor;
 	taajitter = offsets[framemod8];
 	hspec *= clamp(1- luma(color.rgb*10-5),0.95,1);
-	bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
+	bool istopv = vaUV0.t < mc_midTexCoord.t;
 	#ifdef MC_NORMAL_MAP
-		tangent = vec4(normalize(gl_NormalMatrix *at_tangent.rgb),at_tangent.w);
+		tangent = vec4(normalize(normalMatrix *at_tangent.rgb),at_tangent.w);
 	#endif
 
-	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 80 || mc_Entity.x == 10001 ? 0.5:1.0);
+	normalMat = vec4(normalize(normalMatrix *vaNormal),mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 80 || mc_Entity.x == 10001 ? 0.5:1.0);
 	normalMat.a = mc_Entity.x == 10006 ? 0.6 : normalMat.a;
 
 	#ifdef WAVY_PLANTS

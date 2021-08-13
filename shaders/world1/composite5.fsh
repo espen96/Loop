@@ -28,17 +28,17 @@
 
 const bool shadowHardwareFiltering = true;
 
-flat varying vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
-flat varying vec3 ambientUp;
-flat varying vec3 ambientLeft;
-flat varying vec3 ambientRight;
-flat varying vec3 ambientB;
-flat varying vec3 ambientF;
-flat varying vec3 ambientDown;
-flat varying vec3 WsunVec;
-flat varying vec2 TAA_Offset;
-flat varying float tempOffsets;
-flat varying vec3 refractedSunVec;
+flat in vec4 lightCol; //main light source color (rgb),used light source(1=sun,-1=moon)
+flat in vec3 ambientUp;
+flat in vec3 ambientLeft;
+flat in vec3 ambientRight;
+flat in vec3 ambientB;
+flat in vec3 ambientF;
+flat in vec3 ambientDown;
+flat in vec3 WsunVec;
+flat in vec2 TAA_Offset;
+flat in float tempOffsets;
+flat in vec3 refractedSunVec;
 
 
 
@@ -199,7 +199,7 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
 
 
-    vec3 stepv = direction *10. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
+    vec3 stepv = direction *10. * 1 *vec3(RENDER_SCALE,1.0);
 
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv;
 
@@ -308,7 +308,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 
 
 	#ifdef SHADOWS_ON
-				sh =  texture( shadow, pos).x;
+				sh =  texture( shadow, pos);
 		#else 
 				sh =  0;
 	#endif

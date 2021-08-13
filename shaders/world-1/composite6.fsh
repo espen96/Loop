@@ -18,16 +18,16 @@
 
 #define Underwater_Fog_Density 1.0 //[0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.5 2.0 3.0 4.0]
 
-flat varying vec4 lightCol;
-flat varying vec3 ambientUp;
-flat varying vec3 ambientLeft;
-flat varying vec3 ambientRight;
-flat varying vec3 ambientB;
-flat varying vec3 ambientF;
-flat varying vec3 ambientDown;
-flat varying float tempOffsets;
-flat varying float fogAmount;
-flat varying float VFAmount;
+flat in vec4 lightCol;
+flat in vec3 ambientUp;
+flat in vec3 ambientLeft;
+flat in vec3 ambientRight;
+flat in vec3 ambientB;
+flat in vec3 ambientF;
+flat in vec3 ambientDown;
+flat in float tempOffsets;
+flat in float fogAmount;
+flat in float VFAmount;
 uniform sampler2D noisetex;
 uniform sampler2D depthtex0;
 

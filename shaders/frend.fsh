@@ -1,6 +1,6 @@
 
 uniform mat4 gbufferModelView;
-flat varying vec3 zMults;
+flat in vec3 zMults;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D colortex7;

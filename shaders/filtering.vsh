@@ -1,18 +1,18 @@
 
-varying vec2 texcoord;
+out vec2 texcoord;
 
-flat varying vec3 WsunVec;
+flat out vec3 WsunVec;
 
-flat varying vec3 ambientUp;
-flat varying vec3 ambientLeft;
-flat varying vec3 ambientRight;
-flat varying vec3 ambientB;
-flat varying vec3 ambientF;
-flat varying vec3 ambientDown;
-flat varying vec4 lightCol;
-flat varying float tempOffsets;
-flat varying vec2 TAA_Offset;
-flat varying vec3 zMults;
+flat out vec3 ambientUp;
+flat out vec3 ambientLeft;
+flat out vec3 ambientRight;
+flat out vec3 ambientB;
+flat out vec3 ambientF;
+flat out vec3 ambientDown;
+flat out vec4 lightCol;
+flat out float tempOffsets;
+flat out vec2 TAA_Offset;
+flat out vec3 zMults;
 attribute vec4 mc_Entity;
 uniform sampler2D colortex4;
 uniform float far;
@@ -22,7 +22,7 @@ uniform vec3 sunPosition;
 uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
-flat varying vec3 refractedSunVec;
+flat out vec3 refractedSunVec;
 uniform vec2 texelSize;
 uniform int framemod8;
 
@@ -40,14 +40,14 @@ void main() {
 	TAA_Offset = vec2(0.0);
 	#endif
 
-	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0);
+	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy+tempOffsets*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif
 	#ifdef TAA
 	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
 	#endif	
-	texcoord = gl_MultiTexCoord0.xy;
+	texcoord = vaUV0.xy;
 
 
 

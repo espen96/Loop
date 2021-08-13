@@ -1,8 +1,8 @@
-#version 130
+#version 150
 #extension GL_EXT_gpu_shader4 : enable
 
-varying vec2 texcoord;
-flat varying vec3 zMults;
+out vec2 texcoord;
+flat out vec3 zMults;
 uniform float far;
 uniform float near;
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -14,6 +14,6 @@ uniform float near;
 void main() {
 	zMults = vec3(1.0/(far * near),far+near,far-near);
 	gl_Position = ;
-	texcoord = gl_MultiTexCoord0.xy;
+	texcoord = vaUV0.xy;
 
 }

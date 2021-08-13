@@ -38,9 +38,9 @@
 
 
 
-flat varying vec4 exposure;
-flat varying vec2 rodExposureDepth;
-varying vec2 texcoord;
+flat in vec4 exposure;
+flat in vec2 rodExposureDepth;
+in vec2 texcoord;
 uniform sampler2D colortex4;
 uniform sampler2D colortex2;
 uniform sampler2D colortex5;

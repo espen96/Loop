@@ -7,10 +7,10 @@
 #define TAA
 #define VOLUMETRIC_CLOUDS
 
-flat varying vec3 sunColor;
-flat varying vec3 moonColor;
-flat varying vec3 avgAmbient;
-flat varying float tempOffsets;
+flat in vec3 sunColor;
+flat in vec3 moonColor;
+flat in vec3 avgAmbient;
+flat in float tempOffsets;
 
 uniform sampler2D depthtex0;
 uniform sampler2D noisetex;

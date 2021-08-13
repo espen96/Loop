@@ -1,6 +1,18 @@
 
 #define PCF
 #define gbuffer
+// Compatibility
+#extension GL_EXT_gpu_shader4 : enable
+in vec3 vaPosition;
+in vec4 vaColor;
+in vec2 vaUV0;
+in ivec2 vaUV2;
+in vec3 vaNormal;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textureMatrix = mat4(1.0);
+uniform mat3 normalMatrix;
+uniform vec3 chunkOffset;
 
 
      uniform int renderStage; 
@@ -30,16 +42,16 @@
 // 22 World border
 // 23 Translucent handheld objects
 uniform float frameTimeCounter;
-varying vec4 lmtexcoord;
-varying vec4 color;
-varying vec4 normalMat;
+in vec4 lmtexcoord;
+in vec4 color;
+in vec4 normalMat;
 uniform sampler2D normals;
 uniform sampler2D specular;
 uniform sampler2D texture;
 uniform sampler2D noisetex;
-#ifdef SHADOWS_ON
+
 uniform sampler2DShadow shadow;
-#endif
+
 uniform sampler2D gaux1;
 uniform vec4 lightCol;
 uniform vec3 sunVec;
@@ -144,29 +156,6 @@ float h1(float a)
     return 1.0 + w3(a) / (w2(a) + w3(a));
 }
 
-float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
-{
-	vec2 uv = sc.xy*shadowMapResolution;
-	vec2 iuv = floor( uv );
-	vec2 fuv = fract( uv );
-
-    float g0x = g0(fuv.x);
-    float g1x = g1(fuv.x);
-    float h0x = h0(fuv.x);
-    float h1x = h1(fuv.x);
-    float h0y = h0(fuv.y);
-    float h1y = h1(fuv.y);
-
-	vec2 p0 = vec2(iuv.x + h0x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p1 = vec2(iuv.x + h1x, iuv.y + h0y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p2 = vec2(iuv.x + h0x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-	vec2 p3 = vec2(iuv.x + h1x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
-
-    return g0(fuv.y) * (g0x * texture(tex, vec3(p0,sc.z))  +
-                        g1x * texture(tex, vec3(p1,sc.z))) +
-           g1(fuv.y) * (g0x * texture(tex, vec3(p2,sc.z))  +
-                        g1x * texture(tex, vec3(p3,sc.z)));
-}
 float luma(vec3 color) {
 	return dot(color,vec3(0.299, 0.587, 0.114));
 }
@@ -292,11 +281,10 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 				vec2 offsetS = vec2(cos( noise*3.14159265359*2.0 ),sin( noise*3.14159265359*2.0 ));
 
-			#ifdef SHADOWS_ON	
-				float shading = shadow2D_bicubic(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)));
-			#else
-				float shading = 0;
-			#endif	
+		
+				float shading = textureLod(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)),0);
+		
+	
 				direct *= shading;
 			}
 

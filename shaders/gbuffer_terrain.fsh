@@ -359,7 +359,7 @@ void main() {
 //		if (fogFactorAbs < dither) discard;
 		
 		
-	vec3 albedo = texture(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
+	vec3 albedo = textureLod(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
 
 	vec3 normal = normalMat.xyz;
 	#ifdef MC_NORMAL_MAP
@@ -559,7 +559,7 @@ vec2 lm = lmtexcoord.zw;
 	
 	
 	
-	vec4 data0 = texture(texture, lmtexcoord.xy, Texture_MipMap_Bias);
+	vec4 data0 = textureLod(texture, lmtexcoord.xy, Texture_MipMap_Bias);
 	
 
 	#ifdef SPEC
@@ -602,7 +602,7 @@ vec2 lm = lmtexcoord.zw;
 
 		
 	#ifdef MC_NORMAL_MAP
-		vec3 normalTex = texture(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
+		vec3 normalTex = textureLod(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
 	gl_FragData[3].g = 1*normalTex.z;
 		lm *= normalTex.b;
 		vec2 lm2 = lm * normalTex.b;

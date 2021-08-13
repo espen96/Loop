@@ -25,7 +25,7 @@ void main() {
 	#ifndef TAA
 	TAA_Offset = vec2(0.0);
 	#endif
-	gl_Position = ftransform();
+	gl_Position = ;
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
 	#endif

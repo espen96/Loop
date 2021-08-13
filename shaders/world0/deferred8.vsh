@@ -37,7 +37,7 @@ uniform int frameCounter;
 
 void main() {
 	zMults = vec3(1.0/(far * near),far+near,far-near);
-	gl_Position = ftransform();
+	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0);
 //	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
 	#ifdef TAA_UPSCALING
 		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;

@@ -136,7 +136,7 @@ void main() {
 #if defined(solid1) || defined(water) || defined(hand)			
 	vec3 position = mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz;	
 #else
-	gl_Position = ftransform();
+	gl_Position = toClipSpace3(mat3(gl_ModelViewMatrix) * vec3(gl_Vertex) + gl_ModelViewMatrix[3].xyz);
 #endif	
 	
 #ifdef solid1	

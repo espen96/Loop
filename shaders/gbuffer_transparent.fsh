@@ -215,7 +215,7 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 	vec2 lm = lmtexcoord.zw;
 	vec3 normal = normalMat.xyz;
-	vec3 normalTex = texture(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = textureLod(normals, lmtexcoord.xy , 0).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	

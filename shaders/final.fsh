@@ -1,4 +1,4 @@
-#version 130
+
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 //#define BICUBIC_UPSCALING //Provides a better interpolation when using a render quality different of 1.0, slower

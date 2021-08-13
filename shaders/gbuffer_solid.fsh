@@ -436,7 +436,7 @@ vec4 data0 = vec4(0.0);
 	
 	
 //	based on code from Christian Schüler	
-	vec3 normalTex = texture(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = textureLod(normals, lmtexcoord.xy , 0).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	

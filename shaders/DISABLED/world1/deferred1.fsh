@@ -1,4 +1,4 @@
-#version 130
+#version 150
 #extension GL_EXT_gpu_shader4 : enable
 
 //Computes volumetric clouds at variable resolution (default 1/4 res)

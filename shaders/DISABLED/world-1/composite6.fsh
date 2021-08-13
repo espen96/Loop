@@ -1,4 +1,4 @@
-#version 130
+#version 150
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
 

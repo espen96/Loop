@@ -6,7 +6,9 @@ vec3 cloud2D(vec3 fragpos,vec3 col){
 	
 	float phase = Pow2(clamp(dot(fragpos,sunVec),0.,1.))*0.5+0.5;
 	
-	float fbm = clamp((texture2D(noisetex,intersection*vec2(1.,1.5)).a + texture2D(noisetex,intersection*vec2(2.,7.)+wind*0.4).a*0.5)-0.5*(1.0-rainStrength),0.,1.) ;
+	float fbm = clamp((texture
+(noisetex,intersection*vec2(1.,1.5)).a + texture
+(noisetex,intersection*vec2(2.,7.)+wind*0.4).a*0.5)-0.5*(1.0-rainStrength),0.,1.) ;
 
 		
 	

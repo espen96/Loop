@@ -1,4 +1,4 @@
-#version 130
+
 //Vignetting, applies bloom, applies exposure and tonemaps the final image
 #extension GL_EXT_gpu_shader4 : enable
 #define Fake_purkinje
@@ -89,17 +89,26 @@ vec3 closestToCamera3x3()
 	vec2 du = vec2(texelSize.x, 0.0);
 	vec2 dv = vec2(0.0, texelSize.y);
 
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture2D(depthtex0, texcoord - dv).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture
+(depthtex0, texcoord - dv - du).x);
+	vec3 dtc = vec3(texcoord,0.) + vec3( 0.0, -texelSize.y, texture
+(depthtex0, texcoord - dv).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture
+(depthtex0, texcoord - dv + du).x);
 
-	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture2D(depthtex0, texcoord - du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture2D(depthtex0, texcoord + du).x);
+	vec3 dml = vec3(texcoord,0.) +  vec3(-texelSize.x, 0.0, texture
+(depthtex0, texcoord - du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture
+(depthtex0, texcoord).x);
+	vec3 dmr = vec3(texcoord,0.) + vec3( texelSize.x, 0.0, texture
+(depthtex0, texcoord + du).x);
 
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture2D(depthtex0, texcoord + dv).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture
+(depthtex0, texcoord + dv - du).x);
+	vec3 dbc = vec3(texcoord,0.) + vec3( 0.0, texelSize.y, texture
+(depthtex0, texcoord + dv).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture
+(depthtex0, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
 
@@ -162,8 +171,10 @@ vec3 constructNormal(float depthA, vec2 texcoords, sampler2D depthtex) {
     const vec2 offsetB = vec2(0.0,0.001);
     const vec2 offsetC = vec2(0.001,0.0);
   
-    float depthB = texture2D(depthtex, texcoords + offsetB).r;
-    float depthC = texture2D(depthtex, texcoords + offsetC).r;
+    float depthB = texture
+(depthtex, texcoords + offsetB).r;
+    float depthC = texture
+(depthtex, texcoords + offsetC).r;
   
     vec3 A = getDepthPoint(texcoords, depthA);
 	vec3 B = getDepthPoint(texcoords + offsetB, depthB);
@@ -386,7 +397,8 @@ uniform mat4 gbufferProjection;
 
 vec3 getMotionblur(float depth, bool hand,vec3 color) {
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture2D(depthtex2, texcoord.st).x - 1.0, 1.0);
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture
+(depthtex2, texcoord.st).x - 1.0, 1.0);
 
 		vec4 fragposition = gbufferProjectionInverse * currentPosition;
 		fragposition = gbufferModelViewInverse * fragposition;
@@ -401,26 +413,27 @@ vec3 getMotionblur(float depth, bool hand,vec3 color) {
 		
   	    float uVelocityScale = fps / 20;
 		vec2 velocity = (currentPosition - previousPosition).st; 
-		vec4 velocity2  =	texture2D(colortex13,texcoord*RENDER_SCALE).rgba;	
+		vec4 velocity2  =	texture
+(colortex13,texcoord*RENDER_SCALE).rgba;	
 	   	   velocity2.r = 	((velocity2.x/ld(depth)*28)*0.2);
 	   	   velocity2.g = 	((velocity2.y/ld(depth)*28)*0.6);
 	//	if(velocity2.a > 0) velocity = velocity2.xy*10;
 		if(hand) velocity *=0.1;
 		velocity *=  1.5 * 0.02;
   		const int motionblurSamples      = int(8);
-		float dither    = clamp(ditherBluenoiseStatic(),0.9,1);
-
+		float dither    = clamp(ditherBluenoiseStatic(),0.9,1.0);
 		      velocity *= uVelocityScale;
 
 		float speed = length(velocity / texelSize);
-		int  nSamples = clamp(int(speed), 1, motionblurSamples);
+		int  nSamples = clamp(int(speed), 1, int(motionblurSamples));
 
 		vec2 coord = texcoord.st ;
 
  
    for (int i = 1; i < nSamples; ++i) {
       vec2 offset = velocity * (float(i) / float(nSamples - 1) - 0.5);
-      color += texture2D(colortex5, coord + offset*dither).rgb;
+      color += texture
+(colortex5, coord + offset*dither).rgb;
    }
 
 
@@ -431,19 +444,22 @@ return color;
 void main() {
 /* RENDERTARGETS: 7 */
 
-		float z = ld(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+		float z = ld(texture
+(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 
 
   float vignette = (1.5-dot(texcoord-0.5,texcoord-0.5)*2.);
   
   #ifndef firefly_supression
-	vec3 col = texture2D(colortex5,texcoord).rgb;
+	vec3 col = texture
+(colortex5,texcoord).rgb;
   #else
 	vec3 col =  median2(colortex5);
 
   #endif
 	#ifdef motionblur
-		float z2 =  (texture2D(depthtex0, texcoord.st*RENDER_SCALE).r);
+		float z2 =  (texture
+(depthtex0, texcoord.st*RENDER_SCALE).r);
 		bool hand = z < 0.54;
  		col =  getMotionblur(z2,  hand,col) ;
 	#endif
@@ -470,7 +486,8 @@ void main() {
 				focus = MANUAL_FOCUS * screenBrightness;
 		#endif
 			for ( int i = 0; i < 15; i++) {
-				pcoc += texture2D(colortex11, texcoord.xy + poisson15[i]*0.01).r;
+				pcoc += texture
+(colortex11, texcoord.xy + poisson15[i]*0.01).r;
 			}
 			pcoc = pcoc/15.0;		
 
@@ -501,20 +518,23 @@ void main() {
 			#if BOKEH_MODE == 0 // Standard Bokeh
 				bcolor = col;
 				for ( int i = 0; i < 60; i++) {
-					bcolor += texture2D(colortex5, texcoord.xy + dof_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+					bcolor += texture
+(colortex5, texcoord.xy + dof_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
 				}
 				col = bcolor/61.0;
 			#endif
 			#if BOKEH_MODE == 1 // Hexagonal Bokeh
 				bcolor = col;
 				for ( int i = 0; i < 60; i++) {
-					bcolor += texture2D(colortex5, texcoord.xy + hex_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+					bcolor += texture
+(colortex5, texcoord.xy + hex_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
 				}
 				col = bcolor/61.0;
 			#endif	
 			#if BOKEH_MODE == 2 // HQ Bokeh
 				for ( int i = 0; i < 209; i++) {
-					bcolor += texture2D(colortex5, texcoord.xy + noiseM*shadow_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
+					bcolor += texture
+(colortex5, texcoord.xy + noiseM*shadow_offsets[i]*pcoc*vec2(1.0,aspectRatio)).rgb;
 					
 				}
 				col = bcolor/209.0;
@@ -525,7 +545,8 @@ void main() {
 				float h = 1.004;
 				vec2 d = vec2(pcoc / aspectRatio, pcoc);
 				for (int i = 0; i < 6; ++i) {
-					bcolor = texture2D(colortex5, texcoord.xy + paint_offsets[i]*d).rgb;
+					bcolor = texture
+(colortex5, texcoord.xy + paint_offsets[i]*d).rgb;
 					 t = max(sign(bcolor - col), 0.0);
 				
 				col += (bcolor - col) * t;
@@ -537,11 +558,13 @@ void main() {
 #endif
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.));
 
-	vec3 bloom = texture2D(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5*BLOOM_QUALITY).rgb*0.5*0.14;
+	vec3 bloom = texture
+(colortex3,texcoord/clampedRes*vec2(1920.,1080.)*0.5*BLOOM_QUALITY).rgb*0.5*0.14;
 
 	float lightScat = clamp(BLOOM_STRENGTH*0.05*pow(exposure.a,0.2),0.0,1.0)*vignette;
 
-  float VL_abs = texture2D(colortex7,texcoord*RENDER_SCALE).r;
+  float VL_abs = texture
+(colortex7,texcoord*RENDER_SCALE).r;
 	float purkinje = rodExposureDepth.x/(1.0+rodExposureDepth.x)*Purkinje_strength;
   VL_abs = clamp((1.0-VL_abs)*BLOOMY_FOG*0.75*(1.0-purkinje*0.3)*(1.0+rainStrength),0.0,1.0)*clamp(1.0-pow(cdist(texcoord.xy),15.0),0.0,1.0);
 	col = (mix(col,bloom,VL_abs)+bloom*lightScat)*exposure.rgb;
@@ -564,7 +587,8 @@ void main() {
 		col = TONEMAP(col);
 		col = LinearTosRGB(clamp(col * ACESOutputMat, 0.0, 1.0));
 	#endif
-//	col = ACESFitted(texture2D(colortex4,texcoord/3.).rgb/500.);
+//	col = ACESFitted(texture
+(colortex4,texcoord/3.).rgb/500.);
 	gl_FragData[0].rgb = clamp(int8Dither(col,texcoord),0.0,1.0);
 	
 
@@ -577,7 +601,8 @@ void main() {
 //	globalInit();
 //  gl_FragData[0].rgb += vec3(printNumber( fps, vec2(0.48,0.47)));	
 //  gl_FragData[0].rgb += vec3(printNumber((RENDER_SCALE_X), vec2(0.48,0.52)));
-//  gl_FragData[0].rgb = constructNormal(texture2D(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
+//  gl_FragData[0].rgb = constructNormal(texture
+(depthtex0, texcoord.st*RENDER_SCALE).r, texcoord*RENDER_SCALE, depthtex0);
 //	if (nightMode < 0.99 && texcoord.x < 0.5)	gl_FragData[0].rgb =vec3(0.0,1.0,0.0);
 
 }

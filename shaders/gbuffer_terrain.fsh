@@ -219,10 +219,14 @@ ivec2 tileOffset     = ivec2(atlasSize*vtexcoordam.st+0.5);
 				ivec2 i = ivec2(coord);
 				vec2  f = fract(coord);
 
-				float s0 = texture2DGradARB(normals, (mod((i + ivec2(0, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s1 = texture2DGradARB(normals, (mod((i + ivec2(1, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s2 = texture2DGradARB(normals, (mod((i + ivec2(1, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s3 = texture2DGradARB(normals, (mod((i + ivec2(0, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s0 = texture
+GradARB(normals, (mod((i + ivec2(0, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s1 = texture
+GradARB(normals, (mod((i + ivec2(1, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s2 = texture
+GradARB(normals, (mod((i + ivec2(1, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s3 = texture
+GradARB(normals, (mod((i + ivec2(0, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
 
 				return mix(mix(s3, s2, f.x), mix(s0, s1, f.x), f.y);
 			}
@@ -234,12 +238,14 @@ vec4 readNormal(in vec2 coord)
 #ifdef smooth_depth
 	return vec4(smoothDepth(coord));
 #else
-	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+	return texture
+GradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
 #endif	
 }
 vec4 readTexture(in vec2 coord)
 {
-	return texture2DGradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+	return texture
+GradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
 }
 #endif
 float luma(vec3 color) {
@@ -285,7 +291,8 @@ const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
                 {
 				
 
-                    hts[i] = length(texture2D(tex, offsets[i]).x); 			
+                    hts[i] = length(texture
+(tex, offsets[i]).x); 			
 
                 }
                
@@ -359,7 +366,8 @@ void main() {
 //		if (fogFactorAbs < dither) discard;
 		
 		
-	vec3 albedo = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
+	vec3 albedo = texture
+(texture, lmtexcoord.xy, Texture_MipMap_Bias).xyz;
 
 	vec3 normal = normalMat.xyz;
 	#ifdef MC_NORMAL_MAP
@@ -444,7 +452,8 @@ vec2 lm = lmtexcoord.zw;
 				vec3 coord = vec3(vtexcoord.st, 1.0);
 				coord += noise*interval;
 				float sumVec = noise;
-				float lum0 = luma(texture2DLod(texture,lmtexcoord.xy,100).rgb);
+				float lum0 = luma(texture
+Lod(texture,lmtexcoord.xy,100).rgb);
 			for (int loopCount = 0;
 				(loopCount < MAX_OCCLUSION_POINTS) && (1.0 - POM_DEPTH + POM_DEPTH*luma(readTexture(coord.st).rgb)/lum0*0.5 < coord.p) && coord.p >= 0.0;
 						++loopCount) {
@@ -473,14 +482,17 @@ vec2 lm = lmtexcoord.zw;
 		  }
 		
 
-			vec4 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
+			vec4 data0 = texture
+GradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 		  #ifdef DISABLE_ALPHA_MIPMAPS
-			data0.a = texture2DGradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
+			data0.a = texture
+GradARB(texture, adjustedTexCoord.xy,vec2(0.),vec2(0.0)).a;
 		  #endif
 			if (data0.a > 0.1) data0.a = normalMat.a;
 		  else data0.a = 0.0;
 
-			vec3 normalTex = texture2DGradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz;
+			vec3 normalTex = texture
+GradARB(normals,adjustedTexCoord.xy,dcdx,dcdy).xyz;
 			gl_FragData[3].g = 1*normalTex.z;
 			  lm *= normalTex.b;
 			normalTex.xy = normalTex.xy*2.0-1.0;
@@ -531,7 +543,8 @@ vec2 lm = lmtexcoord.zw;
 	
 	#ifdef SPEC
 	#ifdef labspec
-			gl_FragData[1] = texture2DGradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
+			gl_FragData[1] = texture
+GradARB(specular, adjustedTexCoord.xy,dcdx,dcdy);
 			gl_FragData[1].a = 0.0;
 	#else	
 		gl_FragData[1] = vec4(hspec.rg,hspec.b,hspec.a)/255;
@@ -539,7 +552,8 @@ vec2 lm = lmtexcoord.zw;
 	#endif	
 
 		#ifdef SPEC	
-		float labemissive = texture2DLod(specular, adjustedTexCoord.xy, 0).a;
+		float labemissive = texture
+Lod(specular, adjustedTexCoord.xy, 0).a;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
@@ -559,12 +573,14 @@ vec2 lm = lmtexcoord.zw;
 	
 	
 	
-	vec4 data0 = texture2D(texture, lmtexcoord.xy, Texture_MipMap_Bias);
+	vec4 data0 = texture
+(texture, lmtexcoord.xy, Texture_MipMap_Bias);
 	
 
 	#ifdef SPEC
 	#ifdef labspec
-		gl_FragData[1] = texture2DLod(specular, lmtexcoord.xy, 0);
+		gl_FragData[1] = texture
+Lod(specular, lmtexcoord.xy, 0);
 	#else	
 		gl_FragData[1] = vec4(hspec.rg,hspec.b,hspec.a)/255;
 	#endif	
@@ -572,7 +588,8 @@ vec2 lm = lmtexcoord.zw;
 		gl_FragData[1] = vec4(0.0);
 	#endif
 	#ifdef SPEC	
-		float labemissive = texture2DLod(specular, lmtexcoord.xy, 0).a;
+		float labemissive = texture
+Lod(specular, lmtexcoord.xy, 0).a;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
@@ -587,12 +604,14 @@ vec2 lm = lmtexcoord.zw;
 
 
 	data0.rgb*=color.rgb;
-//    float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//    float avgBlockLum = luma(texture
+Lod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 //    data0.rgb = clamp(data0.rgb*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 
   
   #ifdef DISABLE_ALPHA_MIPMAPS
-	data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;
+	data0.a = texture
+Lod(texture,lmtexcoord.xy,0).a;
   #endif
 
 
@@ -602,7 +621,8 @@ vec2 lm = lmtexcoord.zw;
 
 		
 	#ifdef MC_NORMAL_MAP
-		vec3 normalTex = texture2D(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
+		vec3 normalTex = texture
+(normals, lmtexcoord.xy , Texture_MipMap_Bias).rgb;
 	gl_FragData[3].g = 1*normalTex.z;
 		lm *= normalTex.b;
 		vec2 lm2 = lm * normalTex.b;

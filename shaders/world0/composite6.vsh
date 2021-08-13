@@ -1,4 +1,4 @@
-#version 130
+#version 140
 #extension GL_EXT_gpu_shader4 : enable
 
 //#define VL_Clouds_Shadows // Casts shadows from clouds on VL (slow)

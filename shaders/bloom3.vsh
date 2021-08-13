@@ -1,4 +1,4 @@
-#version 120
+
 #include "/lib/res_params.glsl"
 uniform float viewWidth;
 uniform float viewHeight;
@@ -11,7 +11,7 @@ varying vec2 texcoord;
 
 void main() {
 	vec2 clampedRes = max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.0))/BLOOM_QUALITY;
-	gl_Position = ftransform();
+	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0);
 	//0-0.25
 	gl_Position.y = (gl_Position.y*0.5+0.5)*0.25/clampedRes.y*1080.0*2.0-1.0;
 	//0-0.5

@@ -227,10 +227,14 @@ ivec2 tileOffset     = ivec2(atlasSize*vtexcoordam.st+0.5);
 				ivec2 i = ivec2(coord);
 				vec2  f = fract(coord);
 
-				float s0 = texture2DGradARB(normals, (mod((i + ivec2(0, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s1 = texture2DGradARB(normals, (mod((i + ivec2(1, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s2 = texture2DGradARB(normals, (mod((i + ivec2(1, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
-				float s3 = texture2DGradARB(normals, (mod((i + ivec2(0, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s0 = texture
+GradARB(normals, (mod((i + ivec2(0, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s1 = texture
+GradARB(normals, (mod((i + ivec2(1, 1)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s2 = texture
+GradARB(normals, (mod((i + ivec2(1, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
+				float s3 = texture
+GradARB(normals, (mod((i + ivec2(0, 0)), tileResolution) + tileOffset)/vec2(atlasSize), dcdx,dcdy).a;
 
 				return mix(mix(s3, s2, f.x), mix(s0, s1, f.x), f.y);
 			}
@@ -242,12 +246,14 @@ vec4 readNormal(in vec2 coord)
 #ifdef smooth_depth
 	return vec4(smoothDepth(coord));
 #else
-	return texture2DGradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+	return texture
+GradARB(normals,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
 #endif	
 }
 vec4 readTexture(in vec2 coord)
 {
-	return texture2DGradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
+	return texture
+GradARB(texture,fract(coord)*vtexcoordam.pq+vtexcoordam.st,dcdx,dcdy);
 }
 
 #ifdef Depth_Write_POM
@@ -370,7 +376,8 @@ vec4 data0 = vec4(0.0);
 				vec3 coord = vec3(vtexcoord.st, 1.0);
 				coord += noise*interval;
 				float sumVec = noise;
-				float lum0 = luma(texture2DLod(texture,lmtexcoord.xy,100).rgb);
+				float lum0 = luma(texture
+Lod(texture,lmtexcoord.xy,100).rgb);
 			for (int loopCount = 0;
 				(loopCount < MAX_OCCLUSION_POINTS) && (1.0 - POM_DEPTH + POM_DEPTH*luma(readTexture(coord.st).rgb)/lum0*0.5 < coord.p) && coord.p >= 0.0;
 						++loopCount) {
@@ -397,7 +404,8 @@ vec4 data0 = vec4(0.0);
 		  #endif
 
 		  }	
-		 data0 = texture2DGradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
+		 data0 = texture
+GradARB(texture, adjustedTexCoord.xy,dcdx,dcdy);
 #endif	
 
 #endif
@@ -405,18 +413,22 @@ vec4 data0 = vec4(0.0);
 	
 	#ifdef block
 	
-  	 data0 = texture2D(texture, lmtexcoord.xy)*color;
+  	 data0 = texture
+(texture, lmtexcoord.xy)*color;
 	 
 	 #else
-	   	 data0 = texture2D(texture, lmtexcoord.xy)*color;
+	   	 data0 = texture
+(texture, lmtexcoord.xy)*color;
 	#endif	 
 	 
 	 
-//	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//	float avgBlockLum = luma(texture
+Lod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 //    data0.rgb = clamp((data0.rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);  
   
   #ifdef DISABLE_ALPHA_MIPMAPS
-  data0.a = texture2DLod(texture,lmtexcoord.xy,0).a;
+  data0.a = texture
+Lod(texture,lmtexcoord.xy,0).a;
   #endif
 
 #ifndef entity  
@@ -436,7 +448,8 @@ vec4 data0 = vec4(0.0);
 	
 	
 //	based on code from Christian Schüler	
-	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = texture
+(normals, lmtexcoord.xy , 0).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	
@@ -462,14 +475,16 @@ vec4 data0 = vec4(0.0);
 	gl_FragData[0] = vec4(encodeVec2(data0.x,data1.x),encodeVec2(data0.y,data1.y),encodeVec2(data0.z,data1.z),encodeVec2(data1.w,data0.w));
 	
 	#ifdef SPEC
-		float labemissive = texture2DLod(specular, lmtexcoord.xy, 0).a;
+		float labemissive = texture
+Lod(specular, lmtexcoord.xy, 0).a;
 
 		float emissive = float(labemissive > 1.98 && labemissive < 2.02) * 0.25;
 		float emissive2 = mix(labemissive < 1.0 ? labemissive : 0.0, 1.0, emissive);
 
 	
 	  	gl_FragData[2].a = clamp(clamp(emissive2,0.0,1.0),0,1);
-		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
+		gl_FragData[1] = vec4(texture
+Lod(specular, lmtexcoord.xy, 0).rgb,0);
 		
 	#else	
 		gl_FragData[1] = vec4(0.0);

@@ -1,4 +1,4 @@
-#version 120
+
 #extension GL_EXT_gpu_shader4 : enable
 uniform vec2 texelSize;
 #include "/lib/res_params.glsl"

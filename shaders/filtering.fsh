@@ -82,20 +82,26 @@ void main() {
 
 
 
-	float z = texture2D(depthtex1,texcoord).x;
-	vec4 data = texture2D(colortex1,texcoord);	
+	float z = texture
+(depthtex1,texcoord).x;
+	vec4 data = texture
+(colortex1,texcoord);	
 	vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 	bool emissive = abs(dataUnpacked1.w-0.9) <0.01;
-	vec4 trpData = texture2D(colortex7,texcoord);
-	bool iswater = texture2D(colortex7,texcoord).a > 0.99;
-	vec4 color = texture2D(colortex8,texcoord).rgba;		
+	vec4 trpData = texture
+(colortex7,texcoord);
+	bool iswater = texture
+(colortex7,texcoord).a > 0.99;
+	vec4 color = texture
+(colortex8,texcoord).rgba;		
 	
 	
 #ifdef ssptfilter
 if( FILTER_STEPS >= FILTER_STAGE){
 
-		float rtao = texture2D(colortex11,texcoord).r;
+		float rtao = texture
+(colortex11,texcoord).r;
 		if(FILTER_STAGE == 5) rtao = clamp(rtao,0.95,1);
 		if(FILTER_STAGE == 4) rtao = clamp(rtao,0.95,1);
 		if(FILTER_STAGE == 3) rtao = clamp(rtao,0.95,1);

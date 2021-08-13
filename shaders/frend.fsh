@@ -87,8 +87,10 @@ float getWaterHeightmap(vec2 posxz, float iswater) {
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
 	for (int i = 1; i < 3; i++){
-		vec2 displ = texture2D(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
-    float wave = texture2D(noisetex, (pos*vec2(3., 1.0)/128. + movement + displ/128.0)*exp(i*1.0)).b;
+		vec2 displ = texture
+(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+    float wave = texture
+(noisetex, (pos*vec2(3., 1.0)/128. + movement + displ/128.0)*exp(i*1.0)).b;
 		caustic += wave*exp(-i*1.0);
 		weightSum += exp(-i*1.0);
 		pos = rotationMatrix * pos;
@@ -127,21 +129,27 @@ void main() {
   vec2 texcoord2 = gl_FragCoord.xy*texelSize;
   vec2 texcoord3 = gl_FragCoord.xy*texelSize;
 /* RENDERTARGETS: 7,3 */
-  vec4 trpData = texture2D(colortex7,texcoord);
+  vec4 trpData = texture
+(colortex7,texcoord);
   bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
-  float z = texture2D(depthtex1,texcoord).x;
+  float z = texture
+(depthtex1,texcoord).x;
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex1,gl_FragCoord.xy,frDepth);
-  bool istransparent = (texture2D(colortex2,texcoord).a) > 0.0;	
+  bool istransparent = (texture
+(colortex2,texcoord).a) > 0.0;	
 
 
-  vec4 normal2 = (texture2D(colortex10, texcoord));
-  vec4 normal3 = (texture2D(colortex11, texcoord));
+  vec4 normal2 = (texture
+(colortex10, texcoord));
+  vec4 normal3 = (texture
+(colortex11, texcoord));
   vec3 worldnormal = vec3(normal3.r); 
 
 	    float sigma = 0.25;
-	    float intensity = exp(-sigma * texture2D(colortex2,texcoord).a);  
+	    float intensity = exp(-sigma * texture
+(colortex2,texcoord).a);  
   gl_FragData[2].rgb = vec3( worldnormal);  		
 		
    vec2 refractedCoord = texcoord; 
@@ -166,10 +174,12 @@ void main() {
   refractedCoord = coord; 
   #endif
   float refraction = (1*clamp(1-abs(0 + (ld(z) - 0.0) * (1 - 0) / (1.0 - 0.0)),0,1)*0.005);
-  float refraction2 = pow(texture2D(colortex2,texcoord).a,3)*2-0.2;
+  float refraction2 = pow(texture
+(colortex2,texcoord).a,3)*2-0.2;
 
 // if(istransparent || iswater)   texcoord.xy=texcoord.xy+worldnormal.xy;
-  vec4 transparencies = texture2D(colortex2,texcoord);  
+  vec4 transparencies = texture
+(colortex2,texcoord);  
 
 
     vec3 fragpos = toScreenSpace(vec3(texcoord-vec2(0.0)*texelSize*0.5,z));
@@ -180,14 +190,16 @@ void main() {
     float displ = norm/(length(fragpos)/far)/2000. * (1.0 + isEyeInWater*2.0);
     refractedCoord += displ*RENDER_SCALE;
 
-    if (texture2D(colortex7,refractedCoord).a < 0.99)
+    if (texture
+(colortex7,refractedCoord).a < 0.99)
       refractedCoord = texcoord;
 
   }
 
 // if(istransparent || iswater)   refractedCoord.xy=refractedCoord.xy+worldnormal.xy;
 
-  vec3 color = texture2D(colortex3,refractedCoord).rgb;
+  vec3 color = texture
+(colortex3,refractedCoord).rgb;
 
 
 	

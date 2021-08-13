@@ -202,10 +202,12 @@ if(renderStage == 19)gl_FragData[3].g = 0.3;
 if(renderStage == 17)gl_FragData[3].b = 0.3;
                      gl_FragData[3].a = 1.0;
 
-	gl_FragData[0] = texture2D(texture, lmtexcoord.xy)*color;
+	gl_FragData[0] = texture
+(texture, lmtexcoord.xy)*color;
 	vec2 tempOffset=offsets[framemod8];
 #ifdef textured
-//	float avgBlockLum = luma(texture2DLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
+//	float avgBlockLum = luma(texture
+Lod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 //	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 	gl_FragData[0].rgb = clamp((gl_FragData[0].rgb),0.0,1.0);
 #endif	
@@ -215,7 +217,8 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 	vec2 lm = lmtexcoord.zw;
 	vec3 normal = normalMat.xyz;
-	vec3 normalTex = texture2D(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = texture
+(normals, lmtexcoord.xy , 0).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	
@@ -233,7 +236,8 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 
 #if defined(glint) || defined(beacon) || defined(spidereyes)
-	gl_FragData[0] = texture2D(texture, lmtexcoord.xy);
+	gl_FragData[0] = texture
+(texture, lmtexcoord.xy);
 
 	vec3 albedo = toLinear(gl_FragData[0].rgb*color.rgb);
 
@@ -305,7 +309,8 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 		direct *= diffuseSun;
 
-		vec3 ambient = texture2D(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
+		vec3 ambient = texture
+(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
 
 #ifndef textured		
 		vec3 diffuseLight = direct + ambient;
@@ -339,7 +344,8 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 
 	#ifdef SPEC
-		gl_FragData[1] = vec4(texture2DLod(specular, lmtexcoord.xy, 0).rgb,0);
+		gl_FragData[1] = vec4(texture
+Lod(specular, lmtexcoord.xy, 0).rgb,0);
 	#else	
 		gl_FragData[1] = vec4(0.0);
 	#endif	

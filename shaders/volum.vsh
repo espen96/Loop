@@ -1,4 +1,4 @@
-#version 120
+
 #extension GL_EXT_gpu_shader4 : enable
 
 //#define VL_Clouds_Shadows // Casts shadows from clouds on VL (slow)
@@ -49,7 +49,7 @@ uniform int framemod8;
 
 void main() {
 	tempOffsets = HaltonSeq2(frameCounter%10000);
-	gl_Position = ftransform();
+	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0);
 	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
 		
 

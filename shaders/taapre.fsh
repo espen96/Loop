@@ -1,4 +1,3 @@
-#version 120
 #extension GL_EXT_gpu_shader4 : enable
 uniform sampler2D colortex3;
 // Compute 3x3 min max for TAA

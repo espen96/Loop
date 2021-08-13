@@ -1,4 +1,4 @@
-#version 120
+
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 #define SCREENSPACE_CONTACT_SHADOWS	//Raymarch towards the sun in screen-space, in order to cast shadows outside of the shadow map or at the contact of objects. Can get really expensive at high resolutions.
@@ -189,7 +189,8 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 	for (int i = 0; i < int(quality); i++) {
 		spos += stepv;
 
-		float sp = texture2D(depthtex1,spos.xy).x;
+		float sp = texture
+(depthtex1,spos.xy).x;
         if( sp < spos.z) {
 
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
@@ -245,7 +246,8 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	vec2 displ = texture
+(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
 	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
@@ -375,7 +377,8 @@ vec3 rtGI(vec3 normal,vec4 noise,vec3 fragpos, vec3 ambient, float translucent, 
 			previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 			previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 			if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0)
-				intRadiance += texture2D(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent;
+				intRadiance += texture
+(colortex5,previousPosition.xy).rgb + ambient*albedo*translucent;
 			else
 				intRadiance += ambient + ambient*translucent*albedo;
 			occlusion += 1.1;
@@ -462,8 +465,10 @@ void main() {
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
-	float z0 = texture2D(depthtex0,texcoord).x;
-	float z = texture2D(depthtex1,texcoord).x;
+	float z0 = texture
+(depthtex0,texcoord).x;
+	float z = texture
+(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
@@ -474,12 +479,15 @@ void main() {
 	//sky
 	if (z >=1.0) {
 		vec3 color = vec3(1.0,0.4,0.2)/4000.0*1050.0*0.1;
-		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
+		vec4 cloud = texture
+_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		color = color*cloud.a+cloud.rgb;
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3. * (1.0-rainStrength*0.4),triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		vec4 trpData = texture
+(colortex7,texcoord);
+		bool iswater = texture
+(colortex7,texcoord).a > 0.99;
 		if (iswater){
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
@@ -497,10 +505,13 @@ void main() {
 	else {
 		p3 += gbufferModelViewInverse[3].xyz;
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		vec4 trpData = texture
+(colortex7,texcoord);
+		bool iswater = texture
+(colortex7,texcoord).a > 0.99;
 
-		vec4 data = texture2D(colortex1,texcoord);
+		vec4 data = texture
+(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -520,7 +531,8 @@ void main() {
 		float diffuseSun = clamp(NdotL,0.,1.0);
 		vec3 filtered = vec3(1.412,1.0,0.0);
 		if (!hand){
-			filtered = texture2D(colortex3,texcoord).rgb;
+			filtered = texture
+(colortex3,texcoord).rgb;
 		}
 		float shading = 1.0 - filtered.b;
 		float pShadow = filtered.b*2.0-1.0;
@@ -636,7 +648,8 @@ void main() {
 		ambientLight += ambientB*clamp(ambientCoefs.z,0.,1.);
 		ambientLight += ambientF*clamp(-ambientCoefs.z,0.,1.);
 		vec3 directLightCol = lightCol.rgb;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		vec3 custom_lightmap = texture
+(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
 			emitting = luma(albedo)*1.2*Emissive_Strength;
@@ -771,7 +784,8 @@ void main() {
 							previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 							if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
 								reflection.a = 1.0;
-								reflection.rgb = texture2D(colortex5,previousPosition.xy).rgb;
+								reflection.rgb = texture
+(colortex5,previousPosition.xy).rgb;
 							}
 						}
 					}

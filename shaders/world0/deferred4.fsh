@@ -1,4 +1,4 @@
-#version 130
+#version 140
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
@@ -206,7 +206,8 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 	for (int i = 0; i < int(quality); i++) {
 		spos += stepv;
 
-		float sp = texture2D(depthtex1,spos.xy).x;
+		float sp = texture
+(depthtex1,spos.xy).x;
         if( sp < spos.z) {
 
 			float dist = abs(linZ(sp)-linZ(spos.z))/linZ(spos.z);
@@ -261,7 +262,8 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	vec2 displ = texture
+(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
 	pos = pos*0.5+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
@@ -313,11 +315,16 @@ vec3 closestToCamera5taps(vec2 texcoord)
 	vec2 du = vec2(texelSize.x*2., 0.0);
 	vec2 dv = vec2(0.0, texelSize.y*2.);
 
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture
+(depthtex0, texcoord - dv - du).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture
+(depthtex0, texcoord - dv + du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture
+(depthtex0, texcoord).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture
+(depthtex0, texcoord + dv - du).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture
+(depthtex0, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
 	dmin = dmin.z > dtr.z? dtr : dmin;
@@ -348,15 +355,20 @@ vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float shar
 
     vec2 w12 = w1 + w2;
     vec2 tc12 = rtMetrics.xy * (centerPosition + w2 / w12);
-    vec3 centerColor = texture2D(colorTex, vec2(tc12.x, tc12.y)).rgb;
+    vec3 centerColor = texture
+(colorTex, vec2(tc12.x, tc12.y)).rgb;
 
     vec2 tc0 = rtMetrics.xy * (centerPosition - 1.0);
     vec2 tc3 = rtMetrics.xy * (centerPosition + 2.0);
-    vec4 color = vec4(texture2D(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
-                   vec4(texture2D(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
+    vec4 color = vec4(texture
+(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
+                   vec4(texture
+(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
                    vec4(centerColor,                                      1.0) * (w12.x * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
+                   vec4(texture
+(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
+                   vec4(texture
+(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
 	return color.rgb/color.a;
 
 }
@@ -436,11 +448,16 @@ vec4 blur5(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
   vec4 color = vec4(0.0);
   vec2 off1 = vec2(1.3846153846) * direction;
   vec2 off2 = vec2(3.2307692308) * direction;
-  color += texture2D(image, uv) * 0.2270270270;
-  color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
-  color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
-  color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
-  color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
+  color += texture
+(image, uv) * 0.2270270270;
+  color += texture
+(image, uv + (off1 / resolution)) * 0.3162162162;
+  color += texture
+(image, uv - (off1 / resolution)) * 0.3162162162;
+  color += texture
+(image, uv + (off2 / resolution)) * 0.0702702703;
+  color += texture
+(image, uv - (off2 / resolution)) * 0.0702702703;
   return color;
 }
 
@@ -522,8 +539,10 @@ void main() {
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
-	float z0 = texture2D(depthtex0,texcoord).x;
-	float z = texture2D(depthtex1,texcoord).x;
+	float z0 = texture
+(depthtex0,texcoord).x;
+	float z = texture
+(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
@@ -540,14 +559,18 @@ void main() {
 
 		p3 += gbufferModelViewInverse[3].xyz;
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		vec4 transparent = texture2D(colortex2,texcoord);
+		vec4 trpData = texture
+(colortex7,texcoord);
+		vec4 transparent = texture
+(colortex2,texcoord);
 		
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		bool iswater = texture
+(colortex7,texcoord).a > 0.99;
 		bool istransparent = luma(transparent.rgb) > 0.1;
 
 //		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-		vec4 data = texture2D(colortex1,texcoord);
+		vec4 data = texture
+(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -563,7 +586,8 @@ void main() {
 //	    	 normal = mat3(gbufferModelViewInverse) * blur5(colortex10, texcoord, vec2(viewWidth,viewHeight), vec2(1,1) ).rgb;
 
 
-	//	vec3 normal = mat3(gbufferModelViewInverse) * texture2D(colortex10,texcoord).rgb;
+	//	vec3 normal = mat3(gbufferModelViewInverse) * texture
+(colortex10,texcoord).rgb;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 
 
@@ -587,7 +611,8 @@ void main() {
 		vec3 filtered = vec3(1.412,1.0,0.0);
 		vec3 caustic = vec3(1.412,1.0,0.0);
 		if (!hand){
-			filtered = texture2D(colortex3,texcoord).rgb;
+			filtered = texture
+(colortex3,texcoord).rgb;
 		}
 		
 		float shading = 1.0 - filtered.b;

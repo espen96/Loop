@@ -37,6 +37,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 
 uniform vec3 sunVec;
+uniform vec3 fogColor;
 uniform float far;
 uniform int frameCounter;
 uniform float rainStrength;
@@ -145,7 +146,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 		float muS = 1.05;
 		vec3 absorbance = vec3(1.0);
 		float expFactor = 11.0;
-	  vec3 fogColor = clamp(gl_Fog.color.rgb*pow(luma(gl_Fog.color.rgb),-0.75)*0.65,0.0,1.0)*0.05;
+	  vec3 fogColor = clamp(fogColor*pow(luma(fogColor),-0.75)*0.65,0.0,1.0)*0.05;
 		for (int i=0;i<VL_SAMPLES+8;i++) {
 			float d = (pow(expFactor, float(i+dither)/float(VL_SAMPLES+8))/expFactor - 1.0/expFactor)/(1-1.0/expFactor);
 			float dd = pow(expFactor, float(i+dither)/float(VL_SAMPLES+8)) * log(expFactor) / float(VL_SAMPLES+8)/(expFactor-1.0);

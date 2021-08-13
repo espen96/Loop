@@ -8,4 +8,4 @@
 
 #define terrain
 
-#include "/gbuffer_terrain.vfs"
+#include "/gbuffer_terrain.vsh"

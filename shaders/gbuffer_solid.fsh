@@ -405,10 +405,10 @@ vec4 data0 = vec4(0.0);
 	
 	#ifdef block
 	
-  	 data0 = texture(texture, lmtexcoord.xy)*color;
+  	 data0 = textureLod(texture, lmtexcoord.xy,0)*color;
 	 
 	 #else
-	   	 data0 = texture(texture, lmtexcoord.xy)*color;
+	   	 data0 = textureLod(texture, lmtexcoord.xy,0)*color;
 	#endif	 
 	 
 	 

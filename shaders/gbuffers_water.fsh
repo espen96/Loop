@@ -181,7 +181,7 @@ void main() {
 		float iswater = normalMat.w;
 		vec3 fragC = gl_FragCoord.xyz*vec3(texelSize,1.0);
 		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
-		gl_FragData[0] = texture(texture, lmtexcoord.xy)*color;
+		gl_FragData[0] = textureLod(texture, lmtexcoord.xy,0)*color;
 		float avgBlockLum = luma(textureLod(texture, lmtexcoord.xy,128).rgb*color.rgb);
 		gl_FragData[0].rgb = clamp((gl_FragData[0].rgb)*pow(avgBlockLum,-0.33)*0.85,0.0,1.0);
 		vec3 albedo = toLinear(gl_FragData[0].rgb);
@@ -195,7 +195,7 @@ void main() {
 		}
 
 
-			vec3 normalTex = texture(normals, lmtexcoord.xy).rgb;
+			vec3 normalTex = textureLod(normals, lmtexcoord.xy,0).rgb;
 
 			vec3 normal = normalMat.xyz;
 			vec3 normal2 = normalMat.xyz;
@@ -270,7 +270,7 @@ void main() {
 
 						float weight = 1.0+(i+noise)*rdMul/9.0*shadowMapResolution;
 			#ifdef SHADOWS_ON			
-						shading += shadow2D(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x*0.111;
+						shading += texture(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight)))*0.111;
 			#else
 
 					
@@ -282,7 +282,7 @@ void main() {
 
 			direct *= (iswater > 0.9 ? 0.2: 1.0)*diffuseSun*lmtexcoord.w;
 
-			vec3 diffuseLight = direct + texture(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
+			vec3 diffuseLight = direct + textureLod(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize,0).rgb;
 			
 			vec3 color = diffuseLight*albedo*8./150./3.;
 
@@ -311,7 +311,7 @@ void main() {
 
 			vec3 wrefl = mat3(gbufferModelViewInverse)*reflectedVector;
 			if (iswater < 0.1) wrefl = mat3(gbufferModelViewInverse)*reflectedVector2;
-			vec3 sky_c = mix(skyCloudsFromTex(wrefl,gaux1).rgb,texture(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb*0.5,isEyeInWater);
+			vec3 sky_c = mix(skyCloudsFromTex(wrefl,gaux1).rgb,textureLod(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize,0).rgb*0.5,isEyeInWater);
 			sky_c.rgb *= lmtexcoord.w*lmtexcoord.w*255*255/240./240./150.*8./3.;
 
 			vec4 reflection = vec4(sky_c.rgb,0.);
@@ -323,7 +323,7 @@ void main() {
 				previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 				if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
 					reflection.a = 1.0;
-					reflection.rgb = texture(gaux2,previousPosition.xy).rgb;
+					reflection.rgb = textureLod(gaux2,previousPosition.xy,0).rgb;
 				}
 			}
 			#endif

@@ -3,4 +3,4 @@
 #define weather
 #define solid1
 #include "/lib/res_params.glsl"
-#include "/gbuffer_vertex.vfs"
+#include "/gbuffer_vertex.vsh"

@@ -647,7 +647,7 @@ void main() {
 					#ifdef SHADOWS_ON	
 						float shadow1    = shadow2D(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 						float shadow0    = shadow2D(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyzw;
+							 shadowCol   = shadow2D(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight)));
 	
 
 						float transparentshadow = (shadow1-shadow0);	 

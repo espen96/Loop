@@ -1,4 +1,4 @@
-#version 140
+#version 130
 // moved up
 #extension GL_ARB_shader_texture_lod : enable
 #extension GL_EXT_gpu_shader4 : enable
@@ -20,11 +20,9 @@ float blueNoise(){
 }
 void main() {
 	if (blockEntityId == 80) discard;
-	vec4 albedo = texture
-(tex,texcoord.xy);	
+	vec4 albedo = texture(tex,texcoord.xy);	
 	#ifdef SHADOW_DISABLE_ALPHA_MIPMAPS
-	 albedo.a = texture
-Lod(tex,texcoord.xy,0).a;
+	 albedo.a = textureLod(tex,texcoord.xy,0).a;
 	#endif
 
 //	if (albedo.a < 0.01) discard;

@@ -30,8 +30,7 @@ float densityAtPos(in vec3 pos)
 
 	vec2 coord =  uv / 512.0;
 	//The y channel has an offset to avoid using two textures fetches
-	vec2 xy = texture
-(noisetex, coord).yx;
+	vec2 xy = texture(noisetex, coord).yx;
 
 	return mix(xy.r,xy.g, f.y);
 }
@@ -42,15 +41,13 @@ vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 	vec2 fuv = fract( uv );
 	uv = iuv + (fuv*fuv)*(3.0-2.0*fuv);
 	uv = uv/512.0 - 0.5/512.0;
-	return texture
-( tex, uv);
+	return texture( tex, uv);
 }
 //Cloud without 3D noise, is used to exit early lighting calculations if there is no cloud
 float cloudCov(in vec3 pos,vec3 samplePos){
 	float mult = max(pos.y-2000.0,0.0)/2000.0;
 	float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-	float coverage = clamp(texture
-(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
+	float coverage = clamp(texture(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
 	float cloud = coverage*coverage*4.0 - mult*mult*mult*3.0 - mult2*mult2;
 	return max(cloud, 0.0);
 }
@@ -73,8 +70,7 @@ float cloudCov(in vec3 pos,vec3 samplePos){
 		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
 		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
 		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+frameTimeCounter*vec3(0.5,0.,0.5)*25.;
-		float coverage = clamp(texture
-(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
+		float coverage = clamp(texture(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
 		float cloud = coverage*coverage*4.0 - mult*mult*mult*3.0 - mult2*mult2 - 0.11 * (0.2 + mult3);
 		return max(cloud, 0.0);
 	}
@@ -91,8 +87,7 @@ float cloudCov(in vec3 pos,vec3 samplePos){
 		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
 		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
 		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+frameTimeCounter*vec3(0.5,0.,0.5)*25.;
-		float coverage = clamp(texture
-(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
+		float coverage = clamp(texture(noisetex,samplePos.xz/12500.).r-0.2+0.4*rainStrength,0.0,1.0)/(1.0-0.2+0.4*rainStrength);
 		float cloud = coverage*coverage*4.0 - mult*mult*mult*3.0 - mult2*mult2 - 0.11 * (0.2 + mult3);
 		return max(cloud, 0.0);
 	}
@@ -117,17 +112,14 @@ float calcShadow(vec3 pos, vec3 ray){
 }
 float cirrusClouds(vec3 pos){
 	vec2 pos2D = pos.xz/50000.0 + frameTimeCounter/200.;
-	float cirrusMap = clamp(texture
-(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
-	float cloud = texture
-(noisetex, pos2D).r;
+	float cirrusMap = clamp(texture(noisetex,pos2D.yx/6. ).b-0.7+0.7*rainStrength,0.0,1.0);
+	float cloud = texture(noisetex, pos2D).r;
 	float weights = 1.0;
 	vec2 posMult = vec2(2.0,1.5);
 	for (int i = 1; i < 4; i++){
 		pos2D *= posMult;
 		float weight =exp2(-i*1.0);
-		cloud += texture
-(noisetex, pos2D).r*weight;
+		cloud += texture(noisetex, pos2D).r*weight;
 
 		weights += weight;
 	}

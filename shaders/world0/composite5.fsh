@@ -208,7 +208,7 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 	for (int i = 0; i < int(quality); i++) {
 		spos += stepv*dither;
 
-		float sp = texture2D(depthtex1,spos.xy).x;
+		float sp = texture(depthtex1,spos.xy).x;
 		if (sp >0.999) return 1.0;
         if( sp < spos.z) {
 
@@ -263,7 +263,7 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	vec2 displ = texture2D(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	vec2 displ = texture(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
 	pos = pos*0.5+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
@@ -361,11 +361,11 @@ vec3 closestToCamera5taps(vec2 texcoord)
 	vec2 du = vec2(texelSize.x*2., 0.0);
 	vec2 dv = vec2(0.0, texelSize.y*2.);
 
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture2D(depthtex0, texcoord - dv - du).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture2D(depthtex0, texcoord - dv + du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture2D(depthtex0, texcoord).x);
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv - du).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture2D(depthtex0, texcoord + dv + du).x);
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture(depthtex0, texcoord - dv - du).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture(depthtex0, texcoord - dv + du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture(depthtex0, texcoord).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture(depthtex0, texcoord + dv - du).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture(depthtex0, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
 	dmin = dmin.z > dtr.z? dtr : dmin;
@@ -396,15 +396,15 @@ vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float shar
 
     vec2 w12 = w1 + w2;
     vec2 tc12 = rtMetrics.xy * (centerPosition + w2 / w12);
-    vec3 centerColor = texture2D(colorTex, vec2(tc12.x, tc12.y)).rgb;
+    vec3 centerColor = texture(colorTex, vec2(tc12.x, tc12.y)).rgb;
 
     vec2 tc0 = rtMetrics.xy * (centerPosition - 1.0);
     vec2 tc3 = rtMetrics.xy * (centerPosition + 2.0);
-    vec4 color = vec4(texture2D(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
-                   vec4(texture2D(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
+    vec4 color = vec4(texture(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
+                   vec4(texture(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
                    vec4(centerColor,                                      1.0) * (w12.x * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
-                   vec4(texture2D(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
+                   vec4(texture(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
+                   vec4(texture(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
 	return color.rgb/color.a;
 
 }
@@ -494,7 +494,7 @@ vec3 median3(sampler2D tex1) {
       // If a pixel in the window is located at (x+dX, y+dY), put it at index (dX + R)(2R + 1) + (dY + R) of the
       // pixel array. This will fill the pixel array, with the top left pixel of the window at pixel[0] and the
       // bottom right pixel of the window at pixel[N-1].
-      v[(dX + 2) * 5 + (dY + 2)] = toVec(texture2D(tex1, ssC + offset * texelSize));
+      v[(dX + 2) * 5 + (dY + 2)] = toVec(texture(tex1, ssC + offset * texelSize));
     }
   }
 
@@ -530,11 +530,11 @@ vec4 blur5(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
   vec4 color = vec4(0.0);
   vec2 off1 = vec2(1.3846153846) * direction;
   vec2 off2 = vec2(3.2307692308) * direction;
-  color += texture2D(image, uv) * 0.2270270270;
-  color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
-  color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
-  color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
-  color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
+  color += texture(image, uv) * 0.2270270270;
+  color += texture(image, uv + (off1 / resolution)) * 0.3162162162;
+  color += texture(image, uv - (off1 / resolution)) * 0.3162162162;
+  color += texture(image, uv + (off2 / resolution)) * 0.0702702703;
+  color += texture(image, uv - (off2 / resolution)) * 0.0702702703;
   return color;
 }
 void PromoOutline(inout vec3 color, sampler2D depth) {
@@ -543,7 +543,7 @@ void PromoOutline(inout vec3 color, sampler2D depth) {
 	float pw = ph / aspectRatio;
 
 	float outlinea = 0.0, outlineb = 0.0, outlinec = 0.0, outlined = 0.0;
-	float z = ld(texture2D(depth, texCoord).r) * far;
+	float z = ld(texture(depth, texCoord).r) * far;
 	float totalz = 0.0;
 	float maxz = z;
 	float sampleza = 0.0;
@@ -551,8 +551,8 @@ void PromoOutline(inout vec3 color, sampler2D depth) {
 
 	for(int i = 0; i < 12; i++) {
 		vec2 offset = vec2(pw, ph) * outlineOffsets[i];
-		sampleza = ld(texture2D(depth, texCoord + offset).r) * far;
-		samplezb = ld(texture2D(depth, texCoord - offset).r) * far;
+		sampleza = ld(texture(depth, texCoord + offset).r) * far;
+		samplezb = ld(texture(depth, texCoord - offset).r) * far;
 		maxz = max(maxz, max(sampleza, samplezb));
 
 		float sample = (z * 2.0 - (sampleza + samplezb)) / length(outlineOffsets[i]);
@@ -616,8 +616,8 @@ void main() {
 	vec3 dirtEpsilon = vec3(Dirt_Absorb_R, Dirt_Absorb_G, Dirt_Absorb_B);
 	vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 	vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
-	float z0 = texture2D(depthtex0,texcoord).x;
-	float z = texture2D(depthtex1,texcoord).x;
+	float z0 = texture(depthtex0,texcoord).x;
+	float z = texture(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	float noise = blueNoise();
 
@@ -632,17 +632,17 @@ void main() {
 	//sky
 	if (z >=1.0) {
 		vec3 color = vec3(0.0);
-		vec4 cloud = texture2D_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
+		vec4 cloud = texture_bicubic(colortex0,texcoord*CLOUDS_QUALITY);
 		if (np3.y > 0.){
 			color += stars(np3);
 			color += drawSun(dot(lightCol.a*WsunVec,np3),0, lightCol.rgb/150.,vec3(0.0));
 		}
-		color += skyFromTex(np3,colortex4)/150. + toLinear(texture2D(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
+		color += skyFromTex(np3,colortex4)/150. + toLinear(texture(colortex1,texcoord).rgb)/10.*4.0*ffstep(0.985,-dot(lightCol.a*WsunVec,np3));
 		color = color*cloud.a+cloud.rgb;
 		gl_FragData[0].rgb = clamp(fp10Dither(color*8./3.,triangularize(noise)),0.0,65000.);
 		//if (gl_FragData[0].r > 65000.) 	gl_FragData[0].rgb = vec3(0.0);
-		vec4 trpData = texture2D(colortex7,texcoord);
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		vec4 trpData = texture(colortex7,texcoord);
+		bool iswater = texture(colortex7,texcoord).a > 0.99;
 		if (iswater){
 			vec3 fragpos0 = toScreenSpace(vec3(texcoord/RENDER_SCALE-vec2(tempOffset)*texelSize*0.5,z0));
 			float Vdiff = distance(fragpos,fragpos0);
@@ -660,15 +660,15 @@ void main() {
 	else {
 		p3 += gbufferModelViewInverse[3].xyz;
 
-		vec4 trpData = texture2D(colortex7,texcoord);
-		vec3 preshade = texture2D(colortex3,texcoord).rgb;
-		vec4 transparent = texture2D(colortex2,texcoord);
+		vec4 trpData = texture(colortex7,texcoord);
+		vec3 preshade = texture(colortex3,texcoord).rgb;
+		vec4 transparent = texture(colortex2,texcoord);
 		
-		bool iswater = texture2D(colortex7,texcoord).a > 0.99;
+		bool iswater = texture(colortex7,texcoord).a > 0.99;
 		bool istransparent = luma(transparent.rgb) > 0.1;
 
 //		float edgemask = clamp(edgefilter(texcoord*RENDER_SCALE,2,colortex8).rgb,0,1).r;
-		vec4 data = texture2D(colortex1,texcoord);
+		vec4 data = texture(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 
@@ -684,7 +684,7 @@ void main() {
 //	    	 normal = mat3(gbufferModelViewInverse) * blur5(colortex10, texcoord, vec2(viewWidth,viewHeight), vec2(1,1) ).rgb;
 
 
-	//	vec3 normal = mat3(gbufferModelViewInverse) * texture2D(colortex10,texcoord).rgb;
+	//	vec3 normal = mat3(gbufferModelViewInverse) * texture(colortex10,texcoord).rgb;
 		vec3 normal2 =  worldToView(decode(dataUnpacked0.yw));
 
 
@@ -708,7 +708,7 @@ void main() {
 		vec2 filtered = vec2(1.0,0.0);
 		vec3 caustic = vec3(1.412,1.0,0.0);
 		if (!hand){
-			filtered = decodeVec2(texture2D(colortex3,texcoord).a);
+			filtered = decodeVec2(texture(colortex3,texcoord).a);
 		}
 		float shading = 1.0 - filtered.y;
 
@@ -766,7 +766,7 @@ void main() {
 		#endif
 
 
-		float labemissive = texture2D(colortex8, texcoord).a;
+		float labemissive = texture(colortex8, texcoord).a;
 		vec3 ambientCoefs = normal/dot(abs(normal),vec3(1.));
 		vec3 ambientLight = ambientUp*mix(clamp(ambientCoefs.y,0.,1.), 0.166, sssAmount);
 		ambientLight += ambientDown*mix(clamp(-ambientCoefs.y,0.,1.), 0.166, sssAmount);
@@ -776,7 +776,7 @@ void main() {
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 0.166, sssAmount);
 
 		vec3 directLightCol = lightCol.rgb*2;
-		vec3 custom_lightmap = texture2D(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		vec3 custom_lightmap = texture(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
 
@@ -843,7 +843,7 @@ void main() {
 
 
 
-			ambientLight = texture2D(colortex8,texcoord).rgb;
+			ambientLight = texture(colortex8,texcoord).rgb;
 	
 		#ifdef ssptfilter
 		//	ambientLight = mix( median2(colortex8), ambientLight,0.0);
@@ -857,7 +857,7 @@ void main() {
 
 			//combine all light sources
 	#ifdef SSGI
-//	float labao =	texture2D(colortex11, gl_FragCoord.xy*texelSize).g;
+//	float labao =	texture(colortex11, gl_FragCoord.xy*texelSize).g;
 	float labao =	1;
 	#else 
 	float labao = 1;
@@ -928,7 +928,7 @@ void main() {
 				// Ray contribution
 				float g1 = g(clamp(dot(normal, L),0.0,1.0), roughness);
 				vec3 F = f0 + (1.0 - f0) * pow(clamp(1.0 + dot(-Ln, H),0.0,1.0), 5.0);
- // 				gl_FragData[0].rgb = vec3((texture2DLod(colortex5,texcoord,4).rgb));
+ // 				gl_FragData[0].rgb = vec3((textureLod(colortex5,texcoord,4).rgb));
 
 				     rayContrib = F * g1;
 
@@ -955,7 +955,7 @@ void main() {
 							previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 							if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
 								reflection.a = 1.0;
-								reflection.rgb = clamp(clamp(texture2D(colortex5,previousPosition.xy).rgb,0.0, luma(texture2D(colortex5,previousPosition.xy).rgb)),0,20);
+								reflection.rgb = clamp(clamp(texture(colortex5,previousPosition.xy).rgb,0.0, luma(texture(colortex5,previousPosition.xy).rgb)),0,20);
 							}
 						}
 					}
@@ -973,8 +973,8 @@ void main() {
 			
 			vec4    historyGData    = vec4(1.0);
 			vec4   indirectHistory = vec4(0.0);
-			vec4    indirectCurrent = texture2D(colortex5,texcoord.xy/RENDER_SCALE).rgba;
-			float    sceneDepth = texture2D(depthtex0,texcoord.xy).x;
+			vec4    indirectCurrent = texture(colortex5,texcoord.xy/RENDER_SCALE).rgba;
+			float    sceneDepth = texture(depthtex0,texcoord.xy).x;
 			vec3 scenePos   = viewMAD(gbufferModelViewInverse,fragpos);
 			vec3 reprojection   = reproject(scenePos, hand);	
 	        bool offscreen      = clamp(reprojection,0,1) != reprojection;
@@ -986,15 +986,15 @@ void main() {
 			vec2 velocity = previousPosition.xy - closestToCamera.xy;
 			previousPosition.xy = texcoord + velocity;
 
-			vec3 albedoCurrent0 = texture2D(colortex14, reprojection.xy*RENDER_SCALE).rgb;
-			vec3 albedoCurrent1 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent2 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent3 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,-texelSize.y)).rgb;
-			vec3 albedoCurrent4 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,texelSize.y)).rgb;
-			vec3 albedoCurrent5 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,texelSize.y)).rgb;
-			vec3 albedoCurrent6 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,-texelSize.y)).rgb;
-			vec3 albedoCurrent7 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,0.0)).rgb;
-			vec3 albedoCurrent8 = texture2D(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent0 = texture(colortex14, reprojection.xy*RENDER_SCALE).rgb;
+			vec3 albedoCurrent1 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent2 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent3 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,-texelSize.y)).rgb;
+			vec3 albedoCurrent4 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,texelSize.y)).rgb;
+			vec3 albedoCurrent5 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,texelSize.y)).rgb;
+			vec3 albedoCurrent6 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(0.0,-texelSize.y)).rgb;
+			vec3 albedoCurrent7 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(-texelSize.x,0.0)).rgb;
+			vec3 albedoCurrent8 = texture(colortex14, reprojection.xy*RENDER_SCALE + vec2(texelSize.x,0.0)).rgb;
 
 			//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 
@@ -1009,7 +1009,7 @@ void main() {
 					
 			float isclamped = (clamp(clamp(((distance(albedoPrev,finalcAcc)/luma(albedoPrev))),0,10),0,10));	 
 			float isclamped2 = (((distance(albedoPrev2,finalcAcc)/luma(albedoPrev2)) *0.9) );	 
-			float isclamped3 = (((distance(luma(albedoPrev2),texture2D(colortex14,reprojection.xy*RENDER_SCALE).a)/luma(albedoPrev2)) *0.5) );	 
+			float isclamped3 = (((distance(luma(albedoPrev2),texture(colortex14,reprojection.xy*RENDER_SCALE).a)/luma(albedoPrev2)) *0.5) );	 
 			float clamped = dot(isclamped,isclamped2);
 			rej = clamp( (clamp(   (isclamped3)   ,0,1) ) +((isclamped)*clamp(length(velocity/texelSize),0.0,1.0))    ,0.5,1);	
 			vec3 bn = blueNoise(gl_FragCoord.xy).xyz;
@@ -1017,7 +1017,7 @@ void main() {
 		
 			
 		//	vec3 speculars = mix( (((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)),vec3(0.0), clamp(rej,0,1.0) );			
-		reflection = mix(texture2D(colortex14, reprojection.xy*RENDER_SCALE).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
+		reflection = mix(texture(colortex14, reprojection.xy*RENDER_SCALE).rgb,(((indirectSpecular) /nSpecularSamples + specTerm * directLightCol.rgb)), rej );			
 	
 		gl_FragData[1].rgb = reflection;
 	//	gl_FragData[0].rgb = (indirectSpecular/nSpecularSamples + specTerm * directLightCol.rgb)*SPECSTRENGTH +  (1.0-fresnelDiffuse/nSpecularSamples*0.6) * gl_FragData[0].rgb;

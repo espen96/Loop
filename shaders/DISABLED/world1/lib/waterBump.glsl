@@ -8,8 +8,7 @@ float getWaterHeightmap(vec2 posxz, float waveM, float waveZ, float iswater) {
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
 	for (int i = 0; i < 4; i++){
-		vec2 displ = texture
-(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
+		vec2 displ = texture(noisetex, pos/32.0/1.74/1.74 + movement).bb*2.0-1.0;
 		pos = rotationMatrix * pos;
 		caustic += sin(dot((pos+vec2(moving*frameTimeCounter))/1.74/1.74 * exp2(0.8*i) + displ*2.0,vec2(0.5)))*exp2(-0.8*i);
 		weightSum += exp2(-i);

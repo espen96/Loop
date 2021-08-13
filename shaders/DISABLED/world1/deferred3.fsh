@@ -1,4 +1,4 @@
-#version 140
+#version 130
 #extension GL_EXT_gpu_shader4 : enable
 
 #define TAA
@@ -132,13 +132,11 @@ void main() {
 	vec2 texcoord = ((gl_FragCoord.xy))*texelSize;
 //	gl_FragData[1].rg =  moment(ivec2(floor(texcoord * vec2(viewWidth, viewHeight)))) ;
 	gl_FragData[0] = vec4(Min_Shadow_Filter_Radius, 0.1, 0.0, 0.0);
-	float z = texture
-(depthtex1,texcoord).x;
+	float z = texture(depthtex1,texcoord).x;
 	vec2 tempOffset=TAA_Offset;
 	if (z < 1.0){
 
-		vec4 data = texture
-(colortex1,texcoord);
+		vec4 data = texture(colortex1,texcoord);
 		vec4 dataUnpacked0 = vec4(decodeVec2(data.x),decodeVec2(data.y));
 		vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 		vec3 normal = mat3(gbufferModelViewInverse) * worldToView(decode(dataUnpacked0.yw));

@@ -44,8 +44,7 @@ if( lightmap.y <= 0.0) return vec3(0.0);
 //	float noise = bayer64(gl_FragCoord.xy);
 //		  noise = fract(frameCounter * (1.0 / 9.0) + noise);
 	float noise = blueNoise();
-	float Depth = texture
-(depthtex1, texcoord).x;
+	float Depth = texture(depthtex1, texcoord).x;
 	vec4 fragpos = gbufferProjectionInverse * (vec4((texcoord/RENDER_SCALE)-vec2(TAA_Offset*vec2(texelSize.x,texelSize.y))*0.5,Depth,1.0) * 2.0 - 1.0);
 	fragpos /= fragpos.w;
 	float blockDistance = fLength(fragpos);

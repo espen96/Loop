@@ -1,4 +1,4 @@
-#version 140
+#version 130
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
 
@@ -81,8 +81,7 @@ float densityAtPos(in vec3 pos)
 
 	vec2 coord =  uv / 512.0;
 
-	vec2 xy = texture
-(noisetex, coord).yx;
+	vec2 xy = texture(noisetex, coord).yx;
 
 	return mix(xy.r,xy.g, f.y);
 }
@@ -169,8 +168,7 @@ float waterCaustics(vec3 wPos, vec3 lightSource){
 	float weightSum = 0.0;
 	float radiance =  2.39996;
 	mat2 rotationMatrix  = mat2(vec2(cos(radiance),  -sin(radiance)),  vec2(sin(radiance),  cos(radiance)));
-	vec2 displ = texture
-(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
+	vec2 displ = texture(noisetex, pos*vec2(3.0,1.0)/96. + movement).bb*2.0-1.0;
 	pos = pos/2.+vec2(1.74*frameTimeCounter) ;
 	for (int i = 0; i < 3; i++){
 		pos = rotationMatrix * pos;
@@ -217,8 +215,7 @@ void main() {
 /* RENDERTARGETS: 0 */
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-		float z = texture
-(depthtex0,tc).x;
+		float z = texture(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
@@ -232,8 +229,7 @@ void main() {
 		vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-		float z = texture
-(depthtex0,tc).x;
+		float z = texture(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		vec3 vl = vec3(0.0);

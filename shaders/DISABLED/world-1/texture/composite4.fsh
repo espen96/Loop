@@ -1,4 +1,4 @@
-#version 140
+#version 130
 //Horizontal bilateral blur for volumetric fog + Forward rendered objects + Draw volumetric fog
 #extension GL_EXT_gpu_shader4 : enable
 
@@ -24,14 +24,11 @@ float ld(float depth) {
 
 void main() {
 /* DRAWBUFFERS:3 */
-  vec3 color = texture
-(colortex3,texcoord).rgb;
-  vec4 transparencies = texture
-(colortex2,texcoord);
+  vec3 color = texture(colortex3,texcoord).rgb;
+  vec4 transparencies = texture(colortex2,texcoord);
   color = color*(1.0-transparencies.a)+transparencies.rgb*10.;
 
-  vec4 vl = texture
-(colortex0,texcoord);
+  vec4 vl = texture(colortex0,texcoord);
 
   color *= vl.a;
   color += vl.rgb;

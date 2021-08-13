@@ -146,16 +146,11 @@ vec3 closestToCamera5taps(vec2 texcoord)
 	vec2 du = vec2(texelSize.x*2., 0.0);
 	vec2 dv = vec2(0.0, texelSize.y*2.);
 
-	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture
-(depthtex0, texcoord - dv - du).x);
-	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture
-(depthtex0, texcoord - dv + du).x);
-	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture
-(depthtex0, texcoord).x);
-	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture
-(depthtex0, texcoord + dv - du).x);
-	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture
-(depthtex0, texcoord + dv + du).x);
+	vec3 dtl = vec3(texcoord,0.) + vec3(-texelSize, texture(depthtex0, texcoord - dv - du).x);
+	vec3 dtr = vec3(texcoord,0.) +  vec3( texelSize.x, -texelSize.y, texture(depthtex0, texcoord - dv + du).x);
+	vec3 dmc = vec3(texcoord,0.) + vec3( 0.0, 0.0, texture(depthtex0, texcoord).x);
+	vec3 dbl = vec3(texcoord,0.) + vec3(-texelSize.x, texelSize.y, texture(depthtex0, texcoord + dv - du).x);
+	vec3 dbr = vec3(texcoord,0.) + vec3( texelSize.x, texelSize.y, texture(depthtex0, texcoord + dv + du).x);
 
 	vec3 dmin = dmc;
 	dmin = dmin.z > dtr.z? dtr : dmin;
@@ -177,13 +172,11 @@ vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 	vec2 fuv = fract( uv );
 	uv = iuv + fuv*fuv*fuv*(fuv*(fuv*6.0-15.0)+10.0);
 	uv = (uv - 0.5)/textureResolution;
-	return texture
-( tex, uv);
+	return texture( tex, uv);
 }
 //Due to low sample count we "tonemap" the inputs to preserve colors and smoother edges
 vec3 weightedSample(sampler2D colorTex, vec2 texcoord){
-	vec3 wsample = texture
-(colorTex,texcoord).rgb*exposureA;
+	vec3 wsample = texture(colorTex,texcoord).rgb*exposureA;
 	return wsample/(1.0+luma(wsample));
 
 }
@@ -226,26 +219,17 @@ vec4 SampleTextureCatmullRom(sampler2D tex, vec2 uv, vec2 texSize )
     texPos12 *= texelSize;
 
     vec4 result = vec4(0.0);
-    result += texture
-(tex, vec2(texPos0.x,  texPos0.y)) * w0.x * w0.y;
-    result += texture
-(tex, vec2(texPos12.x, texPos0.y)) * w12.x * w0.y;
-    result += texture
-(tex, vec2(texPos3.x,  texPos0.y)) * w3.x * w0.y;
+    result += texture(tex, vec2(texPos0.x,  texPos0.y)) * w0.x * w0.y;
+    result += texture(tex, vec2(texPos12.x, texPos0.y)) * w12.x * w0.y;
+    result += texture(tex, vec2(texPos3.x,  texPos0.y)) * w3.x * w0.y;
 
-    result += texture
-(tex, vec2(texPos0.x,  texPos12.y)) * w0.x * w12.y;
-    result += texture
-(tex, vec2(texPos12.x, texPos12.y)) * w12.x * w12.y;
-    result += texture
-(tex, vec2(texPos3.x,  texPos12.y)) * w3.x * w12.y;
+    result += texture(tex, vec2(texPos0.x,  texPos12.y)) * w0.x * w12.y;
+    result += texture(tex, vec2(texPos12.x, texPos12.y)) * w12.x * w12.y;
+    result += texture(tex, vec2(texPos3.x,  texPos12.y)) * w3.x * w12.y;
 
-    result += texture
-(tex, vec2(texPos0.x,  texPos3.y)) * w0.x * w3.y;
-    result += texture
-(tex, vec2(texPos12.x, texPos3.y)) * w12.x * w3.y;
-    result += texture
-(tex, vec2(texPos3.x,  texPos3.y)) * w3.x * w3.y;
+    result += texture(tex, vec2(texPos0.x,  texPos3.y)) * w0.x * w3.y;
+    result += texture(tex, vec2(texPos12.x, texPos3.y)) * w12.x * w3.y;
+    result += texture(tex, vec2(texPos3.x,  texPos3.y)) * w3.x * w3.y;
 
     return result;
 }
@@ -267,20 +251,15 @@ vec3 FastCatmulRom(sampler2D colorTex, vec2 texcoord, vec4 rtMetrics, float shar
 
     vec2 w12 = w1 + w2;
     vec2 tc12 = rtMetrics.xy * (centerPosition + w2 / w12);
-    vec3 centerColor = texture
-(colorTex, vec2(tc12.x, tc12.y)).rgb;
+    vec3 centerColor = texture(colorTex, vec2(tc12.x, tc12.y)).rgb;
 
     vec2 tc0 = rtMetrics.xy * (centerPosition - 1.0);
     vec2 tc3 = rtMetrics.xy * (centerPosition + 2.0);
-    vec4 color = vec4(texture
-(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
-                   vec4(texture
-(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
+    vec4 color = vec4(texture(colorTex, vec2(tc12.x, tc0.y )).rgb, 1.0) * (w12.x * w0.y ) +
+                   vec4(texture(colorTex, vec2(tc0.x,  tc12.y)).rgb, 1.0) * (w0.x  * w12.y) +
                    vec4(centerColor,                                      1.0) * (w12.x * w12.y) +
-                   vec4(texture
-(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
-                   vec4(texture
-(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
+                   vec4(texture(colorTex, vec2(tc3.x,  tc12.y)).rgb, 1.0) * (w3.x  * w12.y) +
+                   vec4(texture(colorTex, vec2(tc12.x, tc3.y )).rgb, 1.0) * (w12.x * w3.y );
 	return color.rgb/color.a;
 
 }
@@ -314,12 +293,10 @@ vec3 TAA_hq(){
 	#endif
 
 	#ifndef CLOSEST_VELOCITY
-	vec3 closestToCamera = vec3(texcoord,texture
-(depthtex1,adjTC).x);
+	vec3 closestToCamera = vec3(texcoord,texture(depthtex1,adjTC).x);
 	#endif
 
-	vec4 data = texture
-(colortex1,adjTC);
+	vec4 data = texture(colortex1,adjTC);
 	vec4 dataUnpacked1 = vec4(decodeVec2(data.z),decodeVec2(data.w));
 	bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 
@@ -339,29 +316,18 @@ vec3 TAA_hq(){
 	#ifdef TAA_UPSCALING
 	vec3 albedoCurrent0 = smoothfilter(colortex3, adjTC + offsets[framemod8]*texelSize*0.5).xyz;
 	// Interpolating neighboorhood clampling boundaries between pixels
-	vec3 cMax = texture
-(colortex0, adjTC).rgb;
-	vec3 cMin = texture
-(colortex6, adjTC).rgb;
+	vec3 cMax = texture(colortex0, adjTC).rgb;
+	vec3 cMin = texture(colortex6, adjTC).rgb;
 	#else
-	vec3 albedoCurrent0 = texture
-(colortex3, adjTC).rgb;
-	vec3 albedoCurrent1 = texture
-(colortex3, adjTC + vec2(texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent2 = texture
-(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent3 = texture
-(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
-	vec3 albedoCurrent4 = texture
-(colortex3, adjTC + vec2(-texelSize.x,texelSize.y)).rgb;
-	vec3 albedoCurrent5 = texture
-(colortex3, adjTC + vec2(0.0,texelSize.y)).rgb;
-	vec3 albedoCurrent6 = texture
-(colortex3, adjTC + vec2(0.0,-texelSize.y)).rgb;
-	vec3 albedoCurrent7 = texture
-(colortex3, adjTC + vec2(-texelSize.x,0.0)).rgb;
-	vec3 albedoCurrent8 = texture
-(colortex3, adjTC + vec2(texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent0 = texture(colortex3, adjTC).rgb;
+	vec3 albedoCurrent1 = texture(colortex3, adjTC + vec2(texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent2 = texture(colortex3, adjTC + vec2(texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent3 = texture(colortex3, adjTC + vec2(-texelSize.x,-texelSize.y)).rgb;
+	vec3 albedoCurrent4 = texture(colortex3, adjTC + vec2(-texelSize.x,texelSize.y)).rgb;
+	vec3 albedoCurrent5 = texture(colortex3, adjTC + vec2(0.0,texelSize.y)).rgb;
+	vec3 albedoCurrent6 = texture(colortex3, adjTC + vec2(0.0,-texelSize.y)).rgb;
+	vec3 albedoCurrent7 = texture(colortex3, adjTC + vec2(-texelSize.x,0.0)).rgb;
+	vec3 albedoCurrent8 = texture(colortex3, adjTC + vec2(texelSize.x,0.0)).rgb;
 	//Assuming the history color is a blend of the 3x3 neighborhood, we clamp the history to the min and max of each channel in the 3x3 neighborhood
 	vec3 cMax = max(max(max(albedoCurrent0,albedoCurrent1),albedoCurrent2),max(albedoCurrent3,max(albedoCurrent4,max(albedoCurrent5,max(albedoCurrent6,max(albedoCurrent7,albedoCurrent8))))));
 	vec3 cMin = min(min(min(albedoCurrent0,albedoCurrent1),albedoCurrent2),min(albedoCurrent3,min(albedoCurrent4,min(albedoCurrent5,min(albedoCurrent6,min(albedoCurrent7,albedoCurrent8))))));
@@ -383,8 +349,7 @@ vec3 TAA_hq(){
 
 	#ifdef NO_CLIP
 	if (length(velocity) > 1e-6) return vec3(albedoCurrent0);
-	vec3 albedoPrev = texture
-(colortex5, previousPosition.xy).xyz;
+	vec3 albedoPrev = texture(colortex5, previousPosition.xy).xyz;
 	vec3 supersampled =  mix(albedoPrev,albedoCurrent0,clamp(0.05,0.0,1.0));
 	#endif
 
@@ -406,8 +371,7 @@ void main() {
 
 
 	#ifdef DOF
-	float z = ld(texture
-(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
+	float z = ld(texture(depthtex0, texcoord.st*RENDER_SCALE).r)*far;
 		#if DOF_MODE == 0
 			float focus = rodExposureDepth.y*far;
 		#endif	
@@ -434,8 +398,7 @@ void main() {
 	#endif
  	#ifndef TAA
 	
-	vec3 color = clamp(fp10Dither(texture
-(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);
+	vec3 color = clamp(fp10Dither(texture(colortex3,texcoord).rgb,triangularize(interleaved_gradientNoise())),0.,65000.);
 
 	gl_FragData[0].rgb = color;
 

@@ -1,4 +1,4 @@
-#version 140
+#version 130
 
 /*
 !! DO NOT REMOVE !!
@@ -45,8 +45,7 @@ vec3 toLinear(vec3 sRGB){
 uniform sampler2D texture;
 void main() {
 if(renderStage != 5) discard;
-	gl_FragData[0] = texture
-(texture,texcoord.xy)*color;
+	gl_FragData[0] = texture(texture,texcoord.xy)*color;
 	gl_FragData[0].rgb = gl_FragData[0].rgb*gl_FragData[0].a;
 
 }

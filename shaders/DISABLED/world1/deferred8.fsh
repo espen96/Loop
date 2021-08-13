@@ -1,4 +1,4 @@
-#version 140
+#version 130
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
@@ -266,8 +266,7 @@ vec3 toScreenSpaceVector(vec3 p) {
 vec4 computeVariance2(sampler2D tex, ivec2 pos) {
 
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture
-(depthtex1, texcoord.st).x - 1.0, 1.0);
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture(depthtex1, texcoord.st).x - 1.0, 1.0);
 
 		vec4 fragposition = gbufferProjectionInverse * currentPosition;
 		fragposition = gbufferModelViewInverse * fragposition;
@@ -569,8 +568,7 @@ void main() {
 
 		gl_FragData[4] = trpData;
 		vec3 normal = mat3(gbufferModelViewInverse) * normalorg;
-  		gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture
-(depthtex0,texcoord).r));		
+  		gl_FragData[3].rgba = vec4(normalorg.rgb,ld(texture(depthtex0,texcoord).r));		
 
 		bool hand = abs(dataUnpacked1.w-0.75) <0.01;
 
@@ -626,12 +624,10 @@ void main() {
 		ambientLight += ambientB*mix(clamp(ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 		ambientLight += ambientF*mix(clamp(-ambientCoefs.z,0.,1.), 1.0/6.0, sssAmount);
 
-		vec3 custom_lightmap = texture
-(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
+		vec3 custom_lightmap = texture(colortex4,(lightmap*15.0+0.5+vec2(0.0,19.))*texelSize).rgb*10./150./3.;
 		float emitting = 0.0;
 		
-		float labemissive = texture
-(colortex10, texcoord).a;
+		float labemissive = texture(colortex10, texcoord).a;
 		if (emissive || (hand && heldBlockLightValue > 0.1)){
 
 

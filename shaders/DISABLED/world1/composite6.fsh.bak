@@ -1,4 +1,4 @@
-#version 140
+#version 130
 //Volumetric fog rendering
 #extension GL_EXT_gpu_shader4 : enable
 
@@ -86,8 +86,7 @@ float densityAtPos(in vec3 pos)
 
 	vec2 coord =  uv / 512.0;
 
-	vec2 xy = texture
-(noisetex, coord).yx;
+	vec2 xy = texture(noisetex, coord).yx;
 
 	return mix(xy.r,xy.g, f.y);
 }
@@ -204,8 +203,7 @@ void main() {
 /* DRAWBUFFERS:0 */
 	if (isEyeInWater == 0){
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-		float z = texture
-(depthtex0,tc).x;
+		float z = texture(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		mat2x3 vl = getVolumetricRays(noise,fragpos);
@@ -219,8 +217,7 @@ void main() {
 		vec3 totEpsilon = dirtEpsilon*dirtAmount + waterEpsilon;
 		vec3 scatterCoef = dirtAmount * vec3(Dirt_Scatter_R, Dirt_Scatter_G, Dirt_Scatter_B);
 		vec2 tc = floor(gl_FragCoord.xy)/VL_RENDER_RESOLUTION*texelSize+0.5*texelSize;
-		float z = texture
-(depthtex0,tc).x;
+		float z = texture(depthtex0,tc).x;
 		vec3 fragpos = toScreenSpace(vec3(tc/RENDER_SCALE,z));
 		float noise=blueNoise();
 		vec3 vl = vec3(0.0);

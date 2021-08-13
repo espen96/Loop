@@ -12,8 +12,7 @@ vec2 sphereToCarte(vec3 dir) {
 }
 vec3 skyFromTex(vec3 pos,sampler2D sampler){
 	vec2 p = sphereToCarte(pos);
-	return texture
-(sampler,p*texelSize*256.+vec2(18.5,1.5)*texelSize).rgb;
+	return texture(sampler,p*texelSize*256.+vec2(18.5,1.5)*texelSize).rgb;
 }
 float w0(float a)
 {
@@ -55,8 +54,7 @@ float h1(float a)
     return 1.0 + w3(a) / (w2(a) + w3(a));
 }
 
-vec4 texture
-_bicubic(sampler2D tex, vec2 uv)
+vec4 texture_bicubic(sampler2D tex, vec2 uv)
 {
 	vec4 texelSize = vec4(texelSize,1.0/texelSize);
 	uv = uv*texelSize.zw;
@@ -75,17 +73,12 @@ _bicubic(sampler2D tex, vec2 uv)
 	vec2 p2 = (vec2(iuv.x + h0x, iuv.y + h1y) - 0.5) * texelSize.xy;
 	vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - 0.5) * texelSize.xy;
 
-    return g0(fuv.y) * (g0x * texture
-(tex, p0)  +
-                        g1x * texture
-(tex, p1)) +
-           g1(fuv.y) * (g0x * texture
-(tex, p2)  +
-                        g1x * texture
-(tex, p3));
+    return g0(fuv.y) * (g0x * texture(tex, p0)  +
+                        g1x * texture(tex, p1)) +
+           g1(fuv.y) * (g0x * texture(tex, p2)  +
+                        g1x * texture(tex, p3));
 }
 vec4 skyCloudsFromTex(vec3 pos,sampler2D sampler){
 	vec2 p = sphereToCarte(pos);
-	return texture
-(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
+	return texture(sampler,p*texelSize*256.+vec2(18.5+257.,1.5)*texelSize);
 }

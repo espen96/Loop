@@ -1,4 +1,4 @@
-#version 140
+#version 130
 #extension GL_EXT_gpu_shader4 : enable
 #define EXPOSURE_MULTIPLIER 1.0 //[0.25 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 2.0 3.0 4.0]
 #define AUTO_EXPOSURE		//Highly recommended to keep it on unless you want to take screenshots
@@ -147,8 +147,7 @@ void main() {
 	for (int i = 0; i < 5; i++){
 		for (int j = 0; j < 5; j++){
 			vec2 tc = 0.5 + vec2(i-2,j-2)/2.0 * 0.35;
-			v[i+j*5] = luma(texture
-(colortex6,tc/128. * resScale+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb);
+			v[i+j*5] = luma(texture(colortex6,tc/128. * resScale+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb);
 		}
 	}
 	t25(0, 1,			3, 4,		2, 4,		2, 3,		6, 7);
@@ -195,8 +194,7 @@ void main() {
 
 	exposureF = rad*rad;
 	exposure=exposureF*EXPOSURE_MULTIPLIER;
-	float currCenterDepth = ld(texture
-(depthtex0, vec2(0.5)*RENDER_SCALE).r);
+	float currCenterDepth = ld(texture(depthtex0, vec2(0.5)*RENDER_SCALE).r);
 	centerDepth = mix(sqrt(texelFetch2D(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
 	centerDepth = centerDepth * centerDepth * 65000.0;
 

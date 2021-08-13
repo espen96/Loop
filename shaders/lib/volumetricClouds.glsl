@@ -76,8 +76,7 @@ vec4 smoothfilter(in sampler2D tex, in vec2 uv)
 	vec2 fuv = fract( uv );
 	uv = iuv + (fuv*fuv)*(3.0-2.0*fuv);
 	uv = uv/512.0 - 0.5/512.0;
-	return texture
-( tex, uv);
+	return texture( tex, uv);
 }
 
 
@@ -99,8 +98,7 @@ float densityAtPos(in vec3 pos)
 
 	vec2 coord =  uv / 512.0;
 	//The y channel has an offset to avoid using two textures fetches
-	vec2 xy = texture
-(noisetex, coord).yx;
+	vec2 xy = texture(noisetex, coord).yx;
 
 	return mix(xy.r,xy.g, f.y);
 }
@@ -110,8 +108,7 @@ float densityAtPos(in vec3 pos)
 float cloudCov(in vec3 pos,vec3 samplePos){
 	float mult = max(pos.y-2000.0,0.0)/2000.0;
 	float mult2 = max(-pos.y+2000.0,0.0)/500.0;
-	float coverage = max((texture
-(noisetex,(samplePos.xz + (wind*100) +sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength) + ((sin(0.2 * frameTimeCounter*0.05)+ - cos(0.4 * frameTimeCounter*0.05))*cloudCoverage)/2.5,0.0);
+	float coverage = max((texture(noisetex,(samplePos.xz + (wind*100) +sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength) + ((sin(0.2 * frameTimeCounter*0.05)+ - cos(0.4 * frameTimeCounter*0.05))*cloudCoverage)/2.5,0.0);
 	float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
 	return max(cloud, 0.0);
 }
@@ -143,8 +140,7 @@ float cloudVol(in vec3 pos,in vec3 samplePos,in float cov, in int LoD){
 		float mult2 = max(-pos.y+2000.0,0.0)/500.0;
 		float mult3 = (pos.y-1500)/2500.0+rainStrength*0.4;
 		vec3 samplePos = pos*vec3(1.0,1./32.,1.0)/4+cloudSpeed2;
-		float coverage = (texture
-(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength)-0.1;
+		float coverage = (texture(noisetex,(samplePos.xz+sin(dot(samplePos.xz, vec2(0.5))/1000.)*600)/15000.).r+0.9*rainStrength+0.1)/(1.1+0.9*rainStrength)-0.1;
 		float cloud = coverage*coverage*3.0 - mult*mult*mult*3.0 - mult2*mult2*0.9;
 		return max(cloud, 0.0);
 	}

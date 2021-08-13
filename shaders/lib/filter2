@@ -4,8 +4,7 @@
 vec4 computeVariance2(sampler2D tex, ivec2 pos) {
 
   vec2 texcoord = gl_FragCoord.xy*texelSize;
-  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture
-(depthtex1, texcoord.st).x - 1.0, 1.0);
+  		vec4 currentPosition = vec4(texcoord.x * 2.0 - 1.0, texcoord.y * 2.0 - 1.0, 2.0 * texture(depthtex1, texcoord.st).x - 1.0, 1.0);
 
 		vec4 fragposition = gbufferProjectionInverse * currentPosition;
 		fragposition = gbufferModelViewInverse * fragposition;

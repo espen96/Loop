@@ -195,7 +195,7 @@ float rayTraceShadow(vec3 dir,vec3 position,float dither){
 
 
 
-    vec3 stepv = direction *3. * clamp(MC_RENDER_QUALITY,1.,2.0)*vec3(RENDER_SCALE,1.0);
+    vec3 stepv = direction *3. * 1.0*vec3(RENDER_SCALE,1.0);
 
 	vec3 spos = clipPosition*vec3(RENDER_SCALE,1.0)+vec3(TAA_Offset*vec2(texelSize.x,texelSize.y)*0.5,0.0)+stepv*dither;
 
@@ -636,7 +636,7 @@ void main() {
 
 
 			#ifdef SHADOWS_ON	
-				float isShadow = texture(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
+				float isShadow = texture(shadow,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight)));
 
 			#else
 				float isShadow = 0;
@@ -645,9 +645,9 @@ void main() {
 				//	float isShadow =texture(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
 
 					#ifdef SHADOWS_ON	
-						float shadow1    = texture(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-						float shadow0    = texture(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).x;
-							 shadowCol   = texture(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))).xyzw;
+						float shadow1    = texture(shadowtex1,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight)));
+						float shadow0    = texture(shadowtex0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight)));
+							 shadowCol   = vec4(texture(shadowcolor0,vec3(projectedShadowPosition + vec3(rdMul*offsetS,-diffthresh*weight))));
 	
 
 						float transparentshadow = (shadow1-shadow0);	 

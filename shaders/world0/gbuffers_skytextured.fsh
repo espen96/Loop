@@ -48,7 +48,7 @@ out vec4 final0;
 uniform sampler2D texture;
 void main() {
 if(renderStage != 5) discard;
-	final0 = texture(texture,texcoord.xy)*color;
+	final0 = textureLod(texture,texcoord.xy,0)*color;
 	final0.rgb = final0.rgb*final0.a;
 
 }

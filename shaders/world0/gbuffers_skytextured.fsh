@@ -42,10 +42,13 @@ vec3 toLinear(vec3 sRGB){
 // 22 World border
 // 23 Translucent handheld objects
 
+out vec4 final0;
+
+
 uniform sampler2D texture;
 void main() {
 if(renderStage != 5) discard;
-	gl_FragData[0] = texture(texture,texcoord.xy)*color;
-	gl_FragData[0].rgb = gl_FragData[0].rgb*gl_FragData[0].a;
+	final0 = texture(texture,texcoord.xy)*color;
+	final0.rgb = final0.rgb*final0.a;
 
 }

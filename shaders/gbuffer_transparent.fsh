@@ -162,10 +162,10 @@ float shadow2D_bicubic(sampler2DShadow tex, vec3 sc)
 	vec2 p2 = vec2(iuv.x + h0x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
 	vec2 p3 = vec2(iuv.x + h1x, iuv.y + h1y)/shadowMapResolution - 0.5/shadowMapResolution;
 
-    return g0(fuv.y) * (g0x * shadow2D(tex, vec3(p0,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p1,sc.z)).x) +
-           g1(fuv.y) * (g0x * shadow2D(tex, vec3(p2,sc.z)).x  +
-                        g1x * shadow2D(tex, vec3(p3,sc.z)).x);
+    return g0(fuv.y) * (g0x * texture(tex, vec3(p0,sc.z))  +
+                        g1x * texture(tex, vec3(p1,sc.z))) +
+           g1(fuv.y) * (g0x * texture(tex, vec3(p2,sc.z))  +
+                        g1x * texture(tex, vec3(p3,sc.z)));
 }
 float luma(vec3 color) {
 	return dot(color,vec3(0.299, 0.587, 0.114));

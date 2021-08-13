@@ -98,7 +98,7 @@ mat2x3 getVolumetricRays(float dither,vec3 fragpos) {
 			if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 				pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
 			#ifdef SHADOWS_ON	
-				sh = shadow2D( shadow, pos).x;
+				sh = texture( shadow, pos).x;
 			#else
 				sh = 0;	
 			#endif	

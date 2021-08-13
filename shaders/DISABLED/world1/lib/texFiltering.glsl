@@ -15,5 +15,5 @@ float shadowsmoothfilter(in sampler2DShadow tex, in vec3 uv,in float textureReso
 	vec2 fuv = fract( uv.xy );
 	uv.xy = iuv + (fuv*fuv)*(3.0-2.0*fuv); 
 	uv.xy = uv.xy/textureResolution - 0.5/textureResolution;
-	return shadow2D( tex, uv).x;
+	return texture( tex, uv).x;
 }

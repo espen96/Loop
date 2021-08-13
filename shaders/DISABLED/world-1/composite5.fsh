@@ -307,7 +307,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 
 
 	#ifdef SHADOWS_ON
-				sh =  shadow2D( shadow, pos).x;
+				sh =  texture( shadow, pos).x;
 		#else 
 				sh =  0;
 	#endif

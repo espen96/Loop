@@ -1,4 +1,9 @@
 #version 130
+
+out vec4 final0;
+
+
+
 //Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
@@ -306,7 +311,7 @@ void waterVolumetrics(inout vec3 inColor, vec3 rayStart, vec3 rayEnd, float estE
 
 
 	#ifdef SHADOWS_ON
-				sh =  shadow2D( shadow, pos).x;
+				sh =  texture( shadow, pos);
 		#else 
 				sh =  0;
 	#endif

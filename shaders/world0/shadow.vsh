@@ -35,8 +35,8 @@ uniform vec3 shadowViewDir;
 uniform vec3 shadowCamera;
 uniform vec3 shadowLightVec;
 uniform float shadowMaxProj;
-attribute vec4 mc_Entity;
-attribute vec4 mc_midTexCoord;
+in vec4 mc_Entity;
+in vec4 mc_midTexCoord;
 
 const float PI48 = 150.796447372*WAVY_SPEED;
 float pi2wt = PI48*frameTimeCounter;

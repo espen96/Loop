@@ -50,7 +50,7 @@ out float mcentity;
 #ifdef POM
 #define MC_NORMAL_MAP
 #endif
-//attribute vec3 at_velocity;
+//in vec3 at_velocity;
 out vec3 velocity;
 /*
 !! DO NOT REMOVE !!
@@ -71,16 +71,16 @@ out vec4 vtexcoord;
 
 #ifdef MC_NORMAL_MAP
 out vec4 tangent;
-attribute vec4 at_tangent;
+in vec4 at_tangent;
 #endif
 
 uniform float frameTimeCounter;
 const float PI48 = 150.796447372*WAVY_SPEED;
 float pi2wt = PI48*frameTimeCounter;
-attribute vec4 mc_Entity;
+in vec4 mc_Entity;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
-attribute vec4 mc_midTexCoord;
+in vec4 mc_midTexCoord;
 uniform vec3 cameraPosition;
 out vec2 taajitter;
 uniform vec2 texelSize;

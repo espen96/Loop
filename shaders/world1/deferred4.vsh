@@ -14,7 +14,7 @@ flat out float tempOffsets;
 flat out vec2 TAA_Offset;
 flat out vec3 zMults;
 flat out vec3 refractedSunVec;
-//attribute vec3 at_velocity;   
+//in vec3 at_velocity;   
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;

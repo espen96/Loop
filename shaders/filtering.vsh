@@ -24,7 +24,6 @@ flat out vec4 lightCol;
 flat out float tempOffsets;
 flat out vec2 TAA_Offset;
 flat out vec3 zMults;
-attribute vec4 mc_Entity;
 uniform sampler2D colortex4;
 uniform float far;
 uniform float near;

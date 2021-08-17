@@ -1,18 +1,6 @@
 
 #define PCF
 #define gbuffer
-// Compatibility
-#extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
 
 
      uniform int renderStage; 

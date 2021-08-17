@@ -1,4 +1,4 @@
-//attribute vec3 at_velocity;   
+//in vec3 at_velocity;   
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;

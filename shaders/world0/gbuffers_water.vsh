@@ -1,2 +1,4 @@
 #version 150
-#include "/gbuffers_water.vsh"
+#define water
+#include "/lib/res_params.glsl"
+#include "/gbuffer_vertex.vsh"

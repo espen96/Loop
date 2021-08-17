@@ -11,7 +11,7 @@
 #define FOG_TOD_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of time of day on fog amount
 #define FOG_RAIN_MULTIPLIER 1.0 //[0.0 0.2 0.4 0.6 0.8 1.0 1.25 1.5 1.75 2.0 3.0 4.0 5.0] //Influence of rain on fog amount
 #include "/lib/res_params.glsl"
-//attribute vec3 at_velocity;   
+//in vec3 at_velocity;   
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;

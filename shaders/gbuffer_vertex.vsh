@@ -7,7 +7,7 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 out vec3 velocity;
-//attribute vec3 at_velocity;   
+//in vec3 at_velocity;   
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;
@@ -26,8 +26,8 @@ out vec4 lmtexcoord;
 out vec4 color;
 out vec4 normalMat;
 out float mcentity;
-attribute vec4 mc_Entity;
-attribute vec4 mc_midTexCoord;
+in vec4 mc_Entity;
+in vec4 mc_midTexCoord;
 uniform int entityId; 
 #ifdef water
 out vec3 binormal;
@@ -37,13 +37,13 @@ out float lumaboost;
 out vec3 viewVector;
 
 
-attribute vec4 at_tangent;
+in vec4 at_tangent;
 uniform mat4 gbufferModelViewInverse;
 #else
 
 #ifdef MC_NORMAL_MAP
 out vec4 tangent;
-attribute vec4 at_tangent;
+in vec4 at_tangent;
 #endif
 #endif
 uniform int blockEntityId;

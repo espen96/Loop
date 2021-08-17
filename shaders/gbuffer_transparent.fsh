@@ -192,7 +192,7 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 	vec2 lm = lmtexcoord.zw;
 	vec3 normal = normalMat.xyz;
-	vec3 normalTex = textureLod(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = texture(normals, lmtexcoord.xy).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	
@@ -270,7 +270,7 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 				vec2 offsetS = vec2(cos( noise*3.14159265359*2.0 ),sin( noise*3.14159265359*2.0 ));
 
 		
-				float shading = textureLod(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)),0);
+				float shading = texture(shadow,vec3(projectedShadowPosition + vec3(0.0,0.0,-diffthresh*1.2)));
 		
 	
 				direct *= shading;
@@ -281,7 +281,7 @@ if(renderStage == 17)gl_FragData[3].b = 0.3;
 
 		direct *= diffuseSun;
 
-		vec3 ambient = textureLod(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize,0).rgb;
+		vec3 ambient = texture(gaux1,(lmtexcoord.zw*15.+0.5)*texelSize).rgb;
 
 #ifndef textured		
 		vec3 diffuseLight = direct + ambient;

@@ -405,10 +405,10 @@ vec4 data0 = vec4(0.0);
 	
 	#ifdef block
 	
-  	 data0 = textureLod(texture, lmtexcoord.xy,0)*color;
+  	 data0 = texture(texture, lmtexcoord.xy)*color;
 	 
 	 #else
-	   	 data0 = textureLod(texture, lmtexcoord.xy,0)*color;
+	   	 data0 = texture(texture, lmtexcoord.xy)*color;
 	#endif	 
 	 
 	 
@@ -436,7 +436,7 @@ vec4 data0 = vec4(0.0);
 	
 	
 //	based on code from Christian Schüler	
-	vec3 normalTex = textureLod(normals, lmtexcoord.xy , 0).rgb;
+	vec3 normalTex = texture(normals, lmtexcoord.xy).rgb;
 	lm *= normalTex.b;
     normalTex = normalTex * 255./127. - 128./127.;
 	

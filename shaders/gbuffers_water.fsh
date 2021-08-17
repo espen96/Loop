@@ -195,7 +195,7 @@ void main() {
 		}
 
 
-			vec3 normalTex = textureLod(normals, lmtexcoord.xy,0).rgb;
+			vec3 normalTex = texture(normals, lmtexcoord.xy).rgb;
 
 			vec3 normal = normalMat.xyz;
 			vec3 normal2 = normalMat.xyz;
@@ -323,7 +323,7 @@ void main() {
 				previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 				if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.x < 1.0) {
 					reflection.a = 1.0;
-					reflection.rgb = textureLod(gaux2,previousPosition.xy,0).rgb;
+					reflection.rgb = texture(gaux2,previousPosition.xy).rgb;
 				}
 			}
 			#endif

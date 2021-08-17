@@ -19,7 +19,7 @@ vec3 toLinear(vec3 sRGB){
 uniform sampler2D texture;
 void main() {
 
-	gl_FragData[0] = textureLod(texture,texcoord.xy,0)*color;
+	gl_FragData[0] = texture(texture,texcoord.xy)*color;
 	gl_FragData[0].rgb = gl_FragData[0].rgb*gl_FragData[0].a;
 
 }

@@ -1,4 +1,15 @@
-
+// Compatibility
+#extension GL_EXT_gpu_shader4 : enable
+in vec3 vaPosition;
+in vec4 vaColor;
+in vec2 vaUV0;
+in ivec2 vaUV2;
+in vec3 vaNormal;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 textureMatrix = mat4(1.0);
+uniform mat3 normalMatrix;
+uniform vec3 chunkOffset;
 out vec2 texcoord;
 
 flat out vec3 WsunVec;
@@ -33,38 +44,22 @@ uniform int framemod8;
 #include "/lib/res_params.glsl"
 void main() {
 
+	zMults = vec3(1.0/(far * near),far+near,far-near);
+	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
+//	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
+	#ifdef TAA_UPSCALING
+		gl_Position.xy = (gl_Position.xy*0.5+0.5)*RENDER_SCALE*2.0-1.0;
+	#endif
 
 	tempOffsets = HaltonSeq2(frameCounter%10000);
 	TAA_Offset = offsets[frameCounter%8];
 	#ifndef TAA
 	TAA_Offset = vec2(0.0);
 	#endif
-
-	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
-	#ifdef TAA_UPSCALING
-		gl_Position.xy = (gl_Position.xy+tempOffsets*0.5+0.5)*RENDER_SCALE*2.0-1.0;
-	#endif
-	#ifdef TAA
-	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
-	#endif	
-	texcoord = vaUV0.xy;
+    texcoord = vaUV0.xy;
 
 
 
-	vec3 sc = texelFetch2D(colortex4,ivec2(6,37),0).rgb;
-	ambientUp = texelFetch2D(colortex4,ivec2(0,37),0).rgb;
-	ambientDown = texelFetch2D(colortex4,ivec2(1,37),0).rgb;
-	ambientLeft = texelFetch2D(colortex4,ivec2(2,37),0).rgb;
-	ambientRight = texelFetch2D(colortex4,ivec2(3,37),0).rgb;
-	ambientB = texelFetch2D(colortex4,ivec2(4,37),0).rgb;
-	ambientF = texelFetch2D(colortex4,ivec2(5,37),0).rgb;
-
-	lightCol.a = float(sunElevation > 1e-5)*2-1.;
-	lightCol.rgb = sc;
-
-	WsunVec =  lightCol.a*normalize(mat3(gbufferModelViewInverse) *  sunPosition);
-	zMults = vec3((far * near)*2.0,far+near,far-near);
-	refractedSunVec = refract(WsunVec, -vec3(0.0,1.0,0.0), 1.0/1.33333);
-
+	
 
 }

@@ -986,12 +986,11 @@ void main() {
 
 //vec3 color22 = 	gl_FragData[0].rgb;
 //PromoOutline(  color22,  depthtex0);
-//gl_FragData[0].rgb =  mix(color22,gl_FragData[0].rgb,ld(z));
+
 
 
 	
 	}	
-
 
 /* RENDERTARGETS: 3,14 */
 }

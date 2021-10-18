@@ -98,7 +98,7 @@ uniform sampler2D texture;
 uniform sampler2D gaux1;
 uniform sampler2D depthtex1;
 uniform float frameTimeCounter;
-uniform float frameCounter;
+uniform int frameCounter;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;

@@ -1,5 +1,5 @@
 
-//Merge and upsample the blurs into a 1/4 res bloom buffer
+// Merge and upsample the blurs into a 1/4 res bloom buffer
 #include "/lib/res_params.glsl"
 uniform sampler2D colortex3;
 uniform sampler2D colortex6;
@@ -10,22 +10,22 @@ uniform float viewHeight;
 
 float w0(float a)
 {
-    return (1.0/6.0)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
+    return (1.0 / 6.0) * (a * (a * (-a + 3.0) - 3.0) + 1.0);
 }
 
 float w1(float a)
 {
-    return (1.0/6.0)*(a*a*(3.0*a - 6.0) + 4.0);
+    return (1.0 / 6.0) * (a * a * (3.0 * a - 6.0) + 4.0);
 }
 
 float w2(float a)
 {
-    return (1.0/6.0)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
+    return (1.0 / 6.0) * (a * (a * (-3.0 * a + 3.0) + 3.0) + 1.0);
 }
 
 float w3(float a)
 {
-    return (1.0/6.0)*(a*a*a);
+    return (1.0 / 6.0) * (a * a * a);
 }
 
 float g0(float a)
@@ -50,10 +50,10 @@ float h1(float a)
 
 vec4 texture_bicubic(sampler2D tex, vec2 uv)
 {
-	vec4 texelSize = vec4(texelSize,1.0/texelSize);
-	uv = uv*texelSize.zw;
-	vec2 iuv = floor( uv );
-	vec2 fuv = fract( uv );
+    vec4 texelSize = vec4(texelSize, 1.0 / texelSize);
+    uv = uv * texelSize.zw;
+    vec2 iuv = floor(uv);
+    vec2 fuv = fract(uv);
 
     float g0x = g0(fuv.x);
     float g1x = g1(fuv.x);
@@ -62,15 +62,13 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
     float h0y = h0(fuv.y);
     float h1y = h1(fuv.y);
 
-	vec2 p0 = (vec2(iuv.x + h0x, iuv.y + h0y) - 0.5) * texelSize.xy;
-	vec2 p1 = (vec2(iuv.x + h1x, iuv.y + h0y) - 0.5) * texelSize.xy;
-	vec2 p2 = (vec2(iuv.x + h0x, iuv.y + h1y) - 0.5) * texelSize.xy;
-	vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - 0.5) * texelSize.xy;
+    vec2 p0 = (vec2(iuv.x + h0x, iuv.y + h0y) - 0.5) * texelSize.xy;
+    vec2 p1 = (vec2(iuv.x + h1x, iuv.y + h0y) - 0.5) * texelSize.xy;
+    vec2 p2 = (vec2(iuv.x + h0x, iuv.y + h1y) - 0.5) * texelSize.xy;
+    vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - 0.5) * texelSize.xy;
 
-    return g0(fuv.y) * (g0x * texture(tex, p0)  +
-                        g1x * texture(tex, p1)) +
-           g1(fuv.y) * (g0x * texture(tex, p2)  +
-                        g1x * texture(tex, p3));
+    return g0(fuv.y) * (g0x * texture(tex, p0) + g1x * texture(tex, p1)) +
+           g1(fuv.y) * (g0x * texture(tex, p2) + g1x * texture(tex, p3));
 }
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -79,25 +77,31 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 
-void main() {
-/* DRAWBUFFERS:3 */
-vec2 resScale = vec2(1920.,1080.)/(max(vec2(viewWidth,viewHeight),vec2(1920.0,1080.))/BLOOM_QUALITY);
-vec2 texcoord = ((gl_FragCoord.xy)*2.+0.5)*texelSize;
-vec3 bloom = texture_bicubic(colortex3,texcoord/2.0).rgb;	//1/4 res
+void main()
+{
+    /* DRAWBUFFERS:3 */
+    vec2 resScale = vec2(1920., 1080.) / (max(vec2(viewWidth, viewHeight), vec2(1920.0, 1080.)) / BLOOM_QUALITY);
+    vec2 texcoord = ((gl_FragCoord.xy) * 2. + 0.5) * texelSize;
+    vec3 bloom = texture_bicubic(colortex3, texcoord / 2.0).rgb; // 1/4 res
 
-bloom += texture_bicubic(colortex6,texcoord/4.).rgb; //1/8 res
+    bloom += texture_bicubic(colortex6, texcoord / 4.).rgb; // 1/8 res
 
-bloom += texture_bicubic(colortex6,texcoord/8.+vec2(0.25*resScale.x+2.5*texelSize.x,.0)).rgb;  //1/16 res
+    bloom += texture_bicubic(colortex6, texcoord / 8. + vec2(0.25 * resScale.x + 2.5 * texelSize.x, .0)).rgb; // 1/16
+                                                                                                              // res
 
-bloom += texture_bicubic(colortex6,texcoord/16.+vec2(0.375*resScale.x+4.5*texelSize.x,.0)).rgb; //1/32 res
+    bloom +=
+        texture_bicubic(colortex6, texcoord / 16. + vec2(0.375 * resScale.x + 4.5 * texelSize.x, .0)).rgb; // 1/32 res
 
-bloom += texture_bicubic(colortex6,texcoord/32.+vec2(0.4375*resScale.x+6.5*texelSize.x,.0)).rgb*1.0; //1/64 res
-bloom += texture_bicubic(colortex6,texcoord/64.+vec2(0.46875*resScale.x+8.5*texelSize.x,.0)).rgb*1.0; //1/128 res
-bloom += texture_bicubic(colortex6,texcoord/128.+vec2(0.484375*resScale.x+10.5*texelSize.x,.0)).rgb*1.0; //1/256 res
+    bloom += texture_bicubic(colortex6, texcoord / 32. + vec2(0.4375 * resScale.x + 6.5 * texelSize.x, .0)).rgb *
+             1.0; // 1/64 res
+    bloom += texture_bicubic(colortex6, texcoord / 64. + vec2(0.46875 * resScale.x + 8.5 * texelSize.x, .0)).rgb *
+             1.0; // 1/128 res
+    bloom += texture_bicubic(colortex6, texcoord / 128. + vec2(0.484375 * resScale.x + 10.5 * texelSize.x, .0)).rgb *
+             1.0; // 1/256 res
 
-//bloom = texture_bicubic(colortex6,texcoord).rgb*6.; //1/8 res
+    // bloom = texture_bicubic(colortex6,texcoord).rgb*6.; //1/8 res
 
-gl_FragData[0].rgb = bloom*2.;
+    gl_FragData[0].rgb = bloom * 2.;
 
-gl_FragData[0].rgb = clamp(gl_FragData[0].rgb,0.0,65000.);
+    gl_FragData[0].rgb = clamp(gl_FragData[0].rgb, 0.0, 65000.);
 }

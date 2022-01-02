@@ -7,7 +7,7 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 out vec3 velocity;
-//in vec3 at_velocity;   
+// in vec3 at_velocity;
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;
@@ -28,14 +28,13 @@ out vec4 normalMat;
 out float mcentity;
 in vec4 mc_Entity;
 in vec4 mc_midTexCoord;
-uniform int entityId; 
+uniform int entityId;
 #ifdef water
 out vec3 binormal;
-out vec3 tangent;					 
+out vec3 tangent;
 out float dist;
 out float lumaboost;
 out vec3 viewVector;
-
 
 in vec4 at_tangent;
 uniform mat4 gbufferModelViewInverse;
@@ -55,8 +54,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
 #endif
 
-
-     uniform int renderStage; 
+uniform int renderStage;
 
 // 0 Undefined
 // 1  Sky
@@ -83,147 +81,141 @@ uniform float frameTimeCounter;
 // 22 World border
 // 23 Translucent handheld objects
 
-//#define POM							
-#if defined (POM)||  defined (DLM)
+//#define POM
+#if defined(POM) || defined(DLM)
 out vec4 vtexcoordam; // .st for add, .pq for mul
 out vec4 vtexcoord;
-#endif					   
+#endif
 uniform vec2 texelSize;
 uniform int framemod8;
-		const vec2[8] offsets = vec2[8](vec2(1./8.,-3./8.),
-									vec2(-1.,3.)/8.,
-									vec2(5.0,1.)/8.,
-									vec2(-3,-5.)/8.,
-									vec2(-5.,5.)/8.,
-									vec2(-7.,-1.)/8.,
-									vec2(3,7.)/8.,
-									vec2(7.,-7.)/8.);
+const vec2[8] offsets = vec2[8](vec2(1. / 8., -3. / 8.), vec2(-1., 3.) / 8., vec2(5.0, 1.) / 8., vec2(-3, -5.) / 8.,
+                                vec2(-5., 5.) / 8., vec2(-7., -1.) / 8., vec2(3, 7.) / 8., vec2(7., -7.) / 8.);
 
-#ifdef solid1								
+#ifdef solid1
 
-#endif		
+#endif
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
-#define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
-vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(projectionMatrix, viewSpacePosition),-viewSpacePosition.z);
-}														
-								   
+#define projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
+vec4 toClipSpace3(vec3 viewSpacePosition)
+{
+    return vec4(projMAD(projectionMatrix, viewSpacePosition), -viewSpacePosition.z);
+}
 
-																																		
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 
-void main() {
+void main()
+{
 
-											
-	vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy/255.;
-  #if defined (POM)||  defined (DLM)
-	vec2 midcoord = ( mc_midTexCoord).st;
-	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
-	vtexcoordam.pq  = abs(texcoordminusmid)*2;
-	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);
-	vtexcoord.xy    = sign(texcoordminusmid)*0.5+0.5;
-	#endif 
-	
-#if defined(weather) || defined(glint)	
-		lmtexcoord.zw = lmcoord*lmcoord;	
-	#else
-		lmtexcoord.zw = lmcoord;
+    vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy / 255.;
+#if defined(POM) || defined(DLM)
+    vec2 midcoord = mc_midTexCoord.st;
+    vec2 texcoordminusmid = lmtexcoord.xy - midcoord;
+    vtexcoordam.pq = abs(texcoordminusmid) * 2;
+    vtexcoordam.st = min(lmtexcoord.xy, midcoord - texcoordminusmid);
+    vtexcoord.xy = sign(texcoordminusmid) * 0.5 + 0.5;
 #endif
 
-
-#ifdef glint 
-		lmtexcoord.xy = (textureMatrix[0] * vec4(vaUV0, 0.0, 1.0)).st;	
-	#else	
-		lmtexcoord.xy = (vaUV0).xy;	
-#endif
-
-
-	texcoord = (vaUV0).xy;
-	
-#if defined(solid1) || defined(water) || defined(hand)			
-	vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;	
+#if defined(weather) || defined(glint)
+    lmtexcoord.zw = lmcoord * lmcoord;
 #else
-	gl_Position = toClipSpace3(mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz);
-#endif	
-	
-#ifdef solid1	
-	
-	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
-	bool istopv = worldpos.y > cameraPosition.y+5.0;
-	float ft = frameTimeCounter*1.3;
-	if (!istopv) position.xz += vec2(3.0,1.0)+sin(ft)*sin(ft)*sin(ft)*vec2(2.1,0.6);
-	position.xz -= (vec2(3.0,1.0)+sin(ft)*sin(ft)*sin(ft)*vec2(2.1,0.6))*0.5;
-	gl_Position = toClipSpace3(position);	
+    lmtexcoord.zw = lmcoord;
 #endif
 
-#if defined(solid1) || defined(water) || defined(hand)		
-  gl_Position = toClipSpace3(position);	
-#endif  
-	
+#ifdef glint
+    lmtexcoord.xy = (textureMatrix[0] * vec4(vaUV0, 0.0, 1.0)).st;
+#else
+    lmtexcoord.xy = (vaUV0).xy;
+#endif
 
-	color = vaColor;
+    texcoord = (vaUV0).xy;
+
+#if defined(solid1) || defined(water) || defined(hand)
+    vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
+#else
+    gl_Position =
+        toClipSpace3(mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz);
+#endif
+
+#ifdef solid1
+
+    vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz + cameraPosition;
+    bool istopv = worldpos.y > cameraPosition.y + 5.0;
+    float ft = frameTimeCounter * 1.3;
+    if (!istopv)
+        position.xz += vec2(3.0, 1.0) + sin(ft) * sin(ft) * sin(ft) * vec2(2.1, 0.6);
+    position.xz -= (vec2(3.0, 1.0) + sin(ft) * sin(ft) * sin(ft) * vec2(2.1, 0.6)) * 0.5;
+    gl_Position = toClipSpace3(position);
+#endif
+
+#if defined(solid1) || defined(water) || defined(hand)
+    gl_Position = toClipSpace3(position);
+#endif
+
+    color = vaColor;
 
 #ifdef water
-	lumaboost = 0.0;
-	float mat = 0.0;
-	if(mc_Entity.x == 20) {
-    mat = 1.0;
-    gl_Position.z -= 1e-4;
-  }
-		if (mc_Entity.x == 11) lumaboost = 5.0;
+    lumaboost = 0.0;
+    float mat = 0.0;
+    if (mc_Entity.x == 20)
+    {
+        mat = 1.0;
+        gl_Position.z -= 1e-4;
+    }
+    if (mc_Entity.x == 11)
+        lumaboost = 5.0;
 
-	if(mc_Entity.x == 79.0) mat = 0.5;
-		if (mc_Entity.x == 10002) mat = 0.01;
-	normalMat = vec4(normalize( normalMatrix*vaNormal),mat);
+    if (mc_Entity.x == 79.0)
+        mat = 0.5;
+    if (mc_Entity.x == 10002)
+        mat = 0.01;
+    normalMat = vec4(normalize(normalMatrix * vaNormal), mat);
 
-	tangent = normalize( normalMatrix *at_tangent.rgb);
-	binormal = normalize(cross(tangent.rgb,normalMat.xyz)*at_tangent.w);
+    tangent = normalize(normalMatrix * at_tangent.rgb);
+    binormal = normalize(cross(tangent.rgb, normalMat.xyz) * at_tangent.w);
 
-	mat3 tbnMatrix = mat3(tangent.x, binormal.x, normalMat.x,
-								  tangent.y, binormal.y, normalMat.y,
-						     	  tangent.z, binormal.z, normalMat.z);
+    mat3 tbnMatrix = mat3(tangent.x, binormal.x, normalMat.x, tangent.y, binormal.y, normalMat.y, tangent.z, binormal.z,
+                          normalMat.z);
 
+    dist = length(modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0));
 
-		dist = length(modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0));
-	   
+    viewVector = (modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0)).xyz;
+    viewVector = normalize(tbnMatrix * viewVector);
+#endif
 
-	viewVector = ( modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0)).xyz;
-	viewVector = normalize(tbnMatrix * viewVector);
-	#endif
-	
-	
-	#ifndef water
-	#ifdef MC_NORMAL_MAP
-		tangent = vec4(normalize(normalMatrix *at_tangent.rgb),at_tangent.w);
-	#endif
-	#endif
-	#ifdef normal1
-		normalMat = vec4(normalize(normalMatrix *vaNormal),blockEntityId==10006? 1.0:1.0);	
-		if (entityId == 18)	normalMat = vec4(normalize(normalMatrix *vaNormal),1.0);
-	#else
-	#ifndef water
-	#ifdef hand
-	
-	normalMat = vec4(normalize(normalMatrix *vaNormal),0.5);
-	#else
-		normalMat = vec4(normalize(normalMatrix *vaNormal),0.0);
-	#endif
-	#endif
-	#endif
-	
-//	velocity = at_velocity / 1000000.0;
-	velocity = vec3(0.0);
+#ifndef water
+#ifdef MC_NORMAL_MAP
+    tangent = vec4(normalize(normalMatrix * at_tangent.rgb), at_tangent.w);
+#endif
+#endif
+#ifdef normal1
+    normalMat = vec4(normalize(normalMatrix * vaNormal), blockEntityId == 10006 ? 1.0 : 1.0);
+    if (entityId == 18)
+        normalMat = vec4(normalize(normalMatrix * vaNormal), 1.0);
+#else
+#ifndef water
+#ifdef hand
 
-	#ifdef TAA_UPSCALING
-		gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;
-	#endif
-	#ifdef TAA
-	gl_Position.xy += offsets[framemod8] * gl_Position.w*texelSize;
-	#endif
-	mcentity = 0;
-	if(mc_Entity.x >16) mcentity = mc_Entity.x;
+    normalMat = vec4(normalize(normalMatrix * vaNormal), 0.5);
+#else
+    normalMat = vec4(normalize(normalMatrix * vaNormal), 0.0);
+#endif
+#endif
+#endif
+
+    //	velocity = at_velocity / 1000000.0;
+    velocity = vec3(0.0);
+
+#ifdef TAA_UPSCALING
+    gl_Position.xy = gl_Position.xy * RENDER_SCALE + RENDER_SCALE * gl_Position.w - gl_Position.w;
+#endif
+#ifdef TAA
+    gl_Position.xy += offsets[framemod8] * gl_Position.w * texelSize;
+#endif
+    mcentity = 0;
+    if (mc_Entity.x > 16)
+        mcentity = mc_Entity.x;
 }

@@ -7,7 +7,8 @@ uniform float near;
 uniform float far;
 in vec4 hspec;
 
-float linZ(float depth) {
+float linZ(float depth)
+{
     return (2.0 * near) / (far + near - depth * (far - near));
 }
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -16,13 +17,14 @@ float linZ(float depth) {
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 
-void main() {
-/* RENDERTARGETS: 4 */
+void main()
+{
+    /* RENDERTARGETS: 4 */
 
-	vec3 oldTex = texelFetch2D(colortex4, ivec2(gl_FragCoord.xy), 0).xyz;
-	float newTex = texelFetch2D(depthtex1, ivec2(gl_FragCoord.xy*4), 0).x;
-  if (newTex < 1.0)
-	   gl_FragData[0] = vec4(oldTex, linZ(newTex)*linZ(newTex)*65000.0);
-  else
-    gl_FragData[0] = vec4(oldTex, 2.0);
+    vec3 oldTex = texelFetch2D(colortex4, ivec2(gl_FragCoord.xy), 0).xyz;
+    float newTex = texelFetch2D(depthtex1, ivec2(gl_FragCoord.xy * 4), 0).x;
+    if (newTex < 1.0)
+        gl_FragData[0] = vec4(oldTex, linZ(newTex) * linZ(newTex) * 65000.0);
+    else
+        gl_FragData[0] = vec4(oldTex, 2.0);
 }

@@ -1,4 +1,4 @@
-//in vec3 at_velocity;   
+// in vec3 at_velocity;
 // Compatibility
 #extension GL_EXT_gpu_shader4 : enable
 in vec3 vaPosition;
@@ -14,8 +14,9 @@ uniform vec3 chunkOffset;
 #extension GL_EXT_gpu_shader4 : enable
 uniform vec2 texelSize;
 #include "/lib/res_params.glsl"
-void main() {
-	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
-	vec2 scaleRatio = max(vec2(0.25), vec2(18.+258*2,258.)*texelSize);
-	gl_Position.xy = (gl_Position.xy*0.5+0.5)*clamp(scaleRatio+0.01,0.0,1.0)*2.0-1.0;
+void main()
+{
+    gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
+    vec2 scaleRatio = max(vec2(0.25), vec2(18. + 258 * 2, 258.) * texelSize);
+    gl_Position.xy = (gl_Position.xy * 0.5 + 0.5) * clamp(scaleRatio + 0.01, 0.0, 1.0) * 2.0 - 1.0;
 }

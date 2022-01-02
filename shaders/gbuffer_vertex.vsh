@@ -121,7 +121,7 @@ void main() {
 											
 	vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy/255.;
   #if defined (POM)||  defined (DLM)
-	vec2 midcoord = (textureMatrix[0] *  mc_midTexCoord).st;
+	vec2 midcoord = ( mc_midTexCoord).st;
 	vec2 texcoordminusmid = lmtexcoord.xy-midcoord;
 	vtexcoordam.pq  = abs(texcoordminusmid)*2;
 	vtexcoordam.st  = min(lmtexcoord.xy,midcoord-texcoordminusmid);

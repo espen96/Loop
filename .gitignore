@@ -3,3 +3,4 @@ shaders/shadow.vsh.bak
 shaders/lib/clouds.glsl.bak
 shaders/gbuffers_terrain.fsh.bak
 shaders/gbuffers_terrain.vsh.bak
+*.zip

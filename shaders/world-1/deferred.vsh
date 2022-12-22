@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 #define EXPOSURE_MULTIPLIER 1.0 //[0.25 0.4 0.5 0.6 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.1 1.2 1.3 1.4 1.5 2.0 3.0 4.0]
 #define AUTO_EXPOSURE		//Highly recommended to keep it on unless you want to take screenshots
@@ -37,18 +37,10 @@ flat out float centerDepth;
 uniform sampler2D colortex4;
 uniform sampler2D colortex6;
 uniform sampler2D depthtex0;
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 
 uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
@@ -117,7 +109,7 @@ float ld(float depth) {
 }
 void main() {
 
-	gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0)*0.5+0.5;
+	gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0)*0.5+0.5;
 	gl_Position.xy = gl_Position.xy*vec2(18.+258*2,258.)*texelSize;
 	gl_Position.xy = gl_Position.xy*2.-1.0;
 

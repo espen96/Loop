@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 
 out vec2 texcoord;
@@ -14,6 +14,6 @@ uniform float near;
 void main() {
 	zMults = vec3(1.0/(far * near),far+near,far-near);
 	gl_Position = ;
-	texcoord = vaUV0.xy;
+	texcoord = gl_MultiTexCoord0.xy;
 
 }

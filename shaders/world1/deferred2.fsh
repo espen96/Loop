@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 uniform sampler2D colortex4;
 uniform sampler2D depthtex1;

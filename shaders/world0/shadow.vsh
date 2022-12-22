@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 /*
 !! DO NOT REMOVE !!
@@ -12,18 +12,10 @@ Read the terms of modification and sharing before changing something below pleas
 #define WAVY_SPEED 1.0 //[0.001 0.01 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0 1.25 1.5 2.0 3.0 4.0]
 #include "/lib/Shadow_Params.glsl"
 
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 out vec2 texcoord;
 
 uniform mat4 shadowModelViewInverse;
@@ -89,33 +81,33 @@ bool intersectCone(float coneHalfAngle, vec3 coneTip , vec3 coneAxis, vec3 rayOr
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(projectionMatrix, viewSpacePosition),1.0);
+    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),1.0);
 }
 void main() {
 
-	vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
+    vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
   //Check if the vertice is going to cast shadows
   #ifdef SHADOW_FRUSTRUM_CULLING
   if (intersectCone(cosFov, shadowCamera, shadowViewDir, position, -shadowLightVec, shadowMaxProj)) {
   #endif
 	#ifdef WAVY_PLANTS
-  	bool istopv = vaUV0.t < mc_midTexCoord.t;
+  	bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
     if ((mc_Entity.x == 10001&&istopv) && length(position.xy) < 24.0) {
       vec3 worldpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
-      worldpos.xyz += calcMovePlants(worldpos.xyz + cameraPosition)*vec4(vaUV2, 0.0, 1.0).y;
+      worldpos.xyz += calcMovePlants(worldpos.xyz + cameraPosition)*vec4(gl_MultiTexCoord2.xy, 0.0, 1.0).y;
       position = mat3(shadowModelView) * worldpos + shadowModelView[3].xyz ;
     }
 
     if ((mc_Entity.x == 10003) && length(position.xy) < 24.0) {
       vec3 worldpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
-      worldpos.xyz += calcMoveLeaves(worldpos.xyz + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*vec4(vaUV2, 0.0, 1.0).y;
+      worldpos.xyz += calcMoveLeaves(worldpos.xyz + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*vec4(gl_MultiTexCoord2.xy, 0.0, 1.0).y;
       position = mat3(shadowModelView) * worldpos + shadowModelView[3].xyz ;
     }
   #endif
 	gl_Position = BiasShadowProjection(toClipSpace3(position));
 	gl_Position.z /= 6.0;
 
-	texcoord.xy = vaUV0.xy;
+	texcoord.xy = gl_MultiTexCoord0.xy;
 	if(mc_Entity.x == 20) gl_Position.w = -1.0;
   #ifdef SHADOW_FRUSTRUM_CULLING
   }

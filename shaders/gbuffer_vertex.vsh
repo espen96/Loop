@@ -8,18 +8,10 @@ Read the terms of modification and sharing before changing something below pleas
 */
 out vec3 velocity;
 // in vec3 at_velocity;
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 
 out vec2 texcoord;
 out vec4 lmtexcoord;
@@ -98,7 +90,7 @@ const vec2[8] offsets = vec2[8](vec2(1. / 8., -3. / 8.), vec2(-1., 3.) / 8., vec
 #define projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition)
 {
-    return vec4(projMAD(projectionMatrix, viewSpacePosition), -viewSpacePosition.z);
+    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition), -viewSpacePosition.z);
 }
 
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -110,7 +102,7 @@ vec4 toClipSpace3(vec3 viewSpacePosition)
 void main()
 {
 
-    vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy / 255.;
+    vec2 lmcoord = vec4(gl_MultiTexCoord2.xy, 0.0, 1.0).xy / 255.;
 #if defined(POM) || defined(DLM)
     vec2 midcoord = mc_midTexCoord.st;
     vec2 texcoordminusmid = lmtexcoord.xy - midcoord;
@@ -126,18 +118,18 @@ void main()
 #endif
 
 #ifdef glint
-    lmtexcoord.xy = (textureMatrix[0] * vec4(vaUV0, 0.0, 1.0)).st;
+    lmtexcoord.xy = (gl_TextureMatrix[0] * vec4(gl_MultiTexCoord0.xy, 0.0, 1.0)).st;
 #else
-    lmtexcoord.xy = (vaUV0).xy;
+    lmtexcoord.xy = (gl_MultiTexCoord0).xy;
 #endif
 
-    texcoord = (vaUV0).xy;
+    texcoord = (gl_MultiTexCoord0).xy;
 
 #if defined(solid1) || defined(water) || defined(hand)
-    vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
+    vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
 #else
     gl_Position =
-        toClipSpace3(mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz);
+        toClipSpace3(mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz);
 #endif
 
 #ifdef solid1
@@ -155,7 +147,7 @@ void main()
     gl_Position = toClipSpace3(position);
 #endif
 
-    color = vaColor;
+    color = gl_Color;
 
 #ifdef water
     lumaboost = 0.0;
@@ -172,36 +164,36 @@ void main()
         mat = 0.5;
     if (mc_Entity.x == 10002)
         mat = 0.01;
-    normalMat = vec4(normalize(normalMatrix * vaNormal), mat);
+    normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), mat);
 
-    tangent = normalize(normalMatrix * at_tangent.rgb);
+    tangent = normalize(gl_NormalMatrix * at_tangent.rgb);
     binormal = normalize(cross(tangent.rgb, normalMat.xyz) * at_tangent.w);
 
     mat3 tbnMatrix = mat3(tangent.x, binormal.x, normalMat.x, tangent.y, binormal.y, normalMat.y, tangent.z, binormal.z,
                           normalMat.z);
 
-    dist = length(modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0));
+    dist = length(gl_ModelViewMatrix * gl_Vertex);
 
-    viewVector = (modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0)).xyz;
+    viewVector = (gl_ModelViewMatrix * gl_Vertex).xyz;
     viewVector = normalize(tbnMatrix * viewVector);
 #endif
 
 #ifndef water
 #ifdef MC_NORMAL_MAP
-    tangent = vec4(normalize(normalMatrix * at_tangent.rgb), at_tangent.w);
+    tangent = vec4(normalize(gl_NormalMatrix * at_tangent.rgb), at_tangent.w);
 #endif
 #endif
 #ifdef normal1
-    normalMat = vec4(normalize(normalMatrix * vaNormal), blockEntityId == 10006 ? 1.0 : 1.0);
+    normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), blockEntityId == 10006 ? 1.0 : 1.0);
     if (entityId == 18)
-        normalMat = vec4(normalize(normalMatrix * vaNormal), 1.0);
+        normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), 1.0);
 #else
 #ifndef water
 #ifdef hand
 
-    normalMat = vec4(normalize(normalMatrix * vaNormal), 0.5);
+    normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), 0.5);
 #else
-    normalMat = vec4(normalize(normalMatrix * vaNormal), 0.0);
+    normalMat = vec4(normalize(gl_NormalMatrix * gl_Normal), 0.0);
 #endif
 #endif
 #endif

@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 //Filter 
 
 #extension GL_EXT_gpu_shader4 : enable

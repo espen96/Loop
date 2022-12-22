@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 // Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM

@@ -1,34 +1,28 @@
-float square(float x)
-{
+float square(float x) {
     return x * x;
 }
 
-float g(float NdotL, float roughness)
-{
+float g(float NdotL, float roughness) {
     float alpha = square(max(roughness, 0.02));
     return 2.0 * NdotL / (NdotL + sqrt(square(alpha) + (1.0 - square(alpha)) * square(NdotL)));
 }
 
-float gSimple(float dp, float roughness)
-{
+float gSimple(float dp, float roughness) {
     float k = roughness + 1;
     k *= k / 8.0;
     return dp / (dp * (1.0 - k) + k);
 }
-float GGXTerm(float NdotH, float roughness)
-{
+float GGXTerm(float NdotH, float roughness) {
     float a2 = roughness * roughness;
     float d = (NdotH * a2 - NdotH) * NdotH + 1.0f; // 2 mad
     return 0.31830988618 * a2 / (d * d + 1e-7f);   // This function is not intended to be running on Mobile,
                                                    // therefore epsilon is smaller than what can be represented by half
 }
-vec3 GGX2(vec3 n, vec3 v, vec3 l, float r, vec3 F0)
-{
+vec3 GGX2(vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
     float alpha = square(r);
 
     vec3 h = normalize(l + v);
 
-    float dotLH = clamp(dot(h, l), 0., 1.);
     float dotNH = clamp(dot(h, n), 0., 1.);
     float dotNL = clamp(dot(n, l), 0., 1.);
     float dotNV = clamp(dot(n, v), 0., 1.);
@@ -40,13 +34,11 @@ vec3 GGX2(vec3 n, vec3 v, vec3 l, float r, vec3 F0)
 
     return dotNL * F * (G * D / (4 * dotNV * dotNL + 1e-7));
 }
-float invLinZ(float lindepth)
-{
+float invLinZ(float lindepth) {
     return -((2.0 * near / lindepth) - far - near) / (far - near);
 }
 
-float SmithJointGGXVisibilityTerm(float NdotL, float NdotV, float roughness)
-{
+float SmithJointGGXVisibilityTerm(float NdotL, float NdotV, float roughness) {
     // This is an approximation
     float a = roughness * roughness;
     float gV = NdotL * (NdotV * (1 - a) + a);
@@ -55,8 +47,7 @@ float SmithJointGGXVisibilityTerm(float NdotL, float NdotV, float roughness)
                                              // therefore epsilon is smaller than can be represented by float
 }
 
-float BRDF_Unity_Weight(vec3 V, vec3 L, vec3 N, float Roughness)
-{
+float BRDF_Unity_Weight(vec3 V, vec3 L, vec3 N, float Roughness) {
     vec3 H = normalize(L + V);
 
     float NdotH = clamp(dot(N, H), 0, 1);
@@ -68,8 +59,7 @@ float BRDF_Unity_Weight(vec3 V, vec3 L, vec3 N, float Roughness)
 
     return (D * G) * (3.14159265359 / 4.0);
 }
-vec3 GGX(vec3 n, vec3 v, vec3 l, float r, vec3 F0)
-{
+vec3 GGX(vec3 n, vec3 v, vec3 l, float r, vec3 F0) {
     r *= r;
     r *= r;
 
@@ -88,13 +78,11 @@ vec3 GGX(vec3 n, vec3 v, vec3 l, float r, vec3 F0)
 
     return dotNL * D * F / (dotLH * dotLH * (1.0 - k2) + k2);
 }
-vec3 toClipSpace3(vec3 viewSpacePosition)
-{
+vec3 toClipSpace3(vec3 viewSpacePosition) {
     return projMAD(gbufferProjection, viewSpacePosition) / -viewSpacePosition.z * 0.5 + 0.5;
 }
 
-vec3 rayTrace(vec3 viewNormal, vec3 dir, vec3 position, float dither, float quality)
-{
+vec3 rayTrace(vec3 viewNormal, vec3 dir, vec3 position, float dither, float quality) {
 
     vec3 clipPosition = toClipSpace3(position);
     float rayLength = ((position.z + dir.z * far * sqrt(3.)) > -near) ? (-near - position.z) / dir.z : far * sqrt(3.);
@@ -108,18 +96,15 @@ vec3 rayTrace(vec3 viewNormal, vec3 dir, vec3 position, float dither, float qual
     vec3 stepv = direction * mult / quality * vec3(RENDER_SCALE, 1.0);
 
     vec3 spos = clipPosition * vec3(RENDER_SCALE, 1.0) + stepv * dither;
-    float minZ = clipPosition.z + stepv.z * clamp(dither - 0.5, 0.0, 1.0);
-    float maxZ = spos.z + stepv.z * (0.5 + dither);
+
     spos.xy += TAA_Offset * texelSize * 0.5 / RENDER_SCALE;
 
-    for (int i = 0; i <= int(quality); i++)
-    {
+    for (int i = 0; i <= int(quality); i++) {
         if (spos.x < 0.0 && spos.y < 0.0 && spos.z < 0.0 && spos.x > 1.0 && spos.y > 1.0 && spos.z > 1.0)
             return vec3(1.1);
         // decode depth buffer
         float sp = sqrt(texelFetch2D(colortex4, ivec2(spos.xy / texelSize / 4), 0).w / 65000.0);
-        if (sp <= ld(spos.z) && abs(sp - ld(spos.z)) / ld(spos.z) < 0.1)
-        {
+        if (sp <= ld(spos.z) && abs(sp - ld(spos.z)) / ld(spos.z) < 0.1) {
             return vec3(spos.xy / RENDER_SCALE, spos.z);
         }
         spos += stepv;
@@ -127,30 +112,24 @@ vec3 rayTrace(vec3 viewNormal, vec3 dir, vec3 position, float dither, float qual
     return vec3(1.1);
 }
 
-void frisvad(in vec3 n, out vec3 f, out vec3 r)
-{
-    if (n.z < -0.999999)
-    {
+void frisvad(in vec3 n, out vec3 f, out vec3 r) {
+    if (n.z < -0.999999) {
         f = vec3(0., -1, 0);
         r = vec3(-1, 0, 0);
-    }
-    else
-    {
+    } else {
         float a = 1. / (1. + n.z);
         float b = -n.x * n.y * a;
         f = vec3(1. - n.x * n.x * a, b, -n.x);
         r = vec3(b, 1. - n.y * n.y * a, -n.y);
     }
 }
-mat3 CoordBase(vec3 n)
-{
+mat3 CoordBase(vec3 n) {
     vec3 x, y;
     frisvad(n, x, y);
     return mat3(x, y, n);
 }
 
-vec3 MetalCol(float f0)
-{
+vec3 MetalCol(float f0) {
     int metalidx = int(f0 * 255.0);
 
     if (metalidx == 230)
@@ -172,8 +151,7 @@ vec3 MetalCol(float f0)
     return vec3(1.0);
 }
 
-vec3 sampleGGXVNDF(vec3 V_, float alpha_x, float alpha_y, float U1, float U2)
-{
+vec3 sampleGGXVNDF(vec3 V_, float alpha_x, float alpha_y, float U1, float U2) {
     // stretch view
     vec3 V = normalize(vec3(alpha_x * V_.x, alpha_y * V_.y, V_.z));
     // orthonormal basis
@@ -192,8 +170,7 @@ vec3 sampleGGXVNDF(vec3 V_, float alpha_x, float alpha_y, float U1, float U2)
     return N;
 }
 
-float unpackRoughness(float x)
-{
+float unpackRoughness(float x) {
     float r = 1.0 - x;
     return r * r;
 }

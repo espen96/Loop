@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 // moved up
 #extension GL_ARB_shader_texture_lod : enable
 #extension GL_EXT_gpu_shader4 : enable
@@ -38,7 +38,7 @@ void main() {
 
 	
 
-	
+
   #ifdef Stochastic_Transparent_Shadows
 	 gl_FragData[0].a = float(gl_FragData[0].a >= blueNoise());
   #endif

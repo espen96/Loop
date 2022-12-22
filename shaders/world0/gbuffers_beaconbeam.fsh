@@ -1,4 +1,4 @@
-#version 130
+#version 130 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 #define beacon
 

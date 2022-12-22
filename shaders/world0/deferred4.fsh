@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 // Render sky, volumetric clouds, direct lighting
 #extension GL_EXT_gpu_shader4 : enable
 //#define POM
@@ -752,8 +752,8 @@ void main()
             if (!hand)
             {
 #ifdef SCREENSPACE_CONTACT_SHADOWS
-                vec3 vec = lightCol.a * sunVec;
-                float screenShadow = rayTraceShadow(vec, fragpos, noise);
+                vec3 vector = lightCol.a * sunVec;
+                float screenShadow = rayTraceShadow(vector, fragpos, noise);
                 shading = min(screenShadow, shading);
                 // Out of shadow map
                 if (abs(filtered.y - 0.1) < 0.0004)

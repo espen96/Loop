@@ -1,18 +1,10 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 //in vec3 at_velocity;   
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 #include "/lib/res_params.glsl"
 out vec3 velocity;
 //in vec3 at_velocity;   
@@ -59,7 +51,7 @@ uniform int framemod8;
 #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
 #define  projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition) {
-    return vec4(projMAD(projectionMatrix, viewSpacePosition),-viewSpacePosition.z);
+    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition),-viewSpacePosition.z);
 }
 
 
@@ -70,16 +62,16 @@ vec4 toClipSpace3(vec3 viewSpacePosition) {
 //////////////////////////////VOID MAIN//////////////////////////////
 
 void main() {
-	lmtexcoord.xy = (vaUV0).xy;
+	lmtexcoord.xy = (gl_MultiTexCoord0).xy;
 
-	vec2 lmcoord = vec4(vaUV2, 0.0, 1.0).xy/255.;
+	vec2 lmcoord = vec4(gl_MultiTexCoord2.xy, 0.0, 1.0).xy/255.;
 	lmtexcoord.zw = lmcoord;
 
-	vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
+	vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
 
-	color = vaColor;
+	color = gl_Color;
 
-	normalMat = vec4(normalize(normalMatrix *vaNormal),blockEntityId == 10010 ? 0.6:1.0);
+	normalMat = vec4(normalize(gl_NormalMatrix *gl_Normal),blockEntityId == 10010 ? 0.6:1.0);
 	
 //	velocity = at_velocity / 1000000.0;
 	velocity = vec3(0.0);

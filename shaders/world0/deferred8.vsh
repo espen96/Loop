@@ -1,4 +1,4 @@
-#version 150
+#version 150 compatibility
 #extension GL_EXT_gpu_shader4 : enable
 #define TAA
 #define FinalR                                                                                                         \
@@ -20,18 +20,10 @@
         //6 6.1 6.2 6.3 6.4 6.5 6.6 6.7 6.8 6.9 7 7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9
         //8 8.1 8.2 8.3 8.4 8.5 8.6 8.7 8.8 8.9 9 9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9 10.0]
 // in vec3 at_velocity;
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 flat out vec3 WsunVec;
 flat out vec3 ambientUp;
 flat out vec3 ambientLeft;
@@ -63,7 +55,7 @@ uniform int frameCounter;
 void main()
 {
     zMults = vec3(1.0 / (far * near), far + near, far - near);
-    gl_Position = vec4(vec4(vaPosition + chunkOffset, 1.0).xy * 2.0 - 1.0, 0.0, 1.0);
+    gl_Position = vec4(gl_Vertex.xy * 2.0 - 1.0, 0.0, 1.0);
     //	gl_Position.xy = (gl_Position.xy*0.5+0.5)*(0.01+VL_RENDER_RESOLUTION)*2.0-1.0;
 #ifdef TAA_UPSCALING
     gl_Position.xy = (gl_Position.xy * 0.5 + 0.5) * RENDER_SCALE * 2.0 - 1.0;
@@ -74,7 +66,7 @@ void main()
 #ifndef TAA
     TAA_Offset = vec2(0.0);
 #endif
-    coord = vaUV0.xy;
+    coord = gl_MultiTexCoord0.xy;
     vec3 sc = texelFetch2D(colortex4, ivec2(6, 37), 0).rgb;
     ambientUp = texelFetch2D(colortex4, ivec2(0, 37), 0).rgb;
     ambientDown = texelFetch2D(colortex4, ivec2(1, 37), 0).rgb;

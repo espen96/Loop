@@ -3,18 +3,10 @@
 //#define POM
 //#define USE_LUMINANCE_AS_HEIGHTMAP	//Can generate POM on any texturepack (may look weird in some cases)
 
-// Compatibility
+
 #extension GL_EXT_gpu_shader4 : enable
-in vec3 vaPosition;
-in vec4 vaColor;
-in vec2 vaUV0;
-in ivec2 vaUV2;
-in vec3 vaNormal;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textureMatrix = mat4(1.0);
-uniform mat3 normalMatrix;
-uniform vec3 chunkOffset;
+
+
 
 #ifndef USE_LUMINANCE_AS_HEIGHTMAP
 #ifndef MC_NORMAL_MAP
@@ -91,7 +83,7 @@ const vec2[8] offsets = vec2[8](vec2(1. / 8., -3. / 8.), vec2(-1., 3.) / 8., vec
 #define projMAD(m, v) (diagonal3(m) * (v) + (m)[3].xyz)
 vec4 toClipSpace3(vec3 viewSpacePosition)
 {
-    return vec4(projMAD(projectionMatrix, viewSpacePosition), -viewSpacePosition.z);
+    return vec4(projMAD(gl_ProjectionMatrix, viewSpacePosition), -viewSpacePosition.z);
 }
 #ifdef WAVY_PLANTS
 vec2 calcWave(in vec3 pos)
@@ -167,7 +159,7 @@ void main()
     if (mc_Entity.x == 1104)
         hspec = vec4(100, 20, 000, 000);
 
-    lmtexcoord.xy = vaUV0.xy;
+    lmtexcoord.xy = gl_MultiTexCoord0.xy;
 #if defined(POM) || defined(DLM)
     vec2 midcoord = mc_midTexCoord.st;
     vec2 texcoordminusmid = lmtexcoord.xy - midcoord;
@@ -175,21 +167,21 @@ void main()
     vtexcoordam.st = min(lmtexcoord.xy, midcoord - texcoordminusmid);
     vtexcoord.xy = sign(texcoordminusmid) * 0.5 + 0.5;
 #endif
-    vec2 lmcoord = vaUV2.xy / 255.0;
+    vec2 lmcoord = gl_MultiTexCoord2.xy / 255.0;
     lmtexcoord.zw = lmcoord;
 
-    vec3 position = mat3(modelViewMatrix) * vec3(vec4(vaPosition + chunkOffset, 1.0)) + modelViewMatrix[3].xyz;
+    vec3 position = mat3(gl_ModelViewMatrix) * gl_Vertex.xyz + gl_ModelViewMatrix[3].xyz;
 
-    color = vaColor;
+    color = gl_Color;
     taajitter = offsets[framemod8];
     hspec *= clamp(1 - luma(color.rgb * 10 - 5), 0.95, 1);
-    bool istopv = vaUV0.t < mc_midTexCoord.t;
+    bool istopv = gl_MultiTexCoord0.t < mc_midTexCoord.t;
 #ifdef MC_NORMAL_MAP
-    tangent = vec4(normalize(normalMatrix * at_tangent.rgb), at_tangent.w);
+    tangent = vec4(normalize(gl_NormalMatrix * at_tangent.rgb), at_tangent.w);
 #endif
 
     normalMat =
-        vec4(normalize(normalMatrix * vaNormal),
+        vec4(normalize(gl_NormalMatrix * gl_Normal),
              mc_Entity.x == 10004 || mc_Entity.x == 10003 || mc_Entity.x == 80 || mc_Entity.x == 10001 ? 0.5 : 1.0);
     normalMat.a = mc_Entity.x == 10006 ? 0.6 : normalMat.a;
 

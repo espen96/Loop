@@ -130,7 +130,7 @@ void main() {
   vec4 trpData = texture(colortex7,texcoord);
   bool iswater = trpData.a > 0.99;
   //3x3 bilateral upscale from half resolution
-  float z = texture(depthtex1,texcoord).x;
+  float z = texture(depthtex0,texcoord).x;
   float frDepth = ld(z);
   vec4 vl = BilateralUpscale(colortex0,depthtex1,gl_FragCoord.xy,frDepth);
   bool istransparent = (texture(colortex2,texcoord).a) > 0.0;	
@@ -227,7 +227,7 @@ void main() {
   else
 
 
-    color += vl.rgb*(1-transparencies.a);
+    color += vl.rgb;
 
 	
 

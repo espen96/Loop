@@ -556,11 +556,11 @@ void PromoOutline(inout vec3 color, sampler2D depth) {
 		samplezb = ld(texture(depth, texCoord - offset).r) * far;
 		maxz = max(maxz, max(sampleza, samplezb));
 
-		float sample = (z * 2.0 - (sampleza + samplezb)) / length(outlineOffsets[i]);
+		float _sample = (z * 2.0 - (sampleza + samplezb)) / length(outlineOffsets[i]);
 
-		outlinea += clamp(1.0 + sample * 4.0 / z, 0.0, 1.0);
-		if(i >= 8) outlineb += 1.0 - (1.0 - clamp(1.0 - sample * 512.0 / z, 0.0, 1.0)) * clamp(1.0 - sample * 16.0 / z, 0.0, 1.0);
-		outlinec += clamp(1.0 + sample * 128.0 / z, 0.0, 1.0);
+		outlinea += clamp(1.0 + _sample * 4.0 / z, 0.0, 1.0);
+		if(i >= 8) outlineb += 1.0 - (1.0 - clamp(1.0 - _sample * 512.0 / z, 0.0, 1.0)) * clamp(1.0 - _sample * 16.0 / z, 0.0, 1.0);
+		outlinec += clamp(1.0 + _sample * 128.0 / z, 0.0, 1.0);
 
 		totalz += sampleza + samplezb;
 	}
@@ -942,7 +942,7 @@ void main() {
 						}
 					}
 
-					// Sample skybox
+					// _sample skybox
 					if (reflection.a < 0.9){
 						reflection.rgb = clamp((skyCloudsFromTex(L, colortex4).rgb)*clamp(lightmap.y-0.8,0,1),0,10);
 						reflection.rgb *= sqrt(lightmap.y)/150.*8./3.;
